@@ -1,0 +1,324 @@
+
+
+📘 WorkSí — Documento Oficial del Proyecto (Versión Final Consolidada)
+1. INTRODUCCIÓN
+
+WorkSí es una plataforma de reclutamiento laboral que combina una aplicación móvil para candidatos y una aplicación web para empresas, integrando inteligencia artificial para mejorar el proceso de selección mediante un sistema de matching semántico.
+
+El sistema permite a los candidatos interactuar con ofertas laborales mediante una experiencia tipo swipe, mientras que las empresas gestionan ofertas y visualizan postulantes desde un panel web.
+
+El objetivo principal es optimizar el proceso de selección, reducir sesgos y mejorar la calidad del matching entre candidatos y empleos.
+
+2. PROBLEMA A RESOLVER
+
+Los sistemas actuales de reclutamiento presentan múltiples deficiencias:
+
+Postulaciones masivas sin filtrado real
+Matching basado en palabras clave poco preciso
+Alto costo de revisión manual
+Falta de transparencia en los procesos
+Presencia de sesgos (edad, género, nacionalidad, etc.)
+Experiencias de usuario poco modernas
+3. PROPUESTA DE VALOR
+
+WorkSí propone:
+
+Matching inteligente basado en IA
+Explicación simple del resultado del match
+Interfaz moderna tipo swipe
+Reducción de sesgos mediante procesamiento previo de datos
+Experiencia diferenciada para candidatos y empresas
+4. DEFINICIÓN DEL PRODUCTO
+4.1 Aplicación móvil (Candidatos)
+Exploración de ofertas mediante swipe
+Visualización de porcentaje de compatibilidad
+Postulación rápida
+Gestión de perfil
+4.2 Aplicación web (Empresas)
+Creación y gestión de ofertas laborales
+Visualización de candidatos
+Ordenamiento por compatibilidad
+5. USUARIOS OBJETIVO
+Candidatos
+Personas en búsqueda de empleo
+Recién egresados
+Usuarios familiarizados con apps móviles
+Empresas
+Reclutadores
+PYMEs
+Startups
+Equipos de RRHH
+6. STACK TECNOLÓGICO
+Backend
+Java 21
+Spring Boot 3.2.x
+Spring Security (JWT simple)
+JPA (Hibernate)
+Apache Tika (extracción de texto desde PDF en el backend)
+Mobile
+Kotlin
+Android Studio
+ViewModel + LiveData
+Web
+React
+Vite
+Base de Datos
+MySQL 8
+IA (Servicio separado)
+Python 3.11
+FastAPI
+sentence-transformers
+spaCy
+scikit-learn
+Infraestructura
+Docker
+Docker Compose
+7. ARQUITECTURA DEL SISTEMA
+Backend monolítico (Spring Boot)
+Servicio de IA desacoplado (FastAPI)
+Comunicación entre servicios vía HTTP
+Base de datos relacional única (MySQL)
+Los CV se guardan como archivos en filesystem; en MySQL solo referencia/URL (no el binario).
+Comunicación principal:
+Spring Boot → POST /match → FastAPI
+8. MODELO DE DATOS
+
+Tablas principales:
+
+users
+jobs
+applications
+
+❌ No se utiliza tabla matches
+
+El matching se calcula dinámicamente mediante el servicio de IA.
+
+9. PIPELINE DE INTELIGENCIA ARTIFICIAL
+Flujo general:
+Recepción de CV y oferta laboral (el PDF se procesa en el backend; la IA recibe texto, no el archivo)
+Extracción de texto (Apache Tika en Spring Boot)
+Limpieza básica de texto (normalización en backend antes del servicio de IA)
+Eliminación de datos sensibles (doble filtro en el servicio de IA, incluyendo institución de procedencia)
+Generación de embeddings
+Cálculo de similitud (cosine similarity)
+Generación de score
+Generación de explicación simple
+10. SISTEMA DE FAIRNESS (CRÍTICO)
+
+El sistema implementa un doble filtro de eliminación de datos sensibles:
+
+10.1 Uso de spaCy (NER)
+
+Detección de entidades:
+
+PERSON
+ORG
+GPE
+en este contexto, ORG también cubre institución de procedencia (universidad, instituto, centro de formación)
+en texto libre donde regex no llega bien
+Responsabilidad principal de spaCy: detectar nombre (PERSON), instituciones en redacción libre (ORG) y menciones geográficas/países en contexto no estructurado (GPE) para reforzar detección de nacionalidad indirecta.
+Nota de implementación: no eliminar todo ORG de forma indiscriminada; priorizar remoción de institución de procedencia para no borrar contexto profesional útil del CV.
+10.2 Uso de Regex
+
+Detección de:
+
+Edad
+Género
+Nacionalidad
+Institución de procedencia (cuando aparezca en formatos detectables)
+Email
+RUT
+en campos con formato claro
+Responsabilidad principal de regex: capturar patrones explícitos y estructurados (email, RUT, edad en formato directo, género etiquetado, nacionalidad declarada y bloques formateados de educación/institución).
+Estrategia de doble filtro: regex + spaCy con solapamiento selectivo en nombre, institución de procedencia y nacionalidad para maximizar cobertura sin sobreeliminar información profesional relevante.
+Orden recomendado del pipeline de fairness: primer barrido regex, luego spaCy sobre texto libre y cierre con un barrido regex final para escapes de formato.
+Objetivo del filtro:
+
+Eliminar atributos sensibles antes del procesamiento para:
+
+Reducir sesgos en el matching
+Evitar discriminación
+
+Atributos sensibles objetivo del filtro:
+
+Nombre
+Edad
+Género
+Nacionalidad
+Institución de procedencia
+Correo
+RUT
+
+⚠️ Importante:
+
+El sistema reduce sesgos, pero no los elimina completamente.
+
+11. MATCHING
+Input (ilustrativo; cv_text proviene del texto extraído con Tika y la limpieza previa; job_text resume la oferta. Para la app móvil de postulantes, el porcentaje considera CV limpio + modalidades preferidas + cargas horarias preferidas):
+{
+  "cv_text": "...",
+  "job_text": "..."
+}
+Output:
+{
+  "score": 0.82,
+  "explanation": "Coincidencia en habilidades: Java, Spring Boot"
+}
+Explicación del match (simplificada)
+
+Se basa en:
+
+Coincidencias entre el texto del CV (tras fairness) y el texto de la oferta
+Palabras clave o temas relevantes inferidos de esa comparación
+Modalidades preferidas del postulante vs modalidad de la oferta
+Cargas horarias preferidas del postulante vs carga horaria de la oferta
+
+❗ No se implementan explicaciones complejas
+
+No se utilizan para el porcentaje de matching en la app móvil de postulantes:
+
+Skills del perfil del postulante
+Presentación personal escrita en perfil (fuera del CV)
+Rango de sueldo esperado declarado por el postulante
+Sueldo ofrecido en la oferta
+Años de experiencia requeridos por la oferta
+Años de experiencia declarados por el postulante dentro del CV
+Nacionalidad del postulante
+
+12. BACKEND (API REST)
+12.1 Autenticación
+Registro (candidato / empresa)
+Login
+JWT (solo access token)
+En app móvil de postulantes: bloqueo tras 4 intentos fallidos de login y derivación a recuperación de contraseña
+En app móvil de postulantes (MVP): recuperación de contraseña en modo mockup; no se envían mensajes reales al correo electrónico
+12.2 Módulo Candidatos
+CRUD perfil
+Subida de CV (PDF en filesystem; referencia en BD; extracción con Tika; MVP: solo PDF con texto seleccionable, sin OCR)
+Gestión de skills en perfil (persistidas; no intervienen en el porcentaje ni en el request de matching)
+Consentimiento obligatorio para uso de datos antes de participar en matching
+En app móvil de postulantes: carga de CV con límite de 1 MB
+En app móvil de postulantes: selección de skills con mínimo 3 y máximo 12 durante onboarding
+12.3 Módulo Ofertas
+Crear
+Editar (solo si sobra tiempo)
+Eliminar (solo si sobra tiempo)
+Activar/desactivar (solo si sobra tiempo)
+12.4 Módulo Postulaciones
+Crear postulación
+Listar postulaciones
+Cancelar postulación (solo si sobra tiempo)
+Marcar postulación como VIEWED de forma manual por empresa
+
+Estados:
+
+APPLIED
+VIEWED
+CANCELLED (solo si sobra tiempo)
+12.5 Integración IA
+Consumo de /match
+Manejo de score y explicación
+13. FRONTEND
+Mobile (Candidatos)
+Login / registro
+Perfil
+Swipe de ofertas
+Visualización de match
+Postulaciones
+Flujo móvil oficial de postulantes incluye además: recuperación de contraseña, creación de cuenta con validaciones, carga/visualización de CV, selección de rubro y skills, últimas preferencias, consentimiento de uso de datos, vista detalle de oferta y vista previa desde postulaciones
+En flujo móvil de recuperación (MVP): los pasos de envío/reenvío y confirmación por correo se muestran en UI como mockup, sin despacho real de emails
+En pantalla de ofertas: swipe izquierda = pasar, swipe derecha = postular con confirmación
+En postulaciones móviles (MVP): estados visibles APPLIED y VIEWED; CANCELLED queda para backlog opcional
+Web (Empresas)
+Login / registro
+CRUD de ofertas
+Visualización de postulantes
+Orden por compatibilidad
+14. INFRAESTRUCTURA
+
+Servicios en Docker:
+
+MySQL
+Backend (Spring Boot)
+IA (FastAPI)
+Volumen o carpeta persistente para archivos de CV
+
+Orquestación mediante:
+
+docker-compose.yml
+
+❌ No se utiliza Kubernetes
+❌ No CI/CD complejo
+
+15. TESTING
+
+Se implementa únicamente:
+
+Tests críticos de integración entre servicios
+Tests críticos funcionales del flujo core
+Verificación E2E del flujo completo candidato-empresa
+Pruebas críticas de endpoints (Postman) para funcionalidades core
+
+❌ No se realizan:
+
+tests de performance avanzados
+tests automatizados complejos
+testing opcional o de baja prioridad
+16. REGLAS DE DISEÑO
+No microservicios adicionales
+No sobreingeniería
+No features innecesarias
+Prioridad en funcionalidad core
+17. ALCANCE (MVP)
+
+Incluye:
+
+Matching con IA
+Swipe funcional
+Gestión base de postulaciones (crear/listar)
+Explicación básica
+
+Solo si sobra tiempo (backlog opcional):
+HU-14: Cancelar postulación
+HU-18: Activar/desactivar oferta
+HU-16: Editar oferta
+HU-17: Eliminar oferta
+HU-22: Eliminación de cuenta
+HU-24: Guardar oferta
+
+No incluye:
+
+Chat
+Notificaciones
+Dashboards complejos
+Sistemas avanzados de recomendación
+OCR para PDF escaneados (se exige PDF con texto seleccionable)
+18. DURACIÓN ESTIMADA
+
+Total: 80–90 horas
+
+Distribución:
+
+Backend: 30–35 hrs
+Mobile: 20–25 hrs
+Web: 10–15 hrs
+IA: 15–20 hrs
+Integración + testing: 10 hrs
+19. CONCLUSIÓN
+
+WorkSí es una solución enfocada en mejorar el reclutamiento laboral mediante:
+
+IA aplicada de forma simple y responsable
+Experiencia moderna de usuario
+Reducción de sesgos en el proceso
+
+El proyecto prioriza:
+
+Simplicidad
+Funcionalidad
+Valor real
+
+y evita complejidad innecesaria para asegurar su correcta implementación dentro del tiempo definido.
+
+
+

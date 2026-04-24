@@ -1,0 +1,357 @@
+
+REGLA TRANSVERSAL DE TESTING (ESENCIAL)
+En todo el proyecto se ejecutarán únicamente tests críticos para el correcto funcionamiento del sistema.
+Se evita a toda costa realizar testing opcional o de baja prioridad.
+
+
+
+HU-01 — Registro de candidato
+Como candidato
+Quiero registrarme en la plataforma
+Para poder postular a ofertas laborales
+Criterios de aceptación:
+Se puede ingresar: nombre, apellido paterno, apellido materno, correo, celular, rut, nro. documento, región y comuna como obligatorios; segundo nombre y calle como opcionales
+Se valida formato de email
+Se valida lógica numérica de RUT de Chile
+No permite emails duplicados
+El registro crea una cuenta tipo "candidato"
+Se muestra error si falla el registro
+Si falta un campo obligatorio no permite avanzar y muestra "Completa este campo"
+
+
+
+
+
+HU-02 — Registro de empresa
+Como empresa
+Quiero registrarme en la plataforma
+Para poder publicar ofertas laborales
+Criterios de aceptación:
+Se puede ingresar email, contraseña y nombre de empresa
+No permite emails duplicados
+Se crea cuenta tipo "empresa"
+Se valida campos obligatorios
+Manejo de errores visible
+
+
+
+
+
+HU-03 — Login
+Como usuario (candidato o empresa)
+Quiero iniciar sesión
+Para acceder a mis funcionalidades
+Criterios de aceptación:
+Login con email y contraseña
+Retorna token JWT válido
+Manejo de credenciales incorrectas
+Persistencia de sesión en cliente
+Logout elimina sesión
+En app móvil de postulantes, tras 4 intentos fallidos se bloquea el acceso y se deriva al flujo de recuperación de contraseña
+En app móvil de postulantes (MVP), el flujo de recuperación por correo es mockup: no se envían correos reales
+
+
+
+
+
+HU-04 — Crear perfil de candidato
+Como candidato
+Quiero completar mi perfil
+Para registrar mis datos y habilidades declaradas
+Criterios de aceptación:
+Puede ingresar:
+skills
+presentación personal
+pretensión de renta
+Validación de campos
+Persistencia correcta
+Las skills del perfil no se usan para calcular el porcentaje de matching; ese porcentaje usa CV limpio frente al contenido de la oferta, considerando además modalidades preferidas y cargas horarias preferidas del postulante
+
+
+
+
+
+HU-05 — Editar perfil
+Como candidato
+Quiero editar mi perfil
+Para mantener mis datos actualizados
+Criterios de aceptación:
+Puede modificar todos los campos
+Los cambios se guardan correctamente
+No se pierden datos previos
+
+
+
+
+
+HU-06 — Subir CV
+Como candidato
+Quiero subir mi CV en PDF
+Para que el sistema analice mi perfil automáticamente
+Criterios de aceptación:
+Solo acepta PDF
+Tamaño máximo 1 MB
+Se almacena correctamente
+Se procesa posteriormente por IA
+Manejo de error si archivo inválido
+
+
+
+
+
+HU-07 — Calcular compatibilidad (HU importante/core, priorizar)
+Como candidato
+Quiero ver un porcentaje de compatibilidad con una oferta
+Para saber qué tan adecuado soy para el puesto
+Criterios de aceptación:
+Se muestra porcentaje (0–100%)
+Se calcula usando IA a partir del CV limpio frente al contenido de la oferta, considerando además modalidades preferidas y cargas horarias preferidas del postulante
+No usa skills declaradas en el perfil
+No usa presentación personal del perfil
+No usa rango de sueldo esperado
+No usa sueldo ofrecido de la oferta
+No usa años de experiencia requeridos por la oferta
+No usa años de experiencia declarados por el postulante dentro del CV
+No usa nacionalidad del postulante
+Manejo de error si falla IA
+
+
+
+
+
+HU-08 — Explicación del match (HU importante/core, priorizar)
+Como candidato
+Quiero entender por qué tengo cierto nivel de compatibilidad
+Para tomar mejores decisiones al postular
+Criterios de aceptación:
+Resume coincidencias o temas relevantes entre el CV y la oferta, sin tratar la lista de skills del perfil como fuente del score
+Muestra razones del score alineadas con ese criterio
+Información clara y legible
+No muestra datos sensibles
+
+
+
+
+
+HU-09 — Eliminación de datos sensibles
+Como candidato
+Quiero que mis datos sensibles no sean usados en el matching
+Para evitar discriminación
+Criterios de aceptación:
+No se usan:
+nombre
+edad
+género
+institución de procedencia
+correo
+rut
+nacionalidad
+El procesamiento elimina estos datos antes del análisis
+
+
+
+
+
+HU-10 — Ver ofertas
+Como candidato
+Quiero visualizar ofertas laborales
+Para explorar oportunidades
+Criterios de aceptación:
+Se muestran ofertas disponibles
+Incluye info básica (título, empresa, ubicación)
+Carga inicial funciona sin errores
+Manejo si no hay ofertas
+
+
+
+
+
+HU-11 — Swipe de ofertas
+Como candidato
+Quiero deslizar ofertas izquierda/derecha
+Para decidir rápidamente si postulo o descarto
+Criterios de aceptación:
+Swipe derecha → postular
+Swipe izquierda → descartar
+No se repiten ofertas vistas
+Feedback visual claro
+
+
+
+
+
+HU-12 — Confirmar postulación
+Como candidato
+Quiero confirmar mi postulación
+Para evitar acciones accidentales
+Criterios de aceptación:
+Se muestra confirmación
+Solo se guarda si se confirma
+Se puede cancelar
+
+
+
+
+
+HU-13 — Ver postulaciones
+Como candidato
+Quiero ver mis postulaciones
+Para hacer seguimiento
+Criterios de aceptación:
+Lista de postulaciones
+Estados:
+APPLIED
+VIEWED
+CANCELLED (solo si sobra tiempo)
+Información clara
+
+
+
+
+
+HU-14 — Cancelar postulación (SÓLO SI SOBRA TIEMPO)
+Como candidato
+Quiero cancelar una postulación
+Para retractarme si es necesario
+Criterios de aceptación:
+Cambia estado a CANCELLED
+No permite cancelar dos veces
+Feedback visual
+
+
+
+
+
+HU-15 — Crear oferta laboral
+Como empresa
+Quiero crear una oferta laboral
+Para atraer candidatos
+Criterios de aceptación:
+Campos:
+título
+descripción
+requisitos
+skills
+ubicación
+tipo de trabajo
+salario (opcional)
+Validación de campos
+Se guarda correctamente
+
+
+
+
+
+HU-16 — Editar oferta (SÓLO SI SOBRA TIEMPO)
+Como empresa
+Quiero editar una oferta
+Para actualizar información
+Criterios de aceptación:
+Puede modificar campos
+Cambios persistentes
+Validaciones activas
+
+
+
+
+
+HU-17 — Eliminar oferta (SÓLO SI SOBRA TIEMPO)
+Como empresa
+Quiero eliminar una oferta
+Para retirar publicaciones
+Criterios de aceptación:
+Eliminación confirmada
+No visible para candidatos
+No rompe postulaciones previas
+
+
+
+
+
+HU-18 — Activar/desactivar oferta (SÓLO SI SOBRA TIEMPO)
+Como empresa
+Quiero activar o desactivar una oferta
+Para controlar su visibilidad
+Criterios de aceptación:
+Estado visible (activa/inactiva)
+Solo ofertas activas aparecen a candidatos
+
+
+
+
+
+HU-19 — Ver postulantes
+Como empresa
+Quiero ver los candidatos que postularon
+Para evaluarlos
+Criterios de aceptación:
+Lista de candidatos por oferta
+Información básica visible
+Carga sin errores
+
+
+
+
+
+HU-20 — Ordenar por compatibilidad
+Como empresa
+Quiero ver candidatos ordenados por compatibilidad
+Para priorizar mejores perfiles
+Criterios de aceptación:
+Orden descendente por score
+Score visible
+Consistencia con IA
+
+
+
+
+
+HU-21 — Consentimiento de uso de datos
+Como candidato
+Quiero aceptar el uso de mis datos
+Para participar en el sistema de matching
+Criterios de aceptación:
+Checkbox obligatorio
+No permite continuar sin aceptar
+
+
+
+
+
+HU-22 — Eliminación de cuenta (SÓLO SI SOBRA TIEMPO)
+Como usuario
+Quiero eliminar mi cuenta
+Para borrar mis datos del sistema
+Criterios de aceptación:
+Eliminación completa de datos
+Confirmación previa
+No reversible
+
+
+
+
+
+HU-23 — Marcar postulación como vista
+Como empresa
+Quiero marcar una postulación como vista
+Para llevar seguimiento del estado de los candidatos
+Criterios de aceptación:
+Existe una acción manual para marcar como “VIEWED”
+El estado cambia solo cuando la empresa ejecuta esa acción
+El estado se refleja correctamente en la lista de postulantes
+No afecta otras postulaciones fuera de la seleccionada
+
+
+
+
+
+HU-24 — Guardar oferta (SÓLO SI SOBRA TIEMPO)
+Como candidato
+Quiero guardar ofertas laborales
+Para revisarlas más tarde antes de decidir si postulo o no
+Criterios de aceptación:
+Existe opción para guardar una oferta (botón o acción)
+La oferta guardada se almacena correctamente
+El usuario puede acceder a una sección “Guardadas”
+El usuario puede quitar una oferta de guardadas
+No se duplica una oferta si se guarda más de una vez
