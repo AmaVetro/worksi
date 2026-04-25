@@ -1,0 +1,187 @@
+REGLAS MAESTRAS DEL PROYECTO — WorkSí
+Fuente consolidada: HU sin épicas + Sprint oficiales + Sprints Detallados + Stack Oficial + Documento técnico. Donde haya solapamiento sobre plan de sprints, calendario, horas de equipo y etiqueta de sprints pesados, prevalece Sprint oficiales.
+Objetivo: centralizar reglas esenciales para que cualquier integrante encuentre rápidamente qué está permitido, qué es obligatorio y qué está fuera de alcance.
+
+============================================================
+1) REGLAS DE ALCANCE (MVP)
+============================================================
+- El MVP prioriza funcionalidad core: matching con IA, swipe funcional y gestión base de postulaciones.
+- No se incluyen features innecesarias: chat, notificaciones, dashboards complejos, recomendadores avanzados.
+- Las HU opcionales no forman parte del compromiso obligatorio del MVP; se implementan solo si sobra tiempo.
+- HU opcionales actuales (fuera del compromiso obligatorio del MVP; solo si sobra tiempo; orden según Sprint oficiales):
+  - HU-24 Guardar oferta
+  - HU-16 Editar oferta
+  - HU-17 Eliminar oferta (descartada del diseño actual por estado único ACTIVE)
+  - HU-14 Cancelar postulación
+  - HU-18 Activar/desactivar oferta (descartada del diseño actual por estado único ACTIVE)
+  - HU-22 Eliminación de cuenta
+- Se debe evitar a toda costa la sobreingeniería siempre en todo el proyecto y priorizar el ahorro de tiempo, dejar un MVP funcional con los aspectos core y solo los aspectos suficientes, no sobre ingeniería.
+
+============================================================
+2) REGLA GLOBAL DE MATCHING (CRÍTICA)
+============================================================
+- El candidato puede declarar y editar skills en su perfil; se persisten como parte del perfil (HU-04, HU-05).
+- En app móvil de postulantes, el porcentaje de compatibilidad en el producto se calcula con:
+  - contenido del CV limpio (texto extraído del PDF y limpiado)
+  - contenido relevante de la oferta
+  - modalidades preferidas del postulante vs modalidad de la oferta
+  - cargas horarias preferidas del postulante vs carga horaria de la oferta
+- El contrato base hacia IA (POST /match) usa cv_text y job_text; las skills del perfil del candidato no se envían a /match ni influyen en el porcentaje.
+- La explicación del match debe basarse en la comparación CV vs oferta, no en skills de perfil.
+- En app móvil de postulantes no se usan para el porcentaje:
+  - skills del perfil
+  - presentación personal del perfil
+  - rango de sueldo esperado
+  - sueldo ofrecido en la oferta
+  - años de experiencia requeridos por la oferta
+  - años de experiencia declarados por el postulante dentro del CV
+  - nacionalidad del postulante
+
+============================================================
+3) REGLAS DE FAIRNESS Y DATOS SENSIBLES
+============================================================
+- Objetivo: reducir sesgos lo más que se pueda.
+- Antes de embeddings se deben remover/filtrar atributos sensibles.
+- Atributos sensibles objetivo:
+  - nombre
+  - edad
+  - género
+  - nacionalidad
+  - institución de procedencia
+  - correo
+  - RUT
+  - años de experiencia declarados dentro del CV
+- Mecanismo acordado:
+  - spaCy NER básico: PERSON, ORG, GPE
+- regex para edad, género, nacionalidad, institución de procedencia, email, RUT y años de experiencia declarados dentro del CV en formatos detectables
+  - Responsabilidad principal de spaCy: texto libre para nombre/persona (PERSON), institución en redacción natural (ORG) y señales geográficas/país (GPE) como apoyo para nacionalidad.
+- Responsabilidad principal de regex: patrones explícitos y estructurados (email, RUT, edad declarada, género etiquetado, nacionalidad explícita, años de experiencia declarados dentro del CV y bloques formateados de educación/institución).
+  - Solapamiento selectivo obligatorio entre spaCy y regex en nombre, institución de procedencia y nacionalidad para reducir falsos negativos.
+  - Orden operativo de fairness: regex inicial -> spaCy sobre texto libre -> regex final de cierre para escapes.
+  - No eliminar ORG de forma indiscriminada; priorizar institución de procedencia para evitar pérdida de contexto profesional útil.
+- La explicación del match no debe exponer datos sensibles.
+
+============================================================
+4) REGLAS DE CV Y PIPELINE DE DATOS
+============================================================
+- El CV se guarda como archivo en filesystem del servidor.
+- En MySQL se guarda solo referencia/URL/ruta del CV, no el binario del PDF.
+- Extracción de texto del PDF en backend Java con Apache Tika.
+- Se aplica limpieza básica en backend (normalización y ruido básico) antes de IA.
+- En el MVP solo se aceptan PDF con texto seleccionable.
+- En app móvil de postulantes el tamaño máximo del CV es 1 MB.
+- No hay OCR en el MVP.
+- Si el PDF no entrega texto útil, se debe informar error claro al usuario.
+
+============================================================
+5) REGLAS DE ARQUITECTURA Y COMUNICACIÓN
+============================================================
+- Arquitectura principal:
+  - Backend monolítico en Spring Boot
+  - Servicio IA desacoplado en FastAPI
+  - Comunicación entre servicios por HTTP
+- Contrato de matching mínimo:
+  - POST /match con cv_text y job_text
+  - Respuesta con score y explanation
+- No se usa tabla matches; el matching se calcula dinámicamente.
+- Tabla de dominio base: users, jobs, applications.
+
+============================================================
+6) REGLAS DE SEGURIDAD Y AUTENTICACIÓN
+============================================================
+- JWT simple: solo access token.
+- Sin refresh tokens.
+- Sin OAuth.
+- Un filtro JWT en Spring Security.
+- En app móvil de postulantes, login con email y contraseña.
+- En ambos frontends (app móvil de postulantes y app web de empresas), tras 4 intentos fallidos se bloquea el acceso y se deriva a recuperación de contraseña.
+- En app móvil de postulantes (MVP), recuperación de contraseña por correo en modo mockup: no hay envío real de emails.
+
+============================================================
+7) REGLAS DE ESTADOS Y POSTULACIONES
+============================================================
+- Estados del dominio de postulaciones: APPLIED, VIEWED, CANCELLED.
+- En app móvil de postulantes (MVP), los estados visibles son APPLIED y VIEWED; CANCELLED queda como funcionalidad solo si sobra tiempo.
+- VIEWED se marca de forma manual por la empresa.
+- No implementar marcado automático de VIEWED.
+
+============================================================
+8) REGLAS DE STACK OFICIAL
+============================================================
+- Backend: Java 21, Spring Boot 3.2.x, Spring Security, JPA/Hibernate, Apache Tika.
+- Base de datos: MySQL 8.
+- IA: Python 3.11, FastAPI, sentence-transformers, spaCy, scikit-learn.
+- Modelo de embeddings acordado: all-MiniLM-L6-v2.
+- Mobile candidato: Kotlin (Android Studio, enfoque funcional).
+- Web empresa: React + Vite.
+- Infraestructura: Docker + Docker Compose.
+
+============================================================
+9) REGLAS DE INFRAESTRUCTURA Y COMPLEJIDAD
+============================================================
+- Docker Compose simple con servicios principales:
+  - MySQL
+  - Spring Boot
+  - FastAPI
+- Se debe incluir volumen/carpeta persistente para archivos de CV.
+- Android corre aparte de Docker.
+- Evitar sobreingeniería:
+  - no Kafka
+  - no colas/event-driven complejas
+  - no microservicios extra
+  - no Kubernetes
+  - no CI/CD complejo
+  - no patrones innecesarios
+
+============================================================
+10) REGLAS DE TESTING (ESENCIAL)
+============================================================
+- No implementar testing en frontends: no añadir carpetas ni entornos de testing en el proyecto web (React) ni en el móvil (Android). Queda excluido Jest, Vitest, Testing Library en web, y suites o carpetas de test instrumentado en móvil salvo lo que el stack imponga por defecto y deba dejarse sin uso.
+- Las personas que trabajan en frontends validan el comportamiento de forma visual y funcional mientras integran, sin obligación de tests automatizados de UI.
+- La fase de pruebas estructurada o acotada no se reparte en cada sprint: al final del MVP, cuando el proyecto entero esté listo, se ejecuta solo un conjunto reducido de pruebas, las más críticas, sobre el sistema completo, para comprobar que las partes esenciales encajan (por ejemplo integración Spring Boot y FastAPI, flujo funcional core, E2E candidato-empresa, y comprobación puntual con Postman sobre endpoints críticos si aplica). Comprobaciones puntuales durante el desarrollo (por un caso feliz vía API) no sustituyen esa pasada final ni justifican suites en frontend.
+- Regla transversal: dentro de lo anterior, la prioridad de esas pruebas finales es integración y flujo core; evitar testing opcional o de baja prioridad.
+- No se exige: testing de performance avanzado ni suites automatizadas complejas en ningún corte.
+- Si sobra tiempo en un sprint, usarlo en ajustes o bugs críticos, no en montar testing de frontend ni ampliar cobertura más allá de la política anterior.
+
+============================================================
+11) REGLAS DE PLANIFICACIÓN Y SPRINTS
+============================================================
+- Plan base: 11 sprints, 1 semana calendario cada uno, inicio lunes.
+- Equipo: 3 integrantes. Horas por sprint: esfuerzo total del equipo en esa semana (no horas por persona).
+- Carga por sprint: estimación variable entre 8 h y 10 h según complejidad; total del MVP en rango 83–110 h; línea base del plan en Sprint oficiales: 102 h de equipo.
+- Calendario (Sprint oficiales): primera semana 20–26 abril 2026; última semana obligatoria 29 junio – 5 julio 2026 (semana que comienza el 29 de junio de 2026).
+- Criterio de ordenación: lógica de desarrollo (dependencias, pipeline de IA) y entregas de valor continuas; cada sprint puede atravesar BD, frontend y backend a la vez.
+- La inicialización del proyecto no es HU numerada; va en Sprint 1.
+- Cierre obligatorio del plan en Sprint 11: integración end-to-end candidato-empresa, corrección de bugs críticos, pruebas de integración finales, checklist de calidad, preparación demo/entrega; incluye verificación explícita de regla de matching (mismo CV y misma oferta → mismo score aunque solo cambien skills de perfil).
+- Sprints marcados como pesados (alineado a Sprint oficiales):
+  - Sprint 1
+  - Sprint 5
+  - Sprint 6
+  - Sprint 7
+  - Sprint 11
+
+============================================================
+12) REGLAS DE IMPLEMENTACIÓN FUNCIONAL (ORDEN LÓGICO)
+============================================================
+- Autenticación y tipos de cuenta antes del resto (registro, login, perfil base con skills; esas skills no son insumo del porcentaje).
+- Consentimiento (HU-21, checkbox y timestamp) obligatorio en pantalla "Uso de datos", última pantalla antes de crear la cuenta oficialmente; al aceptar el consentimiento se crea la cuenta y se pasa a Perfil.
+- Subida y almacenamiento de CV (HU-06); luego extracción de texto con Tika y post-procesamiento mínimo en backend, y ofertas creadas y visibles (HU-15, HU-10) como insumos antes de fairness y score. El consumo de matching en producto requiere CV limpio, contenido de oferta, modalidades preferidas y cargas horarias preferidas; no skills de perfil del candidato.
+- Fairness (HU-09) antes de score (HU-07) y explicación breve (HU-08, plantilla mínima).
+- Swipe y postulación (HU-11, HU-12) cuando existan ofertas y contrato de matching operativo (cv_text + job_text).
+- Listado de postulaciones del candidato (HU-13) después de existir postulaciones; cancelación (HU-14) es opcional fuera del plan obligatorio.
+- Vista empresa (HU-19) y estado VIEWED por acción manual (HU-23) después del flujo de postulación; orden por compatibilidad (HU-20) en etapa de consolidación.
+- Editar perfil (HU-05) en etapa tardía sin bloquear el núcleo; edición de skills de perfil no redefine el score sin cambio de CV u oferta.
+- Cierre, E2E y demo concentrados en Sprint 11; HU opcionales (24, 16, 17, 14, 18, 22) no condicionan el flujo obligatorio del MVP.
+
+============================================================
+13) REGLAS DE MENSAJE DE DEFENSA DEL PROYECTO
+============================================================
+- Defender explícitamente:
+  - CV en filesystem, referencia en BD
+  - Tika para extracción
+  - limpieza básica backend
+  - fairness con spaCy + regex antes de embeddings
+  - matching por similitud semántica CV vs oferta
+  - MVP sin OCR
+
+Fin del documento de reglas maestras.

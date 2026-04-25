@@ -1,0 +1,753 @@
+CONTRATO UNIFICADO DE INTEGRACION - WORKSI
+Version: 1.1
+Estado: Oficial para desarrollo paralelo (Backend + Web + Android)
+Fecha base: 2026-04-25
+
+
+
+OBJETIVO
+- Este documento define un contrato unico y obligatorio para que Vicente, Ricardo y Fabián trabajen en paralelo sin romper integracion.
+- Si algun detalle no aparece aqui, se considera no definido y debe acordarse antes de implementar.
+- Si hay conflicto con documentos previos, para API e integracion prevalece este contrato.
+
+
+ALCANCE
+- Incluye: endpoints, autenticacion, onboarding candidato, perfiles, catalogos, CV, ofertas, matching, swipe, postulaciones, vistas empresa.
+- Excluye del MVP obligatorio: HU-14, HU-16, HU-17 (descartada del diseño actual por estado único ACTIVE), HU-18 (descartada del diseño actual por estado único ACTIVE), HU-22, HU-24.
+
+
+ARQUITECTURA OBLIGATORIA
+- Frontend web (React) y frontend movil (Android) consumen solo API Spring Boot.
+- Ningun frontend se conecta directo a MySQL.
+- Spring Boot consume servicio IA FastAPI por HTTP interno.
+- MySQL 8 es base unica del sistema.
+
+
+ESTANDARES GENERALES API
+- Base URL: /api/v1
+- Formato: application/json salvo endpoints multipart.
+- Charset: UTF-8.
+- Fechas en respuestas: ISO-8601 UTC (ejemplo: 2026-04-25T03:10:00Z).
+- Ids: enteros sin signo (BIGINT en BD), expuestos como number JSON.
+- Moneda/sueldo: enteros (CLP) sin decimales.
+- Paginacion estandar:
+  - Query params: page (base 1), size (default 20, max 100), sort (campo,asc|desc).
+  - Respuesta: items, page, size, total_items, total_pages.
+
+
+AUTENTICACION Y SESION
+- JWT solo access token (sin refresh).
+- Header en rutas protegidas:
+  Authorization: Bearer <token>
+- Tres familias de credencial:
+  - Publicas: sin Authorization.
+  - ONBOARDING: Bearer <onboarding_access_token> devuelto por POST /api/v1/onboarding/candidate/session. Alcance solo rutas bajo /api/v1/onboarding/candidate/*.
+  - CANDIDATE / COMPANY: Bearer <access_token> emitido por POST /api/v1/auth/register/candidate, POST /api/v1/auth/login o POST /api/v1/auth/register/company segun corresponda. Claim de rol CANDIDATE o COMPANY.
+- Roles en JWT de aplicacion:
+  - CANDIDATE
+  - COMPANY
+- Logout: elimina sesion en cliente (backend no mantiene blacklist para MVP).
+
+
+
+
+FORMATO DE ERRORES ESTANDAR (OBLIGATORIO EN TODA LA API)
+- Formato unico:
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Hay campos invalidos",
+    "details": [
+      { "field": "email", "message": "Formato invalido" }
+    ],
+    "trace_id": "uuid-opcional"
+  }
+}
+- details puede venir vacio si no aplica.
+- Codigos de error permitidos:
+  - VALIDATION_ERROR
+  - UNAUTHORIZED
+  - FORBIDDEN
+  - NOT_FOUND
+  - CONFLICT
+  - BUSINESS_RULE_VIOLATION
+  - PAYLOAD_TOO_LARGE
+  - UNSUPPORTED_MEDIA_TYPE
+  - RATE_LIMITED
+  - IA_UNAVAILABLE
+  - INTERNAL_ERROR
+
+
+ENUMS OFICIALES
+- role: CANDIDATE | COMPANY
+- modality: REMOTE | HYBRID | ONSITE
+- workload: FULL_TIME | PART_TIME | OTHER
+- job_status: ACTIVE
+- application_status: APPLIED | VIEWED | CANCELLED
+- swipe_action: PASS | APPLY
+
+
+
+CONSTRUCCION OBLIGATORIA DE job_text (BACKEND)
+- job_text se construye concatenando solo:
+  - title
+  - description
+  - requirements
+  - modality
+  - workload
+- No incluir:
+  - job_skills
+  - salary_offered
+  - years_experience_required
+
+
+
+FAIRNESS OBLIGATORIO (ANTES DE EMBEDDINGS)
+- Orden: regex inicial -> spaCy NER -> regex final.
+- spaCy: PERSON, ORG, GPE.
+- Regex: edad, genero, nacionalidad, institucion procedencia, email, RUT y menciones de años de experiencia declarados dentro del CV.
+- Solapamiento selectivo obligatorio en: nombre, institucion, nacionalidad.
+- No eliminar ORG de forma indiscriminada.
+
+
+
+
+ENDPOINTS DE AUTENTICACION
+
+1) Registro candidato
+- POST /api/v1/auth/register/candidate
+- Auth: publica
+- Request:
+{
+  "email": "correo@dominio.cl",
+  "password": "Aa!123456789",
+  "first_name": "Juan",
+  "middle_name": "Eduardo",
+  "last_name_paternal": "Ramirez",
+  "last_name_maternal": "Perez",
+  "phone": "+56912345678",
+  "rut": "12345678-5",
+  "document_number": "12345678",
+  "street": "Av. Siempre Viva 123",
+  "region_id": 7,
+  "commune_id": 77,
+  "consent_given": true,
+  "onboarding_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+- onboarding_id: obligatorio si el postulante uso las pantallas Subir CV / Skills / Ultimas preferencias contra /api/v1/onboarding/candidate/*; el backend fusiona borrador (perfil, CV, preferencias) a la cuenta creada. Si no hubo borrador, puede omitirse segun implementacion (debe documentarse en OpenAPI).
+- Validaciones:
+  - email formato valido y unico.
+  - password politica obligatoria.
+  - RUT valido (digito verificador).
+  - comuna debe pertenecer a region.
+  - consent_given debe ser true.
+  - la pantalla "Uso de datos" es la ultima pantalla antes de crear la cuenta oficialmente.
+  - consent_given se registra en pantalla "Uso de datos"; al aceptarlo se crea la cuenta, se emite sesion autenticada y se pasa a perfil.
+- Response 201:
+{
+  "user_id": 101,
+  "role": "CANDIDATE",
+  "onboarding_completed": false,
+  "access_token": "jwt",
+  "token_type": "Bearer",
+  "expires_in": 3600
+}
+
+
+
+2) Registro empresa
+- POST /api/v1/auth/register/company
+- Auth: publica
+- Request:
+{
+  "email": "empresa@dominio.cl",
+  "password": "Aa!123456789",
+  "contact_full_name": "Maria Perez Soto",
+  "phone": "+56912345678",
+  "commercial_name": "Empresa X",
+  "legal_name": "Empresa X SPA",
+  "rut": "76123456-7",
+  "region_id": 7,
+  "commune_id": 77,
+  "sector_id": 1,
+  "worker_count_approx": 50,
+  "annual_vacancies_approx": 20,
+  "image_url": null
+}
+- Validaciones:
+  - email unico.
+  - password politica obligatoria.
+  - RUT valido y formato exigido por UI web.
+  - comuna-region consistente.
+- Response 201:
+{
+  "user_id": 201,
+  "role": "COMPANY"
+}
+
+
+
+3) Login
+- POST /api/v1/auth/login
+- Auth: publica
+- Request:
+{
+  "email": "correo@dominio.cl",
+  "password": "Aa!123456789"
+}
+- Response 200:
+{
+  "access_token": "jwt",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "user": {
+    "id": 101,
+    "role": "CANDIDATE",
+    "email": "correo@dominio.cl"
+  },
+  "lock_info": {
+    "is_locked": false,
+    "failed_attempts": 0,
+    "remaining_attempts": 4
+  }
+}
+- Reglas:
+  - al 4to intento fallido: bloqueo.
+  - retornar BUSINESS_RULE_VIOLATION con code de bloqueo.
+
+
+
+4) Recuperacion mock - solicitar codigo
+- POST /api/v1/auth/password-recovery/request
+- Auth: publica
+- Request:
+{
+  "email": "correo@dominio.cl"
+}
+- Response 200:
+{
+  "message": "Codigo generado en modo mock",
+  "mock_flow": true
+}
+
+
+
+5) Recuperacion mock - validar codigo
+- POST /api/v1/auth/password-recovery/verify
+- Auth: publica
+- Request:
+{
+  "email": "correo@dominio.cl",
+  "code": "cualquier-texto"
+}
+- Response 200:
+{
+  "verified": true,
+  "recovery_token": "token-corto-mock"
+}
+
+
+
+6) Recuperacion mock - nueva contrasena
+- POST /api/v1/auth/password-recovery/reset
+- Auth: publica
+- Request:
+{
+  "email": "correo@dominio.cl",
+  "recovery_token": "token-corto-mock",
+  "new_password": "Aa!123456789"
+}
+- Response 200:
+{
+  "message": "Contrasena actualizada"
+}
+
+
+
+7) Perfil autenticado basico
+- GET /api/v1/auth/me
+- Auth: Bearer access_token con role CANDIDATE o COMPANY
+- Response 200:
+{
+  "id": 101,
+  "role": "CANDIDATE",
+  "email": "correo@dominio.cl"
+}
+
+7.1) Imagen de empresa (edicion posterior al registro)
+- PATCH /api/v1/company/profile/image
+- Auth: COMPANY
+- Request:
+{
+  "image_url": "https://.../logo.png"
+}
+- Reglas:
+  - Esta imagen es de la empresa (perfil empresa), no de las ofertas.
+  - Debe permitir subir/cambiar/eliminar imagen con cuenta ya creada y sesion iniciada.
+  - Para eliminar, enviar image_url en null.
+- Response 200:
+{
+  "user_id": 201,
+  "image_url": "https://.../logo.png"
+}
+
+
+
+
+CATALOGOS (AMBOS FRONTENDS)
+
+8) Regiones
+- GET /api/v1/catalogs/regions
+- Auth: publica
+- Response 200:
+{
+  "items": [
+    { "id": 7, "code": "CL-RM", "name": "Metropolitana de Santiago" }
+  ]
+}
+
+
+9) Comunas por region
+- GET /api/v1/catalogs/regions/{region_id}/communes
+- Auth: publica
+
+
+10) Sectores
+- GET /api/v1/catalogs/sectors
+- Auth: publica
+
+
+11) Skills por sector
+- GET /api/v1/catalogs/sectors/{sector_id}/skills
+- Auth: publica
+
+
+
+
+CLAVE VISUAL DE RUTAS CANDIDATO **********************
+- Prefijo /api/v1/onboarding/candidate/ = sesion de borrador antes de pantalla "Uso de datos". Header: Authorization: Bearer <onboarding_access_token> (JWT de alcance limitado exclusivamente a rutas bajo /onboarding/candidate/; distinto del access_token del candidato tras el alta o login).
+- Prefijo /api/v1/candidate/ = cuenta ya creada o sesion iniciada con login. Header: Authorization: Bearer <access_token> con role CANDIDATE. No usar /onboarding/candidate/* en Perfil u ofertas tras el alta.
+
+Resumen: Endpoints que digan onboarding son los de las pantallas de creación de cuenta, luego de crearla, ya no dicen "onboarding".
+
+
+
+ONBOARDING CANDIDATO (ANTES DE "USO DE DATOS")
+
+12) Abrir sesion de borrador candidato
+- POST /api/v1/onboarding/candidate/session
+- Auth: publica
+- Momento UX recomendado: al avanzar desde pantalla "Crear cuenta" hacia "Subir CV", una vez validado el formulario en cliente.
+- Request (datos de Crear cuenta; sin consent_given):
+{
+  "email": "correo@dominio.cl",
+  "password": "Aa!123456789",
+  "first_name": "Juan",
+  "middle_name": "Eduardo",
+  "last_name_paternal": "Ramirez",
+  "last_name_maternal": "Perez",
+  "phone": "+56912345678",
+  "rut": "12345678-5",
+  "document_number": "12345678",
+  "street": "Av. Siempre Viva 123",
+  "region_id": 7,
+  "commune_id": 77
+}
+- Response 201:
+{
+  "onboarding_id": "550e8400-e29b-41d4-a716-446655440000",
+  "onboarding_access_token": "jwt",
+  "token_type": "Bearer",
+  "expires_in": 3600
+}
+- Validaciones: email unico respecto a usuarios finales; password politica oficial; RUT; comuna-region.
+- Errores: mismos codigos que registro candidato donde aplique (409 email duplicado, etc.).
+
+
+13) Obtener perfil borrador
+- GET /api/v1/onboarding/candidate/profile
+- Auth: ONBOARDING (Bearer onboarding_access_token)
+- Response 200: mismo esquema que GET /api/v1/candidate/profile; consent_given sera false hasta fusion en alta.
+
+
+14) Editar perfil borrador
+- PATCH /api/v1/onboarding/candidate/profile
+- Auth: ONBOARDING
+- Request (campos opcionales), validaciones y Response 200: iguales que PATCH /api/v1/candidate/profile (skills_ids 3-12, rango sueldo, comuna-region).
+
+
+15) Subir CV borrador
+- POST /api/v1/onboarding/candidate/cv
+- Auth: ONBOARDING
+- Content-Type: multipart/form-data
+- Form-data:
+  - file: <pdf>
+- Validaciones:
+  - solo PDF.
+  - max 1MB.
+- Response 201: mismo cuerpo que POST /api/v1/candidate/cv.
+
+
+16) Obtener CV borrador actual (metadatos)
+- GET /api/v1/onboarding/candidate/cv/current
+- Auth: ONBOARDING
+
+
+17) Descargar CV borrador actual
+- GET /api/v1/onboarding/candidate/cv/current/file
+- Auth: ONBOARDING
+- Response: application/pdf
+
+
+
+PERFIL Y CV CANDIDATO (CUENTA CREADA O LOGIN, JWT CANDIDATE, YA DENTRO DE LA APP AUTENTICADO)
+
+18) Obtener perfil candidato
+- GET /api/v1/candidate/profile
+- Auth: CANDIDATE
+- Response 200:
+{
+  "user_id": 101,
+  "first_name": "Juan",
+  "middle_name": "Eduardo",
+  "last_name_paternal": "Ramirez",
+  "last_name_maternal": "Perez",
+  "phone": "+56912345678",
+  "email": "juan@correo.cl",
+  "region_id": 7,
+  "commune_id": 77,
+  "sector_id": 1,
+  "profile_summary": "Texto",
+  "salary_expected_min": 700000,
+  "salary_expected_max": 1200000,
+  "preferred_modalities": ["REMOTE", "HYBRID"],
+  "preferred_workloads": ["FULL_TIME", "OTHER"],
+  "skills": [
+    { "id": 10, "name": "Integracion de APIs REST" }
+  ],
+  "consent_given": true,
+  "consent_given_at": "2026-04-25T03:10:00Z",
+  "onboarding_completed": true
+}
+
+
+19) Editar perfil candidato
+- PATCH /api/v1/candidate/profile
+- Auth: CANDIDATE
+- Request (campos opcionales):
+{
+  "profile_summary": "Nuevo texto",
+  "salary_expected_min": 800000,
+  "salary_expected_max": 1300000,
+  "region_id": 7,
+  "commune_id": 77,
+  "sector_id": 1,
+  "preferred_modalities": ["REMOTE", "ONSITE"],
+  "preferred_workloads": ["FULL_TIME"],
+  "skills_ids": [1,2,3]
+}
+- Validaciones:
+  - skills_ids entre 3 y 12.
+  - rango sueldo coherente si ambos informados.
+  - comuna-region consistente.
+- Response 200: perfil actualizado completo.
+
+
+20) Subir CV candidato
+- POST /api/v1/candidate/cv
+- Auth: CANDIDATE
+- Content-Type: multipart/form-data
+- Form-data:
+  - file: <pdf>
+- Validaciones:
+  - solo PDF.
+  - max 1MB.
+- Response 201:
+{
+  "cv_id": 9001,
+  "original_filename": "CV_Juan.pdf",
+  "file_size_bytes": 345678,
+  "is_current": true,
+  "uploaded_at": "2026-04-25T03:30:00Z"
+}
+
+
+21) Obtener CV actual (metadatos)
+- GET /api/v1/candidate/cv/current
+- Auth: CANDIDATE
+
+
+22) Descargar CV actual
+- GET /api/v1/candidate/cv/current/file
+- Auth: CANDIDATE
+- Response: application/pdf
+
+
+OFERTAS (EMPRESA)
+
+23) Crear oferta
+- POST /api/v1/company/jobs
+- Auth: COMPANY
+- Request:
+{
+  "title": "Desarrollador Backend Java",
+  "description": "Descripcion completa",
+  "requirements": "Requisitos del puesto",
+  "city": "Santiago",
+  "region_id": 7,
+  "commune_id": 77,
+  "salary_offered": 1400000,
+  "years_experience_required": 2,
+  "modality": "HYBRID",
+  "workload": "FULL_TIME",
+  "skills_ids": [1,2,3],
+  "image_url": null
+}
+- Validaciones:
+  - skills_ids entre 3 y 8.
+  - campos obligatorios completos.
+- Regla estado:
+  - para MVP obligatorio, se crea ACTIVE por defecto.
+- Response 201:
+{
+  "id": 5001,
+  "status": "ACTIVE",
+  "published_at": "2026-04-25T03:40:00Z"
+}
+
+24) Listar mis ofertas empresa
+- GET /api/v1/company/jobs?page=1&size=20&sort=created_at,desc
+- Auth: COMPANY
+
+25) Ver detalle oferta propia
+- GET /api/v1/company/jobs/{job_id}
+- Auth: COMPANY
+- Regla autorizacion:
+  - empresa solo accede a sus propios job_id.
+
+OFERTAS (CANDIDATO)
+
+26) Feed ofertas para swipe
+- GET /api/v1/candidate/jobs/feed?page=1&size=20
+- Auth: CANDIDATE
+- Reglas:
+  - excluye ofertas ya swipeadas por candidato.
+  - incluye solo ofertas ACTIVE.
+- Response item minimo:
+{
+  "job_id": 5001,
+  "title": "Desarrollador Backend Java",
+  "company_name": "Empresa X",
+  "salary_offered": 1400000,
+  "commune_name": "Maipu",
+  "modality": "HYBRID",
+  "years_experience_required": 2,
+  "description_preview": "texto truncado",
+  "skills_preview": [
+    { "id": 1, "name": "Desarrollo de software" }
+  ],
+  "match": {
+    "score": 82.15,
+    "explanation_short": "Coincidencia en experiencia y stack"
+  }
+}
+
+
+
+27) Detalle de oferta para candidato
+- GET /api/v1/candidate/jobs/{job_id}
+- Auth: CANDIDATE
+- Incluye:
+  - descripcion completa
+  - hasta 8 skills
+  - workload
+  - match.score
+  - match.explanation
+
+SWIPE Y POSTULACIONES CANDIDATO
+
+
+
+
+28) Registrar swipe
+- POST /api/v1/candidate/swipes
+- Auth: CANDIDATE
+- Request:
+{
+  "job_id": 5001,
+  "action": "PASS"
+}
+- Response 201:
+{
+  "swipe_id": 7001,
+  "job_id": 5001,
+  "action": "PASS",
+  "created_at": "2026-04-25T03:45:00Z"
+}
+
+
+
+
+29) Confirmar postulacion (desde swipe APPLY o boton)
+- POST /api/v1/candidate/applications
+- Auth: CANDIDATE
+- Request:
+{
+  "job_id": 5001
+}
+- Reglas:
+  - no duplicar postulacion por candidato-job.
+  - crea status APPLIED.
+  - puede registrar swipe APPLY si no existia.
+- Response 201:
+{
+  "application_id": 8001,
+  "status": "APPLIED",
+  "applied_at": "2026-04-25T03:50:00Z"
+}
+
+
+
+30) Listar mis postulaciones
+- GET /api/v1/candidate/applications?page=1&size=20&sort=applied_at,desc
+- Auth: CANDIDATE
+- Estados visibles MVP: APPLIED, VIEWED.
+- CANCELLED reservado para opcional.
+
+
+
+31) Ver detalle de mi postulacion
+- GET /api/v1/candidate/applications/{application_id}
+- Auth: CANDIDATE
+
+
+
+
+POSTULACIONES EMPRESA
+
+
+32) Listar postulaciones de una oferta
+- GET /api/v1/company/jobs/{job_id}/applications?page=1&size=20&sort=match_score,desc
+- Auth: COMPANY
+- Reglas:
+  - solo oferta propia.
+  - orden por score descendente para HU-20.
+
+
+
+33) Marcar postulacion como VIEWED
+- PATCH /api/v1/company/applications/{application_id}/viewed
+- Auth: COMPANY
+- Request: {}
+- Reglas:
+  - solo empresa duena de la oferta asociada.
+  - idempotente: si ya VIEWED, mantener VIEWED.
+- Response 200:
+{
+  "application_id": 8001,
+  "status": "VIEWED",
+  "viewed_at": "2026-04-25T04:10:00Z"
+}
+
+
+
+
+MATCHING API EXTERNA (CONSUMIDA SOLO POR SPRING)
+
+34) Match interno IA
+- URL interna sugerida: /match (FastAPI)
+- Request:
+{
+  "cv_text": "texto cv limpio",
+  "job_text": "texto oferta permitido"
+}
+- Response:
+{
+  "score": 0.8215,
+  "explanation": "Coincidencia en experiencia backend y herramientas"
+}
+- Reglas:
+  - score de FastAPI es base semantica.
+  - Spring transforma a 0..100 y aplica ajuste modalidad/workload.
+
+
+
+CONTRATO DE SCORE FINAL (BACKEND -> FRONT)
+- Formula fija para evitar ambiguedad:
+  final_score = clamp( base_semantic_score_0_100 * 0.8 + preference_bonus_0_20, 0, 100 )
+- preference_bonus_0_20:
+  - +10 si modalidad oferta esta en preferred_modalities.
+  - +10 si workload oferta esta en preferred_workloads.
+  - +0 en cada caso si no coincide.
+- Redondeo de respuesta:
+  - dos decimales (DECIMAL 5,2).
+
+
+
+
+CODIGOS HTTP POR TIPO DE RESULTADO
+- 200: consulta/actualizacion exitosa.
+- 201: recurso creado.
+- 400: request invalido.
+- 401: sin token o token invalido.
+- 403: sin permisos sobre recurso.
+- 404: recurso no encontrado.
+- 409: conflicto (ejemplo: email duplicado, postulacion duplicada).
+- 413: archivo excede tamano permitido.
+- 415: tipo de archivo no soportado.
+- 422: regla de negocio incumplida.
+- 429: limite de intentos/rate limit.
+- 503: IA no disponible.
+
+
+
+MATRIZ DE AUTORIZACION
+- Publico:
+  - auth/login
+  - auth/register/*
+  - auth/password-recovery/*
+  - catalogs/*
+  - onboarding/candidate/session
+- ONBOARDING (Bearer onboarding_access_token; solo prefijo onboarding/candidate):
+  - onboarding/candidate/profile
+  - onboarding/candidate/cv
+  - onboarding/candidate/cv/current
+  - onboarding/candidate/cv/current/file
+- CANDIDATE (Bearer access_token rol CANDIDATE):
+  - auth/me
+  - candidate/profile
+  - candidate/cv
+  - candidate/cv/current
+  - candidate/cv/current/file
+  - candidate/jobs/*
+  - candidate/swipes
+  - candidate/applications/*
+- COMPANY (Bearer access_token rol COMPANY):
+  - auth/me
+  - company/profile/image
+  - company/jobs/*
+  - company/applications/*/viewed
+
+
+
+
+CHECKLIST DE INTEGRACION FINAL
+- Login candidato y empresa operativos con JWT.
+- Registro candidato: sesion borrador con POST /onboarding/candidate/session antes de Subir CV cuando aplique; fusion con onboarding_id en POST /auth/register/candidate; consentimiento en "Uso de datos" y JWT CANDIDATE al crear la cuenta.
+- Registro empresa completo con region/comuna/sector.
+- CV PDF <= 1MB validado y almacenado.
+- Oferta creada con 3..8 skills.
+- Feed candidato sin repeticion de ofertas.
+- Swipe PASS/APPLY funcionando.
+- Postulacion APPLIED creada solo al confirmar.
+- Empresa marca VIEWED manualmente.
+- Orden por score descendente en vistas empresa.
+- Invariante de score verificada (skills no alteran score).
+
+
+
+PUERTOS (FRONTEND/BACKEND/BD, ETC):
+- Pendiente luego de preparar bien el setup de docker, etc.
+
+
+FIN DEL CONTRATO

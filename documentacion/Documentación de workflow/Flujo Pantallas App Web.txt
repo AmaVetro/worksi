@@ -1,0 +1,131 @@
+Flujo de las pantallas de sitio web WorkSí
+
+Este documento define de forma oficial los parámetros que se usarán para establecer el flujo de trabajo de las empresas en la versión web de WorkSí al momento de usar la app web que es sólo para empresas. En este documento se explicará el flujo de lo que va mostrando la UI de la app web. Se explica todo por “Pantallas”, pero no es que realmente se utilice una pantalla para cada cosa, aquí solo se divide en pantallas distintas por fines explicativos, en realidad, en los frontends, será la misma pantalla/componente en algunos casos, solo que irán apareciendo nuevos textos o botones o visuales, e irán desapareciendo otros, ya sabes, esto es solo para explicar, pero en verdad todo funcionará en su momento como suele funcionar react + vite para frontends web.
+
+Nota transversal: el flujo postulante móvil usa rutas /api/v1/onboarding/candidate/* (borrador) y /api/v1/candidate/* (JWT CANDIDATE); eso está detallado en Contrato Unificado API y en Flujo Pantallas App Móvil. En este documento web, tras login o registro empresa, todas las rutas /api/v1/company/* y GET /api/v1/auth/me usan Bearer access_token rol COMPANY (salvo auth/catalogos públicos indicados en cada pantalla).
+
+
+
+Pantalla "al abrir sitio web":
+- Muestra botones iniciar sesión y crear cuenta, ahí mismo encima del botón iniciar sesión está el formulario de email y password para escribir dichos datos antes de pulsar el botón (Debe tener validaciones de email/nombre usuario y contraseña). Botón crear cuenta lleva a Pantalla Crear Cuenta.
+Abajo de campo para poner contraseña hay botón “¿Olvidaste tu contraseña?” que llevará a Pantalla “Olvidé mi contraseña”.
+El botón "Iniciar sesión" consume (endpoint: POST /api/v1/auth/login).
+Este bloqueo por intentos fallidos aplica en ambos frontends (móvil y web): si hay 4 intentos fallidos al iniciar sesión se lleva a pantalla “Recuperar contraseña” en su versión web (mismo endpoint: POST /api/v1/auth/login).
+
+
+
+Pantalla "Recuperar contraseña" versión web → Muestra mensaje "Excediste el límite de intentos. Por nuestros lineamientos de seguridad, deberás recuperar tu contraseña" "Pulsa aquí:" y aparece el botón "Recuperar contraseña" que lleva a pantalla "Olvidé mi contraseña", es decir, se lleva a la misma pantalla que botón "Olvidé mi contraseña" que esta en Pantalla Iniciar Sesión.
+
+
+
+Pantalla "Olvidé mi contraseña"  versión web --> En ella, dice "¿Olvidaste tu contraseña?" "Ingresa el email asociado a tu cuenta y te enviaremos un código de recuperación", hay un campo para escribir el email y botón "Enviar código" (endpoint: POST /api/v1/auth/password-recovery/request) --> si el email escrito no se encuentra en la BD, lanza error ahí en esa misma pantalla "El email no está registrado en WorkSí". Sí sí está registrado, NO SE ENVÍA CÓDIGO REALMENTE (la recuperación de contraseña en sitio web y móvil por ahora será solo simulada), posteriormente se lleva a pantalla "Ingresa tu código".
+
+
+
+Pantalla "Ingresa tu código" versión web --> dice "Ingresa tu código" y un campo para escribir el código recibido por correo (ya que esto es simulado, uno puede escribir literalmente cualquier cosa ahí y funcionará). Justo abajo el botón "Ingresar código" para procesar la solicitud (endpoint: POST /api/v1/auth/password-recovery/verify). Justo abajo el texto "¿No recibiste el código?" y abajo de él otro botón que dice "Enviar nuevo código" (endpoint: POST /api/v1/auth/password-recovery/request en modo mock).
+Luego de escribir cualquier cosa en el campo de código y presionar “Ingresar código”, se pasa a Pantalla "Nueva contraseña".
+
+
+
+Pantalla "Nueva contraseña" versión web --> Dice "Ingresa tu nueva contraseña:", abajo el campo para escribirla, y debajo del campo para escribirla dice:
+"Debe contener al menos 12 caracteres.
+Debe contener al menos 1 símbolo, 1 número, letras minúsculas y mayúsculas."
+Debajo de ese texto el botón "Aceptar" (endpoint: POST /api/v1/auth/password-recovery/reset). Si se cumple con los requisitos y se pulsa aceptar, viene la pantalla "Confirmar en Bandeja".
+
+
+
+Pantalla "Confirmar en bandeja" versión web --> Dice "Tu nueva contraseña ha sido creada con éxito.
+Vé a la bandeja de entrada del correo asociado y confirma el cambio clickeando el link que te hemos enviado." (ya que es solo simulado, en realidad no se envía nada al correo, esto es solo simulado, en verdad la contraseña ya quedó cambiada con exito) y abajo el botón "Volver a Log In". Botón que claramente lleva a Pantalla Iniciar Sesión.
+
+
+
+Pantalla "Crear cuenta"  versión web--> Dice "Completa tus datos", y abajo solicita:
+*Campos obligatorios (marcados con ):
+Nombre y Apellidos
+Teléfono
+Correo de acceso
+Contraseña (creación de cuenta: mínimo 12 caracteres, al menos un símbolo, al menos un número, y letras en mayúscula y minúscula; misma política en Pantalla "Nueva contraseña")
+Nombre comercial de la empresa
+Razón social
+Rut (Exige formato sin puntos pero con guión).
+Región (desplegable para elegir regiones registradas en la BD) (endpoint: GET /api/v1/catalogs/regions)
+Comuna (desplegable para elegir comunas registradas en la BD y solo mostrar las que están contenidas en la región elegida en el desplegable de arriba) (endpoint: GET /api/v1/catalogs/regions/{region_id}/communes)
+Seleccionar el sector/ámbito (de trabajo) (desplegable de sectores o ámbitos profesionales precargados previamente por nosotros en la BD) (endpoint: GET /api/v1/catalogs/sectors)
+N° de trabajadores (aprox)
+N° de vacantes anuales (aprox)
+Si alguno de los campos obligatorios no es rellenado, no dejará avanzar y saldrán mensajes rojos que digan "Completa este campo".
+Si se logra avanzar, se crea la cuenta empresa (endpoint: POST /api/v1/auth/register/company). En ese mismo registro, la imagen de empresa es opcional (campo image_url). Luego de crear cuenta e iniciar sesión, se va a pantalla “Imagen de empresa”.
+
+
+
+Pantalla “Imagen de empresa”:
+En esta pantalla se le solicitará al usuario empresa que adjunte una imagen a su empresa (opcional). Esta imagen puede venir opcionalmente desde el registro (campo image_url en POST /api/v1/auth/register/company) y, con la cuenta ya creada y sesión iniciada, debe poder editarse (subir, eliminar o cambiar) mediante endpoint autenticado de empresa (PATCH /api/v1/company/profile/image). Esta imagen es de la empresa y no corresponde a la imagen de las ofertas laborales.
+
+Si se avanza de ahí, aparecerá un mensaje de “Cuenta creada correctamente” y el botón “ok” para avanzar. Que llevará a “Pantalla Inicio”.
+
+
+
+Pantalla "Inicio" --> Se visualiza un dashboard. En la esquina superior derecha aparece el usuario logueado, en donde se despliega un menú de “Cerrar sesión”.
+Validación de sesión activa (endpoint: GET /api/v1/auth/me).
+En el header aparece una lista de categorías navegable → Inicio (lleva a Pantalla “Inicio”) / Reclutamiento (lleva a Pantalla “Reclutamiento”).
+Abajo aparece un recuadro donde aparece la imagen de la empresa junto al nombre de la empresa y el rol que tiene el usuario en la empresa (por ahora para web solo usuario empresa, ningún otro rol), también aparecerá la imagen de la empresa.
+Abajo de este recuadro aparece otro recuadro con las estadísticas relacionadas al reclutamiento, donde aparece el texto “Ofertas publicadas” con el número de la cantidad, y botón  “Ir a ver”, el cuál llevará a Pantalla “Ofertas publicadas” (endpoint base: GET /api/v1/company/jobs?page=1&size=20&sort=created_at,desc).
+Al lado derecho de este recuadro aparece otro recuadro que mostrará “Postulaciones” y el número de la cantidad de postulaciones, con el botón “Ver postulaciones” que llevará a Pantalla “Postulaciones de postulantes” (endpoint base por oferta: GET /api/v1/company/jobs/{job_id}/applications?page=1&size=20&sort=match_score,desc).
+
+
+
+Pantalla "Reclutamiento":
+
+En esta pantalla habrá botón Ofertas Publicadas (“Lleva a pantalla “Ofertas Publicadas”), Crear Oferta (lleva a pantalla “Crear Oferta”), Postulaciones (lleva a pantalla “Postulaciones de postulantes”).
+
+
+
+Pantalla “Ofertas Publicadas”:
+
+Ahí las empresas podrán ver el listado de sus ofertas publicadas (endpoint: GET /api/v1/company/jobs?page=1&size=20&sort=created_at,desc). En cada fila podrá ver info básica de cada oferta, si clickea “Ir a ver Oferta” llegará a Pantalla “Vista Oferta” (endpoint: GET /api/v1/company/jobs/{job_id}).
+
+
+
+Pantalla “Vista Oferta” versión web empresa:
+
+Ahí las empresas podrán ver toda la información de la oferta que seleccionaron en pantalla “Ofertas publicadas” (endpoint: GET /api/v1/company/jobs/{job_id}) → Y justo al lado de toda esta info, saldrá el listado de los postulantes que han postulado a esta oferta, junto a su información básica y el porcentaje de matching que tienen con esa oferta (endpoint: GET /api/v1/company/jobs/{job_id}/applications?page=1&size=20&sort=match_score,desc). Los postulantes ahí serán ordenados de mayor a menor porcentaje de matching. En cada fila de postulante también saldrá el botón “Ver Postulante”, que llevará a pantalla “Perfil postulantes” usando los datos ya entregados por el mismo listado (GET /api/v1/company/jobs/{job_id}/applications?page=1&size=20&sort=match_score,desc).
+
+
+
+Pantalla “Crear Oferta”:
+
+Aquí se puede crear ofertas laborales.
+Se deberá rellenar:
+Título oferta (Cuenta para porcentaje de matching, sería limpiado por herramientas de nuestro stack eso sí antes de calcular el porcentaje de matching). 
+Descripción oferta (Muchas cosas de aquí contarán para porcentaje de matching entre postulantes y oferta laboral, pero recordar que el pipeline de IA y otras herramientas que tenemos en el stack harán limpieza primero, antes de calcular el porcentaje de matching). 
+Ciudad, comuna
+Sueldo ofrecido (recordar, esto no se cuenta para el porcentaje de matching entre postulantes y oferta laboral).
+Años de experiencia solicitados (recordar, esto no se cuenta para el porcentaje de matching entre postulantes y oferta laboral).
+Skills requeridas (recordar, estas no se cuentan para el porcentaje de matching entre postulantes y oferta laboral) → Poner mínimo 3. 
+Modalidad (Remoto, Híbrido, Presencial) → Cuenta para porcentaje de matching
+Carga horaria (Full Time, Part Time, Otro) → Cuenta para porcentaje de matching.
+Imagen de la Oferta (Opcional). Todo lo mencionado anteriormente es obligatorio al crear una oferta menos Imagen de la oferta.
+Finalmente botón “Publicar” → Aparecerá ventanita de confirmación antes de publicar oficialmente; al confirmar se ejecuta (endpoint: POST /api/v1/company/jobs).
+
+
+
+Pantalla “Postulaciones postulantes”:
+
+Aquí saldrá un listado de todas las postulaciones que han hecho postulantes a ofertas publicadas por la empresa, junto al número de postulaciones que ha recibido la empresa en total (endpoint principal por oferta: GET /api/v1/company/jobs/{job_id}/applications?page=1&size=20&sort=match_score,desc).
+En cada fila, saldrá la info básica del postulante, a qué oferta postuló, porcentaje de matching que dicho postulante tiene con esa oferta, y también el botón Ver explicación matching, que llevará a Pantalla “Explicación matching empresa”.
+Acción de marcar como vista (endpoint: PATCH /api/v1/company/applications/{application_id}/viewed).
+
+
+
+Pantalla “Explicación matching empresa”:
+
+Esta pantalla muestra información básica que uso el pipeline de IA para calcular el matching y porqué sacó el porcentaje que sacó, a nivel sencillo (fuente de datos: GET /api/v1/company/jobs/{job_id}/applications?page=1&size=20&sort=match_score,desc). También el botón “Ver perfil postulante”, que llevará a Pantalla “Perfil postulantes”. 
+
+
+
+Pantalla “Perfil postulantes”:
+
+En esta pantalla, aparecerá toda la info del postulante que está en Pantalla Perfil de la app móvil para postulantes, simplemente eso. Esta vista se alimenta con la información de postulante entregada en (endpoint: GET /api/v1/company/jobs/{job_id}/applications?page=1&size=20&sort=match_score,desc).
+
+
+

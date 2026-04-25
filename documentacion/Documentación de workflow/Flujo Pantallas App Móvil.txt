@@ -1,0 +1,134 @@
+Flujo de las pantallas de app móvil WorkSí
+
+En este documento se explicará el flujo de lo que va mostrando la UI en ambos frontends.
+No es que realmente se utilice una pantalla para cada cosa, aquí solo se divide en pantallas distintas por fines explicativos, en realidad, en los frontends, será la misma pantalla/componente en algunos casos, solo que irán apareciendo nuevos textos o botones o visuales, e irán desapareciendo otros, ya sabes, esto es solo para explicar, pero en verdad todo funcionará en su momento como suele funcionar android studio para frontends de app móvil y react + vite en el caso del frontend web.
+
+
+1. App Móvil (postulantes):
+
+Pantalla "al abrir la app":
+- Muestra botones iniciar sesión y crear cuenta, botón iniciar sesión lleva a Pantalla Iniciar Sesión. Botón crear cuenta lleva a Pantalla "Crear Cuenta".
+
+
+Pantalla Iniciar Sesión --> Pide email y contraseña, con botón "iniciar sesión" (endpoint: POST /api/v1/auth/login). También está el botón "Olvidé mi contraseña" (navegación UI local). Debe tener validaciones de email y contraseña en UI y backend. Este bloqueo por intentos fallidos aplica en ambos frontends (móvil y web): con 4 intentos incorrectos se bloquea (mismo endpoint: POST /api/v1/auth/login). Si se bloquea se muestra pantalla "Recuperar contraseña". 
+
+
+Pantalla "Recuperar contraseña", muestra mensaje "Excediste el límite de intentos. Por nuestros lineamientos de seguridad, deberás recuperar tu contraseña" "Pulsa aquí:" y aparece el botón "Recuperar contraseña" que lleva a pantalla "Olvidé mi contraseña", es decir, se lleva a la misma pantalla que botón "Olvidé mi contraseña" que esta en Pantalla Iniciar Sesión.
+
+
+Pantalla "Olvidé mi contraseña" --> En ella, dice "¿Olvidaste tu contraseña?" "Ingresa el email asociado a tu cuenta y te enviaremos un código de recuperación", hay un campo para escribir el email y botón "Enviar código" (endpoint: POST /api/v1/auth/password-recovery/request) --> si el email escrito no se encuentra en la BD, lanza error ahí en esa misma pantalla "El email no está registrado en WorkSí" (mismo endpoint). Si si está registrado, no se envía código realmente al correo, la funcionalidad de enviar mensajes al correo registrado no irá por ahora, solo será si sobra tiempo alfinal del proyecto. Pero al presionar "Enviar código" se lleva a pantalla "Ingresa tu código".
+
+
+Pantalla "Ingresa tu código" --> dice "Ingresa tu código" y un campo para escribir el código recibido por correo (en realidad, uno podrá poner cualquier cosa escrita ahí, ya que no habrá mensajes al correo enrealidad). Justo abajo el botón "Ingresar código" para procesar la solicitud y ver si el código calza (endpoint: POST /api/v1/auth/password-recovery/verify). Justo abajo el texto "¿No recibiste el código?" y abajo de él otro botón que dice "Enviar nuevo código" que debe enviar nuevo código (endpoint: POST /api/v1/auth/password-recovery/request, en modo mock).
+Al escribir cualquier cosa en el campo para el código y luego botón "Ingresar código", se pasa a Pantalla "Nueva contraseña".
+
+
+Pantalla "Nueva contraseña" --> Dice "Ingresa tu nueva contraseña:", abajo el campo para escribirla, y debajo del campo para escribirla dice:
+"Debe contener al menos 12 caracteres.
+Debe contener al menos 1 símbolo, 1 número, letras mínusculas y mayúsculas."
+Debajo de ese texto el botón "Aceptar" (endpoint: POST /api/v1/auth/password-recovery/reset). Si se cumple con los requisitos y se pulsa aceptar, viene la pantalla "Confirmar en Bandeja".
+
+
+Pantalla "Confirmar en bandeja" --> Dice "Tu nueva contraseña ha sido creada con éxito.
+Vé a la bandeja de entrada del correo asociado y confirma el cambio clickeando el link que te hemos enviado." y abajo el botón "Volver a Log In". Obviamente nunca se envía nada al correo, así que al llegar a Pantalla "Confirmar en bandeja" nueva contraseña ya se registra en la BD para el usuario. Al presionar "Volver a Log In" se va a Pantalla Iniciar Sesión.
+
+
+Pantalla "Crear cuenta" --> Dice "Completa tus datos", y abajo solicita:
+*Campos obligatorios (marcados con ):
+Nombre
+Apellido Paterno
+Apellido Materno
+Correo
+Contraseña (creación de cuenta: mínimo 12 caracteres, al menos un símbolo, al menos un número, y letras en mayúscula y minúscula; misma política en Pantalla "Nueva contraseña")
+Celular
+Rut (debe verificar lógica numérica de formato de ruts de chile).
+Nro. Documento (por ahora, se podrá poner cualquier número ahí).
+Región (desplegable para elegir regiones registradas en la BD)
+Comuna (desplegable para elegir comunas registradas en la BD y solo mostrar las que están contenidas en la región elegida en el desplegable de arriba)
+Campos opcionales o no obligatorios:
+Segundo nombre
+Calle (opcional)
+En esta pantalla no se registra el consentimiento. El consentimiento obligatorio se registra solo en la pantalla "Uso de datos".
+
+Si alguno de los campos obligatorios no es rellenado, no dejará avanzar y saldrán mensajes rojos que digan "Completa este campo". Para poblar región/comuna se usa (endpoint: GET /api/v1/catalogs/regions) y (endpoint: GET /api/v1/catalogs/regions/{region_id}/communes).
+
+Esta pantalla solo reúne datos de registro. La cuenta aún no se crea aquí. El alta oficial ocurre recién después de aceptar en "Uso de datos".
+
+Clave visual de rutas (alineado a Contrato Unificado API): el prefijo /api/v1/onboarding/candidate/ se usa solo en el tramo antes de "Uso de datos", con header Authorization: Bearer <onboarding_access_token>. El prefijo /api/v1/candidate/ se usa con JWT de candidato ya creado (después de registro con consentimiento o tras login).
+
+Al avanzar desde "Crear cuenta" hacia "Subir CV", el cliente debe abrir sesión de borrador (endpoint: POST /api/v1/onboarding/candidate/session, auth pública, cuerpo JSON con los mismos datos obligatorios ya validados en pantalla Crear cuenta). La respuesta incluye onboarding_id y onboarding_access_token; el token se envía en las pantallas siguientes hasta "Uso de datos".
+
+
+Pantalla "Subir CV" --> Dice "Sube tu CV", "Tu CV servirá para establecer tu porcentaje de matching con las ofertas. Asegúrate de que tenga experiencias profesionales, habilidades, y nombres de herramientas que domines y hayas utilizado en cada experiencia.", y justo abajo un espacio con un botón para subir el CV (endpoint: POST /api/v1/onboarding/candidate/cv, multipart/form-data). Auth: Bearer onboarding_access_token. Abajo del botón dice "(Máx. 1mb)" y "Solo formato PDF con texto seleccionable". Abajo de todo, la flecha para continuar el proceso. Si CV es mayor a 1mb, saldrá mensaje en rojo "Tu CV es superior a 1mb." y no dejará avanzar a la siguiente pantalla (mismo endpoint). Si se avanza correctamente, se llega a la pantalla "Mostrar CV subido".
+
+
+Pantalla "Mostrar CV Subido" --> Muestra una tabla con el nombre del CV y el tamaño del archivo (endpoint: GET /api/v1/onboarding/candidate/cv/current), y el botón "Subir denuevo" para subir denuevo el CV si usuario quiere (endpoint: POST /api/v1/onboarding/candidate/cv). Auth: Bearer onboarding_access_token. Justo abajo el botón de flecha para continuar a Pantalla "Skills".
+
+
+Pantalla "Skills" --> Muestra mensaje "Elige las skills que aparecerán en tu perfil", abajo dice "Elige tu rubro profesional" y un desplegable para elegir entre la lista de rubros profesionales que nosotros ya precargamos en la BD (endpoint: GET /api/v1/catalogs/sectors), elegir ahí el rubro profesional de la lista servirá para linkear dicho rubro al perfil del usuario (se guarda junto con perfil en endpoint: PATCH /api/v1/onboarding/candidate/profile) y también para determinar las skills que después podrá encontrar en el buscador de esta misma pantalla justo abajo (endpoint para carga por rubro: GET /api/v1/catalogs/sectors/{sector_id}/skills). Justo debajo, escrito "Busca tus skills:" y abajo de eso el buscador que te decía, que servirá para buscar entre las skills que nosotros ya precargamos en cada rubro profesional en la BD. Abajo de eso, dice "Ya elegiste:" y saldrán todas las skills que el usuario ya ha elegido para su perfil con la posibilidad de borrarlas y más abajo el escrito "Máximo 12 skills" y "Mínimo 3 skills" (persistencia de selección en endpoint: PATCH /api/v1/onboarding/candidate/profile, campo skills_ids). Auth: Bearer onboarding_access_token. Abajo del todo, la flecha para avanzar a pantalla "Últimas preferencias".
+
+
+Pantalla "Últimas preferencias" --> Aquí se solicita al postulante elegir su sueldo esperado (estableciendo mínimo y máximo), también mensaje "Atención: Tus modalidades preferidas y tus cargas horarias preferidas serán tomadas en cuenta a la hora del porcentaje de matching." y luego abajo la sección para elegir las modalidades preferidas (Remoto, Presencial, Híbrido), y las cargas horarias preferidas (Full time, Part time, Otro). El usuario puede elegir las 3 en ambas categorías si quiere. Esta información se guarda en perfil (endpoint: PATCH /api/v1/onboarding/candidate/profile, campos salary_expected_min, salary_expected_max, preferred_modalities, preferred_workloads). Auth: Bearer onboarding_access_token. Así que finalmente lo que se tomará en cuenta para el matching es: Todo lo que haya dentro de CV (menos las secciones o conceptos o palabras que podrían usarse para discriminación, que son los siguientes a modo oficial: género, nombre, institución de procedencia, edad, correo, rut, nacionalidad y años de experiencia declarados dentro del CV; de eso se deben encargar las herramientas de IA del stack para hacer limpieza previa antes del porcentaje de matching, ya sea por regex o spaCy según el pipeline), Modalidades preferidas, Cargas horarias preferidas, y solo eso. Las cosas que no se usarán para porcentaje de matching oficialmente son: Skills, presentación personal que se ponga en perfil (no la que viene en el CV), el rango de sueldo esperado, el sueldo ofrecido, años de experiencia que requiere la oferta, nacionalidad.
+En lo más abajo de esta pantalla, habrá flecha para avanzar. Esa flecha lleva directamente a la pantalla "Uso de datos". Es decir, la pantalla que lleva a "Uso de datos" es "Últimas preferencias".
+
+
+Pantalla "Uso de datos" --> Ahí hay un escrito acerca de información para el usuario de qué cosas está aceptando, como serán usados sus datos y qué nivel de privacidad tiene. Esta es la última pantalla antes de crear la cuenta oficialmente y se accede a ella desde "Últimas preferencias". En esta pantalla se debe aceptar el consentimiento obligatorio con la casilla "He leído y acepto el uso de mis datos personales conforme a la Política de Privacidad". El backend debe exigir ese consentimiento para crear la cuenta del candidato (endpoint: POST /api/v1/auth/register/candidate con consent_given=true y onboarding_id devuelto por POST /api/v1/onboarding/candidate/session para fusionar borrador). Auth: pública (sin Bearer de candidato; el cuerpo lleva email, password, datos de registro y consentimiento). Si no se acepta, no se crea la cuenta. Al aceptar y avanzar, la respuesta incluye access_token JWT rol CANDIDATE y se va a Pantalla "Perfil".
+
+Nota de integración: antes de "Uso de datos" solo se usan rutas bajo /api/v1/onboarding/candidate/* (mas catalogos publicos y POST /api/v1/onboarding/candidate/session). Tras el alta en "Uso de datos", la app deja de usar /api/v1/onboarding/candidate/* y pasa a /api/v1/candidate/* con el JWT de candidato.
+
+
+
+Pantalla "Perfil" --> 
+Ícono de engranaje (configuración) en la esquina superior derecha (Ese ícono se ve desde las tres pantallas principales de la app).
+👤 Sección de información del usuario
+Nombre completo: Juan Eduardo Ramírez Pérez
+Ubicación: Santiago - Maipú
+Rubro: [el rubro que el usuario haya elegido en pantalla skils]
+Correo: juanramirez@gmail.com
+A la derecha hay un ícono de editar perfil
+Teléfono: +56982109192 
+“Descripción personal" (editable y distinta de la que el usuario podría opcionalmente poner dentro de su CV).
+También justo abajo se muestra el botón para descargar el CV del usuario, subir otro, o simplemente visualizarlo. 
+Más abajo sale el sueldo esperado por el postulante, sus modalidades preferidas y cargas horarias preferidas.
+También más abajo se muestran las “Skills” (no tomadas en cuenta para porcentaje de matching), que son editables.
+Ícono de editar a la derecha, icono para añadir más skills.
+Ya que la Pantalla Perfil ya está en el flujo interior de la app, abajo ya se muestra Barra inferior (Que tiene 3 íconos para navegar entre 3 pantallas principales de la app --> Pantalla Perfil - Pantalla Ofertas (donde hará swipe y verá ofertas) - Pantalla Mis Postulaciones, en donde verá la lista de sus postulaciones.)
+Carga de datos de perfil (endpoint: GET /api/v1/candidate/profile). Guardado de cambios de perfil, skills y preferencias (endpoint: PATCH /api/v1/candidate/profile). Visualización de CV desde perfil (endpoint: GET /api/v1/candidate/cv/current y/o GET /api/v1/candidate/cv/current/file). Auth en estas tres rutas: Bearer access_token JWT rol CANDIDATE (no usar /onboarding/candidate/* en Perfil). 
+
+
+
+Pantalla "Ofertas" --> Ahí ya ve las ofertas con (endpoint de carga feed: GET /api/v1/candidate/jobs/feed?page=1&size=20):
+- Su imagen (adjunta a la oferta por la misma empresa al crear la oferta)
+- Su nombre
+- Nombre de empresa
+- Sueldo
+- Comuna
+- Modalidad (Remoto/Presencial/Híbrido)
+- Años de experiencia requeridos (no usable para porcentaje de matching).
+- Descripción de la oferta pero si esta es muy larga, se cortará en cierto punto.
+Abajo botón "Ver detalles" para ir a Pantalla "Oferta Detalles" (endpoint detalle: GET /api/v1/candidate/jobs/{job_id}).
+- Abajo de ese botón, las skills que puso la empresa que busca en su oferta (solo aparecen 4 skills en esa pantalla, si se va a Pantalla "Oferta Detalles" saldrán todas, así como también la descripción completa.
+- Porcentaje de matching y una barra con el porcentaje, que es calculado entre el CV y el texto de la oferta laboral (No todo lo de la oferta cuenta para establecer porcentaje de matching entre la oferta y el CV, solo cuenta: Nombre de oferta, Descripción de la oferta (menos palabras/conceptos/ideas que ya se mencionaron más arriba que no se usarían para porcentaje de matching), Modalidad (Remoto/Presencial/Híbrido), y otras cosas que aparecerán en "Oferta Detalles" después de uno clickear el botón "Ver detalles". El sueldo ofrecido no se usa para porcentaje de matching).
+En esta pantalla, si postulante desliza hacia la izquierda, eso significa "Pasar", es decir, pasar a la siguiente oferta (endpoint swipe: POST /api/v1/candidate/swipes con action PASS), y si postulante desliza hacia la derecha será para Postular, aparecerá un recuadro que diga "¿Seguro de postular?" y si se presiona "Postular" en ese recuadro, se postulará oficialmente a esa oferta (endpoint confirmar postulación: POST /api/v1/candidate/applications; opcionalmente registrar swipe APPLY en POST /api/v1/candidate/swipes).
+
+
+Pantalla "Oferta Detalles" --> Aquí aparece más info de la oferta que la que le aparecía al usuario en Pantalla Ofertas, esta vez incluyendo también carga horaria de la oferta (usable para porcentaje de matching), y 8 skills que es el máximo que se puede añadir a una oferta laboral. A demás ahí también saldrá la descripción completa de la oferta. También aquí, saldrá una explicación sencilla del porcentaje de matching obtenido con esa oferta (endpoint: GET /api/v1/candidate/jobs/{job_id}).
+
+
+Pantalla "Mis Postulaciones" (endpoint: GET /api/v1/candidate/applications?page=1&size=20&sort=applied_at,desc).
+En esta pantalla el postulante puede ver todas sus postulaciones, y el estado que tienen "APPLIED, VIEWED", no "CANCELLED" por ahora, ya que cancelar postulaciones es parte de las HU "SÓLO SI SOBRA TIEMPO". Aparece en esta pantalla el nombre de cada oferta postulada, la empresa dela oferta, su sueldo ofrecido, y el estado. Si uno presiona las ofertas en esa pantalla se mostrará la Pantalla "Vista Previa Oferta".
+
+
+Pantalla "Vista Previa Oferta" --> Muestra la oferta seleccionada desde "Mis Postulaciones", con toda la info que tiene la oferta en Pantalla "Ofertas", pero añadiendo el estado "VIEWED", "APPLIED" según corresponda (endpoint: GET /api/v1/candidate/applications/{application_id}), y abajo los botones "Ir a Oferta" (que lleva a la Oferta en pantalla "Ofertas", reutilizando GET /api/v1/candidate/jobs/{job_id}).
+
+Eso sería todo respecto a la App móvil de Postulantes de WorkSí.
+
+
+
+
+
+
+
+
+
+

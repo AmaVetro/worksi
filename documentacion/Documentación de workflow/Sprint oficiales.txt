@@ -1,0 +1,250 @@
+PLAN DE SPRINTS — WorkSí
+
+(Reordenado por lógica de desarrollo · Product Backlog como insumo · 11 semanas · equipo de 3 · carga más equilibrada por esfuerzo real · total MVP estimado 102 h de equipo)
+
+
+═══════════════════════════════════════════════════════════
+REGLA DE MATCHING (VÁLIDA EN TODO EL PLAN)
+═══════════════════════════════════════════════════════════
+
+●    El candidato puede declarar y editar skills en su perfil; se persisten como parte del perfil (HU-04, HU-05).
+
+●    El porcentaje de compatibilidad en el producto considera CV limpio + contenido relevante de la oferta + modalidades preferidas + cargas horarias preferidas. El contrato base hacia IA (POST /match) usa cv_text y job_text; las skills del perfil del candidato no se envían a /match ni influyen en el porcentaje.
+●    Tampoco deben influir en el porcentaje: presentación personal del perfil, rango de sueldo esperado, sueldo ofrecido en la oferta, años de experiencia requeridos por la oferta, años de experiencia declarados dentro del CV y nacionalidad.
+
+
+═══════════════════════════════════════════════════════════
+PARÁMETROS DEL PLAN (EXPLÍCITOS)
+═══════════════════════════════════════════════════════════
+
+●    Cada sprint: 1 semana calendario (inicio lunes).
+
+●    Equipo: 3 integrantes. Las horas por sprint son el esfuerzo total del equipo sumado en esa semana (no horas por persona).
+
+●    Calendario: 11 sprints. Primera semana: semana del 20 de abril de 2026. Última semana obligatoria: semana del 29 de junio de 2026 (29 junio – 5 julio 2026).
+
+●    Carga similar entre sprints por esfuerzo real: estimación variable entre 8 h y 10 h según complejidad de actividades de cada semana. El total del MVP se mantiene en el rango 83–110 h.
+
+●    Criterio de ordenación: lógica de desarrollo (dependencias, pipeline de IA) y entregas de valor continuas. Cada sprint puede atravesar BD, frontend y backend a la vez.
+
+●    Setup inicial no es una HU numerada; va en el Sprint 1.
+
+●    Regla esencial de testing: no implementar testing en frontends (sin carpetas de testing en web ni móvil); quienes trabajan en frontends validan de forma visual. La pasada de pruebas, reducida a lo más crítico y sobre el sistema completo, se concentra al final del MVP cuando el proyecto esté listo, no repartida como suite por sprint. Dentro de esa política, seguir evitando testing opcional o de baja prioridad; lo que sí puede incluirse al cierre es integración y flujo core, E2E, y comprobación puntual de API si aplica.
+
+
+═══════════════════════════════════════════════════════════
+SOLO SI SOBRA TIEMPO (FUERA DEL PLAN DE SPRINTS)
+═══════════════════════════════════════════════════════════
+
+Estas HU no forman parte del compromiso del MVP ni consumen las semanas numeradas. Implementarlas solo si sobra tiempo antes de la entrega o en paralelo no crítico.
+
+●    HU-24 — Guardar oferta (Favoritos del candidato).
+
+●    HU-16 — Editar oferta (Empresas).
+
+●    HU-17 — Eliminar oferta (descartada del diseño actual por estado único ACTIVE).
+
+●    HU-14 — Cancelar postulación (candidato).
+
+●    HU-18 — Activar/desactivar oferta (descartada del diseño actual por estado único ACTIVE).
+
+●    HU-22 — Eliminación de cuenta (política de datos y archivos asociados).
+
+
+
+═══════════════════════════════════════════════════════════
+CALENDARIO (11 SEMANAS)
+═══════════════════════════════════════════════════════════
+
+Sprint 1 (Sprint pesado):   20–26 abril 2026
+
+Estado: En proceso.
+Esfuerzo total estimado del equipo: 10 h.
+Contenido:
+●    Inicialización (repositorio, Docker Compose, MySQL, esqueleto backend/front).
+●    HU-01 — Registro de candidato.
+●    En creación de contraseña (registro), validar según HU sin épicas y Flujo Pantallas App Web y Flujo Pantallas App Móvil: mínimo 12 caracteres, al menos un símbolo, al menos un número, letras en mayúscula y minúscula; la misma política aplica al definir o cambiar contraseña en el flujo de recuperación (mock) cuando se implemente en el cliente o en API.
+Equilibrio: se mantiene el arranque técnico y se concentra un solo registro para no sobrecargar la primera semana.
+
+
+Sprint 2:   27 abril – 3 mayo 2026
+
+Estado: Pendiente.
+Esfuerzo total estimado del equipo: 9 h.
+Contenido:
+●    HU-02 — Registro de empresa.
+●    Campos obligatorios registro empresa en web (crear cuenta, alineado a Flujo Pantallas App Web): nombre y apellidos; teléfono; correo de acceso; contraseña; nombre comercial; razón social; RUT sin puntos con guión; región; comuna (solo de la región elegida); sector o ámbito de trabajo (catálogo BD); N° de trabajadores aprox.; N° de vacantes anuales aprox. La imagen de empresa es opcional en el registro (image_url) y luego se puede subir/eliminar/cambiar con cuenta empresa logueada (PATCH /api/v1/company/profile/image), separada de la imagen de cada oferta.
+●    Misma validación de contraseña en registro empresa que en Sprint 1 (mínimo 12 caracteres, al menos un símbolo, al menos un número, mayúsculas y minúsculas, según HU sin épicas y flujos de pantalla; igual para nueva contraseña en recuperación mock si aplica en este sprint o después).
+●    HU-03 — Login (incluir logout en cliente según HU-03).
+Equilibrio: identidad completa (tipos de cuenta + autenticación) antes de capas funcionales posteriores.
+
+
+Sprint 3:   4–10 mayo 2026
+
+Estado: Pendiente.
+Esfuerzo total estimado del equipo: 9 h (quizás un poco más).
+Contenido:
+●    Onboarding candidato previo al alta oficial: apertura de sesión de borrador y uso de rutas /api/v1/onboarding/candidate/*.
+●    HU-06 — Subir CV en onboarding (antes de "Uso de datos"), con PDF <= 1 MB y almacenamiento en filesystem + referencia en BD.
+●    HU-04 — Captura de perfil en onboarding (skills, rubro, presentación y preferencias) sin usar skills de perfil para el porcentaje de matching.
+Equilibrio: se alinea la implementación al flujo real de pantallas móvil, dejando listo todo el borrador antes del consentimiento final.
+
+
+Sprint 4:   11–17 mayo 2026
+
+Estado: Pendiente.
+Esfuerzo total estimado del equipo: 10 h.
+Contenido:
+●    HU-21 — Consentimiento de uso de datos en pantalla "Uso de datos" (última antes del alta oficial), con evidencia en BD (flag + timestamp).
+●    Alta oficial del candidato al aceptar consentimiento: creación de cuenta, emisión de JWT CANDIDATE y transición desde /onboarding/candidate/* a /candidate/*.
+●    Consolidación de HU-04 en cuenta creada: lectura/edición de perfil autenticado y persistencia final coherente con lo capturado en borrador.
+Equilibrio: se cierra la secuencia de onboarding de forma lógica (CV y perfil primero, consentimiento al final) y queda operativa la entrada a Perfil autenticado.
+
+
+Sprint 5 (Sprint pesado):   18–24 mayo 2026
+
+Estado: Pendiente.
+Esfuerzo total estimado del equipo: 10 h.
+Contenido:
+●    Extracción de texto con Apache Tika en Spring Boot; post-procesamiento mínimo (saltos de línea, ruido básico, texto consistente).
+●    HU-15 — Crear oferta laboral.
+●    HU-10 — Ver ofertas.
+Equilibrio: se deja listo el texto de CV y también el texto de oferta, preparando ambos insumos antes de fairness y score.
+
+
+Sprint 6 (Sprint pesado):   25–31 mayo 2026
+
+Estado: Pendiente.
+Esfuerzo total estimado del equipo: 10 h.
+Contenido:
+●    HU-09 — Eliminación de datos sensibles (fairness: spaCy NER básico + regex; sin ampliar alcance más allá del diseño acordado). Reparto oficial: spaCy para texto libre (PERSON/ORG/GPE) y regex para patrones estructurados (email, RUT, edad, género, nacionalidad, institución y años de experiencia declarados dentro del CV en formatos detectables), con solapamiento selectivo en nombre/institución/nacionalidad. Orden operativo: regex inicial -> spaCy -> regex final de cierre. Servicio FastAPI acotado a lo necesario para este pipeline (puede compartir base del contenedor que expondrá /match en el sprint siguiente).
+●    HU-07 — Calcular compatibilidad.
+●    HU-08 — Explicación del match: alcance mínimo, sin NLP extra en ese punto — plantilla fija del tipo «Coincidencia en: X, Y» (términos o temas derivados del contraste texto del CV vs texto de la oferta y de las preferencias aplicables; texto breve y seguro; sin usar la lista de skills del perfil como fuente del score).
+●    Contrato de matching: input base al servicio de IA con texto del CV (post-Tika y pre-fairness donde corresponda en el pipeline) y texto de la oferta; en producto el porcentaje final además considera modalidades y cargas horarias preferidas.
+Equilibrio: se ejecuta de forma compacta el bloque IA core (fairness + score + explicación) luego de tener CV y oferta listos.
+
+
+Sprint 7 (Sprint pesado):   1–7 junio 2026
+
+Estado: Pendiente.
+Esfuerzo total estimado del equipo: 10 h.
+Contenido:
+●    App móvil (candidato) y web React/Vite (empresa) según contrato donde aplique; prioridad API operativa en este sprint; vista empresa puede rematar en Sprint 9.
+●    HU-11 — Swipe de ofertas.
+●    HU-12 — Confirmar postulación.
+Equilibrio: se consolida la experiencia core de candidato sobre la base del score ya disponible.
+
+
+Sprint 8:   8–14 junio 2026
+
+Estado: Pendiente.
+Esfuerzo total estimado del equipo: 9 h.
+Contenido:
+●    HU-13 — Ver postulaciones (candidato), estados al menos APPLIED y transiciones coherentes con lo que la empresa marcará como vista en Sprint 9.
+Equilibrio: seguimiento candidato posterior a la postulación, sin depender de HU opcionales.
+
+
+Sprint 9:   15–21 junio 2026
+
+Estado: Pendiente.
+Esfuerzo total estimado del equipo: 9 h.
+Contenido:
+●    HU-19 — Ver postulantes.
+●    HU-23 — Marcar postulación como vista: existe una acción manual de la empresa para marcar como VIEWED.
+Equilibrio: se construye la base de gestión empresa y transición manual de estado antes de ordenar.
+
+
+Sprint 10:  22–28 junio 2026
+
+Estado: Pendiente.
+Esfuerzo total estimado del equipo: 8 h.
+Contenido:
+●    HU-20 — Ordenar por compatibilidad.
+●    HU-05 — Editar perfil (datos y skills en perfil; el porcentaje de matching sigue basado en CV + oferta + modalidades preferidas + cargas horarias preferidas).
+Equilibrio: semana de cierre funcional con tareas de complejidad media sobre módulos ya existentes.
+
+
+Sprint 11 (Sprint pesado):  29 junio – 5 julio 2026   (semana que comienza el 29 de junio de 2026)
+
+Estado: Pendiente.
+Esfuerzo total estimado del equipo: 8 h.
+Contenido:
+●    Integración end-to-end candidato–empresa (flujo completo en entorno común), corrección de bugs detectados, checklist de calidad previo al cierre.
+●    Ajustes menores de permisos o textos si aparecen en la demo interna.
+●    Chequeo explícito de regla de matching: mismo CV y misma oferta → mismo score aunque solo cambien skills de perfil.
+●    Cierre: pruebas de integración finales (acotadas a lo crítico, sobre el sistema entero, sin testing en frontends; ver regla de testing), preparación demo/entrega, ajustes finales.
+●    HU-22 permanece fuera del plan obligatorio (ver “Solo si sobra tiempo”).
+●    Demo alineada a la regla global: perfil con skills opcional; porcentaje explicado como CV + oferta + modalidades preferidas + cargas horarias preferidas.
+Equilibrio: semana final obligatoria en calendario; concentra buffer, cierre y demo; exige cerrar deuda crítica antes para no comprometer la entrega.
+
+
+Nota: cada sprint con inicio en lunes; primera semana del plan: 20 de abril de 2026; última semana del plan: 29 de junio – 5 julio de 2026.
+
+
+
+═══════════════════════════════════════════════════════════
+LÓGICA DE DESARROLLO (RESUMEN)
+═══════════════════════════════════════════════════════════
+
+●    Autenticación y tipos de cuenta antes del resto (registro + login + perfil base con skills; esas skills no son insumo del porcentaje).
+
+●    Consentimiento (HU-21, checkbox + timestamp) en pantalla "Uso de datos", última pantalla antes del alta oficial; al aceptar se crea la cuenta y se pasa a Perfil.
+●    El orden del onboarding candidato se implementa así: sesión borrador -> subir CV -> skills/preferencias -> "Uso de datos" -> alta oficial -> Perfil autenticado.
+
+●    Ofertas creadas y visibles (HU-15, HU-10) antes de consumir matching en producto; el score usa CV limpio, contenido de oferta, modalidades preferidas y cargas horarias preferidas; no skills de perfil del candidato.
+
+●    Fairness (HU-09) antes de score y explicación breve (HU-07, HU-08 con plantilla).
+
+●    Swipe y postulación (HU-11, HU-12) cuando existan ofertas y contrato de matching operativo (cv_text + job_text).
+
+●    Listado de postulaciones candidato (HU-13) después de existir postulaciones; cancelación (HU-14) es opcional fuera de plan (sección “Sólo si sobra tiempo”).
+
+●    Vista empresa y estado “vista” de las postulaciones mediante acción manual de la empresa (HU-19, HU-23) después del flujo de postulación; orden por compatibilidad (HU-20) a continuación en etapa de consolidación.
+
+●    Editar perfil (HU-05) en etapa tardía sin bloquear el núcleo; edición de skills de perfil no redefine el score sin cambio de CV u oferta.
+
+●    Cierre, E2E y demo concentrados en el Sprint 11 (semana del 29 de junio).
+
+●    HU opcionales (24, 16, 17, 14, 18, 22) no condicionan el flujo obligatorio del MVP.
+
+
+
+═══════════════════════════════════════════════════════════
+RESUMEN NUMÉRICO
+═══════════════════════════════════════════════════════════
+
+●    Número de sprints: 11
+
+●    Duración de cada sprint: 1 semana calendario
+
+●    Equipo: 3 integrantes; horas por sprint = esfuerzo total del equipo en esa semana
+
+●    Carga estimada por esfuerzo real: entre 8 h y 10 h por sprint (dentro del rango 83–110 h del MVP)
+
+●    Ajuste fino: redistribuir horas entre sprints en pasos de 1 h manteniendo el total del MVP entre 83 h y 110 h
+
+●    Primera semana del plan: semana del 20 de abril de 2026
+
+●    Última semana del plan (obligatoria): semana del 29 de junio de 2026 (29 junio – 5 julio 2026)
+
+Tabla de estimación (horas totales del equipo por sprint):
+
+Sprint 1  (20–26 abr):    10 h
+Sprint 2  (27 abr–3 may):  9 h
+Sprint 3  (4–10 may):      9 h
+Sprint 4  (11–17 may):    10 h
+Sprint 5  (18–24 may):    10 h
+Sprint 6  (25–31 may):    10 h
+Sprint 7  (1–7 jun):      10 h
+Sprint 8  (8–14 jun):      9 h
+Sprint 9  (15–21 jun):     9 h
+Sprint 10 (22–28 jun):     8 h
+Sprint 11 (29 jun–5 jul):  8 h
+                        ─────
+Total estimado:          102 h
+
+Total MVP según documentación técnica previa: mínimo ~83 h, más probable ~100–110 h; este plan usa 102 h como línea base equilibrada por complejidad y permite ajustes finos sin cambiar el calendario de 11 semanas.
+
+
+
+

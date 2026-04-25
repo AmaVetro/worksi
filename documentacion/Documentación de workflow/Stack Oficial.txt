@@ -1,0 +1,234 @@
+🧱 STACK FINAL DEL PROYECTO — WorkSí
+
+🔙 Backend ***************************
+Java 21 (LTS)
+Spring Boot 3.2.x
+Spring Security (JWT simple)
+JPA (Hibernate)
+Monolítico
+
+
+📄 CV: almacenamiento y texto (antes de la IA)
+Los CV se guardan como archivos en el servidor (filesystem).
+En MySQL solo se guarda la referencia/URL (no el binario del PDF).
+Extracción de texto con Apache Tika (Java): integración directa con Spring Boot; soporta PDF (y DOCX si lo permites más adelante).
+Después de extraer: post-procesamiento mínimo obligatorio — normalizar saltos de línea raros, quitar ruido básico (headers/footers repetidos), normalizar texto. Eso impacta directamente en la calidad del matching.
+Flujo backend para IA: subida del CV → guardar archivo → extraer texto con Tika → limpiar/normalizar → ese texto es lo que alimenta el pipeline (fairness en Python → embeddings → similitud). La IA no procesa PDFs ni archivos binarios; necesita texto limpio.
+Restricción MVP explícita: el sistema acepta CV en PDF con texto seleccionable (no escaneados). Sin OCR en el MVP (evita Tesseract, sobrecarga y calidad impredecible). Mensaje claro al usuario si el PDF no entrega texto útil.
+PDFs con formato complejo pueden devolver texto desordenado: la limpieza básica mitiga; no persigas perfección de layout, sí consistencia del input.
+
+✅ Recomendaciones clave
+🔹 JWT: mantenlo simple
+Solo access token
+Sin refresh tokens
+Sin OAuth
+Un solo filtro JWT en Spring Security
+👉 Objetivo: autenticación funcional, no perfecta
+
+🔹 Arquitectura backend
+Controladores REST simples
+Servicios claros (User, Job, Application)
+Nada de sobreingeniería
+
+👉 No uses:
+eventos complejos
+patrones innecesarios
+microservicios extra
+marcado automático de VIEWED en postulaciones
+
+
+
+
+📱 Mobile ***************************
+Kotlin
+Android Studio
+Jetpack básico (ViewModel + LiveData o State)
+
+✅ Recomendaciones clave
+UI simple (no te enfoques en diseño complejo)
+Consumir API REST con Retrofit o similar
+Swipe puede ser básico (no necesitas animaciones perfectas)
+👉 Prioridad: funcionalidad > estética
+
+
+
+🗄️ Base de Datos ***************************
+MySQL 8
+
+✅ Recomendaciones clave
+Usar relaciones claras:
+users
+jobs
+applications
+Para el CV: en base de datos solo metadatos y URL/ruta al archivo; el archivo vive en filesystem (coherente con Docker volumen de subidas).
+No usar MongoDB ❌
+👉 MySQL es suficiente, más simple y más rápido de implementar
+
+
+
+🤖 IA (Servicio separado) ***************************
+Python 3.11
+FastAPI
+sentence-transformers
+spaCy
+scikit-learn (cosine similarity)
+
+⚙️ Pipeline de IA (simple y correcto)
+Orden real de datos:
+En el backend Java: PDF → texto (Tika) → limpieza básica de texto.
+En Python: texto ya limpio → limpieza de fairness (spaCy + regex, datos sensibles) → embeddings → similitud → score (y explicación breve si el contrato lo incluye).
+El input hacia embeddings no es el PDF; es texto ya extraído y tratado.
+Para el matching del producto, la base del request hacia IA incluye texto del CV (post-Tika y post-limpieza inicial en backend, fairness en Python) y texto de la oferta. Además, el porcentaje final del producto considera modalidades preferidas y cargas horarias preferidas del postulante. Las skills que el candidato guarda en el perfil no se envían a /match ni influyen en el porcentaje.
+Tampoco deben influir en el porcentaje: presentación personal del perfil, rango de sueldo esperado, sueldo ofrecido en la oferta, años de experiencia requeridos por la oferta, años de experiencia declarados dentro del CV y nacionalidad del postulante.
+
+🔹 1. Comunicación entre servicios (MUY IMPORTANTE) ***************************
+
+👉 NO sobrecomplicar la comunicación
+
+Hazlo así:
+
+Spring Boot → llama a Python vía HTTP
+
+Ejemplo (ilustrativo; ajusta nombres de campos a tu API):
+
+POST /match
+{
+  "cv_text": "...",
+  "job_text": "..."
+}
+
+Response desde Python (ejemplo mínimo; si tu producto incluye explicación, suma el campo):
+
+{
+  "score": 0.82,
+  "explanation": "Coincidencia en habilidades: Java, Spring Boot"
+}
+
+cv_text debe ser texto ya extraído en el backend (Tika), no el PDF.
+En el producto, sobre ese resultado base también se aplica la regla de modalidades preferidas y cargas horarias preferidas para el porcentaje final.
+
+👉 listo, no necesitas:
+
+Kafka ❌
+colas ❌
+eventos ❌
+
+✔ simple
+✔ funcional
+✔ suficiente
+
+
+🔹 2. spaCy: no te compliques
+
+Usa solo:
+
+NER básico:
+PERSON
+ORG
+GPE
+para entidades en texto libre donde regex no llega bien
+en este contexto, ORG incluye instituciones de procedencia (universidad, instituto, centro de formación)
+Responsabilidad principal de spaCy: detectar nombre/persona en redacción natural (PERSON), instituciones cuando no vienen en campos estructurados (ORG) y señales geográficas/país en texto libre (GPE) que ayuden a reforzar nacionalidad.
+Evita sobrelimpiar ORG: eliminar toda entidad ORG puede borrar empresas o contexto profesional útil; prioriza institución de procedencia como objetivo de fairness.
+regex para:
+edad
+género
+nacionalidad
+institución de procedencia (cuando aparezca en formatos detectables)
+email
+RUT
+años de experiencia declarados dentro del CV (cuando aparezcan en formatos detectables)
+en campos con formato claro
+Responsabilidad principal de regex: capturar datos sensibles con patrón explícito y alta precisión (email, RUT, edad declarada, género etiquetado, nacionalidad explícita, años de experiencia declarados dentro del CV y secciones formateadas de educación/institución).
+Doble filtro recomendado: mantener solapamiento selectivo entre spaCy y regex en nombre, institución de procedencia y nacionalidad para reducir falsos negativos.
+Orden operativo recomendado: regex inicial -> spaCy en texto libre -> regex final de cierre para escapes.
+
+👉 No intentes NLP avanzado
+
+
+🔹 3. Embeddings: no reinventes nada
+
+Modelo:
+
+👉 all-MiniLM-L6-v2
+
+✔ rápido
+✔ liviano
+✔ suficiente
+
+
+🔹 4. Fairness (cómo defenderlo)
+Eliminas atributos sensibles antes del embedding
+incluyendo nombre, edad, género, nacionalidad, institución de procedencia, correo, RUT y años de experiencia declarados dentro del CV
+Comparas el contenido profesional del CV frente al texto de la oferta
+
+👉 “reduce sesgos”, no “los elimina”
+
+
+
+🌐 Web (empresa) ***************************
+React
+Vite
+React Router
+UI por componentes
+Consumo de API REST (misma API que la app; vistas y flujos de empresa en navegador)
+
+
+
+⚙️ Infraestructura ***************************
+Docker
+Docker Compose
+Servicios:
+MySQL
+Spring Boot
+FastAPI (IA)
+
+Incluir volumen o carpeta persistente para archivos subidos (CV en filesystem), alineado con guardar solo URL en MySQL.
+
+👉 Android corre aparte
+
+🔹 Recomendaciones clave
+No compliques Docker:
+un docker-compose.yml simple
+No necesitas:
+Kubernetes ❌
+CI/CD complejo ❌
+
+
+
+⏱️ REGLAS DE ORO PARA CUMPLIR 80–90 HORAS ***************************
+1. 🚫 Evitar features innecesarias
+
+No implementar:
+chat
+notificaciones
+perfiles complejos
+dashboards avanzados
+
+
+2. 🎯 Priorizar core del proyecto
+
+Lo importante es:
+
+✔ matching con IA
+✔ swipe funcional
+✔ registro de postulaciones
+
+3. 🧠 IA simple pero bien hecha
+PDF → texto (Tika) en backend → limpieza básica → fairness (spaCy/regex) en Python → embeddings → cosine similarity
+
+4. 📌 Backlog opcional (solo si sobra tiempo)
+HU-14: Cancelar postulación
+HU-18: Activar/desactivar oferta (descartada del diseño actual por estado único ACTIVE)
+HU-16: Editar oferta
+HU-17: Eliminar oferta (descartada del diseño actual por estado único ACTIVE)
+HU-22: Eliminación de cuenta
+HU-24: Guardar oferta
+
+5. 🧪 Regla esencial de testing
+En frontends no se implementan tests automatizados ni carpetas de testing; quienes hacen web y móvil comprueban el producto a ojo, flujo a flujo. Al terminar el MVP, con todo integrado, se corren solo algunas pruebas de las más críticas, sobre el sistema entero, para validar partes clave. Dentro de esa pasada no se pide performance avanzada ni suites grandes; tampoco testing opcional o de baja prioridad. Lo que aporte estabilidad es la integración crítica y el flujo funcional core, concentrados en ese cierre, no en front.
+
+🎯 Frase tipo defensa (CV + IA)
+Los CV se almacenan como archivos en el servidor y en la base de datos solo la referencia. El backend extrae el texto con Apache Tika, lo limpia y normaliza; el servicio de IA aplica el doble filtro con spaCy y regex para reducir datos sensibles antes de generar embeddings y calcular el matching. El MVP no incluye OCR: solo PDF con texto seleccionable.
+
+

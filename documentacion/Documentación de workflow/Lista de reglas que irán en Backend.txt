@@ -1,0 +1,54 @@
+Las siguientes reglas deben cuidarse en backend, ya que no se suelen cubrir en BD:
+
+(Almenos no se quisieron poner ya que solo podían ir puestas en triggers y no quise
+poner triggers):
+
+
+
+Bloqueo de login en ambos frontends (móvil y web) tras 4 intentos y derivación a recuperación.
+
+Flujo de recuperación mock completo (email existente, código simulado, reenvío simulado, cambio de contraseña sin correo real).
+
+Política de contraseña (12+ caracteres, mayúscula, minúscula, número, símbolo) en registro y reset.
+
+Validación real de RUT chileno (dígito verificador/lógica completa).
+
+Mensajes funcionales por campo como “Completa este campo”.
+
+Orden/secuencia de onboarding por pantallas (crear cuenta -> abrir sesión de borrador onboarding -> subir CV -> skills -> últimas preferencias -> uso de datos [última pantalla antes del alta oficial] -> creación de cuenta en backend con consent_given=true y onboarding_id -> perfil).
+
+
+Reglas de negocio de skills por momento:
+candidato mínimo 3 / máximo 12 en onboarding/edición,
+oferta mínimo 3 / máximo 8 al crear/publicar.
+
+
+Reglas de matching:
+qué campos sí/no entran al score,
+que skills de perfil/oferta no alteren score,
+construcción de cv_text y job_text.
+
+
+Fairness (regex + spaCy) antes de embeddings.
+
+Explicación de match simple y sin datos sensibles.
+
+Reglas de publicación de oferta (solo ACTIVE, cuándo se publica y cómo se llena published_at).
+
+Regla “VIEWED solo por acción manual de empresa” (la BD valida fechas, pero no quién/cómo cambió el estado).
+
+Regla de “cancelar postulación” como opcional (solo si se implementa).
+
+No repetir ofertas vistas en swipe (feed personalizado por candidato).
+
+Permisos/autorización (empresa A no puede ver/editar recursos de empresa B).
+
+Manejo de sesión JWT (solo access token, persistencia cliente, logout).
+
+Validación de “CV con texto útil” (la BD valida formato/tamaño, no calidad de texto extraído).
+
+Manejo de archivos CV en filesystem (subida, reemplazo, marcar actual de forma consistente transaccional).
+
+Ordenar postulantes por compatibilidad en vistas empresa.
+
+Invariante funcional del score: mismo CV + misma oferta => mismo score aunque cambien skills de perfil/oferta.

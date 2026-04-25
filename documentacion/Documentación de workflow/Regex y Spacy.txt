@@ -1,0 +1,39 @@
+Veredicto corto
+Base actual: correcta (spaCy para texto libre + regex para formatos claros).
+Mejora clave: no hacer “duplicación total ciega” de todo en ambas, sino responsabilidad principal por tipo de dato + solapamiento selectivo en los más críticos.
+Reparto recomendado (práctico)
+regex principal en:
+
+correo (patrón muy estructurado)
+RUT (formato chileno estructurado)
+edad explícita (xx años, fechas de nacimiento cuando el patrón sea claro)
+años de experiencia declarados dentro del CV cuando aparezcan en patrón claro (por ejemplo "X años de experiencia")
+género cuando venga en etiquetas/formularios (sexo:, género:)
+nacionalidad en frases directas (nacionalidad:, chileno/a, etc.)
+institución de procedencia cuando aparezca en bloques típicos de educación o etiquetas claras
+spaCy principal en:
+
+nombre (PERSON) en texto narrativo
+instituciones (ORG) en frases no estructuradas
+lugares/países (GPE) cuando nacionalidad aparece de forma indirecta
+casos “difusos” donde no hay patrón fijo
+¿Conviene que ambas cubran todo?
+No conviene 100% duplicado de todo (más ruido, más mantenimiento, más falsos positivos).
+Sí conviene solapamiento parcial en sensibles críticos:
+nombre
+institución
+nacionalidad
+Eso da “red de seguridad”: si falla una capa, la otra puede capturar.
+
+Punto crítico que debes cuidar (muy importante)
+Si borras ORG de forma agresiva con spaCy, puedes eliminar empresas/herramientas relevantes del CV y bajar calidad del matching.
+Lo correcto es remover institución de procedencia (sesgo), pero no destruir todo el contexto profesional útil.
+
+Conclusión
+Tu diseño actual (spaCy + regex) es el correcto para MVP.
+La mejor versión es:
+
+regex primero para lo estructurado,
+spaCy después para texto libre,
+un último barrido regex/diccionario corto para “escapes”.
+Con eso maximizas reducción de sesgo sin romper demasiado el contenido útil para matching.
