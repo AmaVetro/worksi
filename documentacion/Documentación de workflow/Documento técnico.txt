@@ -188,6 +188,11 @@ Años de experiencia declarados por el postulante dentro del CV
 Nacionalidad del postulante
 
 12. BACKEND (API REST)
+Convención de nombres backend/API:
+JSON expuesto por API: snake_case.
+Código Java interno (entidades/DTOs/servicios): camelCase.
+El puente entre ambos se implementa con mapeo explícito (anotaciones/configuración de serialización) para mantener contrato estable.
+
 12.1 Autenticación
 Registro (candidato / empresa)
 Login

@@ -200,15 +200,12 @@ CREATE TABLE onboarding_candidate_cvs (
   extracted_text MEDIUMTEXT NULL,
   normalized_text MEDIUMTEXT NULL,
   is_current TINYINT(1) NOT NULL DEFAULT 1,
-  current_onboarding_id CHAR(36)
-    GENERATED ALWAYS AS (CASE WHEN is_current = 1 THEN onboarding_id ELSE NULL END) STORED,
   uploaded_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_onboarding_candidate_cvs_onboarding (onboarding_id),
   KEY idx_onboarding_candidate_cvs_onboarding_current (onboarding_id, is_current),
-  UNIQUE KEY uk_onboarding_candidate_cvs_one_current (current_onboarding_id),
   KEY idx_onboarding_candidate_cvs_uploaded_at (uploaded_at),
   CONSTRAINT fk_onboarding_candidate_cvs_onboarding
     FOREIGN KEY (onboarding_id) REFERENCES onboarding_candidate_sessions(id)
@@ -364,15 +361,12 @@ CREATE TABLE candidate_cvs (
   extracted_text MEDIUMTEXT NULL,
   normalized_text MEDIUMTEXT NULL,
   is_current TINYINT(1) NOT NULL DEFAULT 1,
-  current_candidate_user_id BIGINT UNSIGNED
-    GENERATED ALWAYS AS (CASE WHEN is_current = 1 THEN candidate_user_id ELSE NULL END) STORED,
   uploaded_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_candidate_cvs_candidate (candidate_user_id),
   KEY idx_candidate_cvs_candidate_current (candidate_user_id, is_current),
-  UNIQUE KEY uk_candidate_cvs_one_current (current_candidate_user_id),
   KEY idx_candidate_cvs_uploaded_at (uploaded_at),
   CONSTRAINT fk_candidate_cvs_candidate
     FOREIGN KEY (candidate_user_id) REFERENCES candidate_profiles(user_id)

@@ -116,6 +116,10 @@ Objetivo: centralizar reglas esenciales para que cualquier integrante encuentre 
 - Mobile candidato: Kotlin (Android Studio, enfoque funcional).
 - Web empresa: React + Vite.
 - Infraestructura: Docker + Docker Compose.
+- Convención obligatoria de nombres API/código:
+  - JSON de API pública en snake_case.
+  - Código Java interno en camelCase.
+  - Mapeo entre ambos obligatorio por configuración o anotaciones explícitas.
 
 ============================================================
 9) REGLAS DE INFRAESTRUCTURA Y COMPLEJIDAD

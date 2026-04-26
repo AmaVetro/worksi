@@ -30,6 +30,10 @@ ESTANDARES GENERALES API
 - Fechas en respuestas: ISO-8601 UTC (ejemplo: 2026-04-25T03:10:00Z).
 - Ids: enteros sin signo (BIGINT en BD), expuestos como number JSON.
 - Moneda/sueldo: enteros (CLP) sin decimales.
+- Convencion de nombres:
+  - JSON de API publica: snake_case (ejemplo: first_name, region_id).
+  - Codigo Java interno (entidades/DTOs/servicios): camelCase.
+  - Mapeo JSON snake_case <-> Java camelCase: obligatorio mediante configuracion de serializacion o anotaciones explicitas en DTOs.
 - Paginacion estandar:
   - Query params: page (base 1), size (default 20, max 100), sort (campo,asc|desc).
   - Respuesta: items, page, size, total_items, total_pages.

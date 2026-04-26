@@ -167,6 +167,7 @@ B) DESGLOSE ULTRA DETALLADO (orden sugerido para minimizar bloqueos)
 ------------------------------------------------------------
 
 B1) Tarea 1 — Acuerdo de datos mínimos del candidato (30 a 60 minutos equipo)
+(Estado: lista)
 - Listar columnas mínimas de users o tabla equivalente acordada para MVP.
 - Definir estructura de borrador onboarding (onboarding_id y expiración).
 - Decidir cómo se guarda contraseña: hash con algoritmo estándar (por ejemplo
@@ -183,6 +184,7 @@ campos y tipos.
 
 
 B2) Tarea 2 — Docker Compose “feliz path” (2 a 3 horas equipo)
+(Estado: lista)
 - Levantar MySQL con usuario, password, base de datos y puerto fijos acordados.
 - Definir volumen para datos de MySQL.
 - Definir volumen o carpeta persistente futura para CV (aunque CV se implemente
@@ -196,6 +198,7 @@ DoD compose:
 
 
 B3) Tarea 3 — Modelo de usuario y onboarding + repositorio + migraciones (2 a 3 horas)
+(Estado: en proceso)
 - Crear entidad User base y estructura de onboarding con campos HU-01.
 - Crear repositorio JPA.
 - Implementar restricción única a nivel BD para email si es posible, y validar
