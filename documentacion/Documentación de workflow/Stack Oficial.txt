@@ -5,6 +5,7 @@ Java 21 (LTS)
 Spring Boot 3.2.x
 Spring Security (JWT simple)
 JPA (Hibernate)
+Flyway Community (migraciones SQL versionadas)
 Monolítico
 
 

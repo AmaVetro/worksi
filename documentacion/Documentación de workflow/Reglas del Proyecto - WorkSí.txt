@@ -93,6 +93,7 @@ Objetivo: centralizar reglas esenciales para que cualquier integrante encuentre 
 - Sin refresh tokens.
 - Sin OAuth.
 - Un filtro JWT en Spring Security.
+- Persistencia de contraseña en BD: siempre como hash BCrypt (o algoritmo estándar equivalente) y nunca en texto plano.
 - En app móvil de postulantes, login con email y contraseña.
 - En ambos frontends (app móvil de postulantes y app web de empresas), tras 4 intentos fallidos se bloquea el acceso y se deriva a recuperación de contraseña.
 - En app móvil de postulantes (MVP), recuperación de contraseña por correo en modo mockup: no hay envío real de emails.
@@ -109,7 +110,7 @@ Objetivo: centralizar reglas esenciales para que cualquier integrante encuentre 
 8) REGLAS DE STACK OFICIAL
 ============================================================
 - Backend: Java 21, Spring Boot 3.2.x, Spring Security, JPA/Hibernate, Apache Tika.
-- Base de datos: MySQL 8.
+- Base de datos: MySQL 8 + Flyway Community (migraciones SQL versionadas).
 - IA: Python 3.11, FastAPI, sentence-transformers, spaCy, scikit-learn.
 - Modelo de embeddings acordado: all-MiniLM-L6-v2.
 - Mobile candidato: Kotlin (Android Studio, enfoque funcional).

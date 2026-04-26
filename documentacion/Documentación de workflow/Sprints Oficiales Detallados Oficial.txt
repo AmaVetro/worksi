@@ -54,12 +54,12 @@ Regla global de testing (válida en todo el proyecto):
 ANTES DEL SPRINT 1 — ACUERDOS QUE TODO EL EQUIPO DEBE ENTENDER
 ================================================================================
 
-1) Entornos
+1) Entornos:
 - Docker Compose con MySQL + Spring Boot + FastAPI es obligatorio en el plan;
   Android corre fuera de Docker.
-- MySQL 8. Java 21. Spring Boot 3.2.x. Python 3.11 para FastAPI.
+- MySQL 8 + Flyway Community para migraciones SQL versionadas. Java 21. Spring Boot 3.2.x. Python 3.11 para FastAPI.
 
-2) No crear tabla matches: el matching se calcula dinámicamente.
+2) No crear tabla matches: el matching se calcula dinámicamente
 
 3) Autenticación oficial
 - JWT simple: solo access token, sin refresh, sin OAuth, un filtro JWT en
@@ -160,6 +160,8 @@ Criterio de aceptación transversal:
 - Si el registro falla por causa de servidor o BD, hay manejo de error visible
   en la respuesta (mensaje controlado, no stacktrace crudo al cliente).
 
+
+
 ------------------------------------------------------------
 B) DESGLOSE ULTRA DETALLADO (orden sugerido para minimizar bloqueos)
 ------------------------------------------------------------
@@ -179,6 +181,7 @@ B1) Tarea 1 — Acuerdo de datos mínimos del candidato (30 a 60 minutos equipo)
 Entregable: esquema escrito (aunque sea en wiki interna o README corto) con
 campos y tipos.
 
+
 B2) Tarea 2 — Docker Compose “feliz path” (2 a 3 horas equipo)
 - Levantar MySQL con usuario, password, base de datos y puerto fijos acordados.
 - Definir volumen para datos de MySQL.
@@ -191,11 +194,13 @@ DoD compose:
 - Un compañero nuevo puede clonar y levantar con los pasos documentados sin
   llamar a otro integrante.
 
+
 B3) Tarea 3 — Modelo de usuario y onboarding + repositorio + migraciones (2 a 3 horas)
 - Crear entidad User base y estructura de onboarding con campos HU-01.
 - Crear repositorio JPA.
 - Implementar restricción única a nivel BD para email si es posible, y validar
   también en servicio para mensaje amigable.
+
 
 B4) Tarea 4 — Endpoint de sesión onboarding candidato (2 a 3 horas)
 - POST /api/v1/onboarding/candidate/session (ruta acordada) que reciba DTO con
@@ -210,6 +215,7 @@ B4) Tarea 4 — Endpoint de sesión onboarding candidato (2 a 3 horas)
 - Persistencia exitosa devuelve 201 Created con onboarding_id y
   onboarding_access_token (sin crear aún cuenta final CANDIDATE).
 
+
 B5) Tarea 5 — Verificación cruzada (1 a 2 horas)
 - Caso feliz Postman: apertura de sesión onboarding con onboarding_id.
 - Caso email duplicado.
@@ -217,6 +223,7 @@ B5) Tarea 5 — Verificación cruzada (1 a 2 horas)
   de carácter): rechazo con error controlado.
 - Caso campo obligatorio vacío: debe disparar validación y el mensaje exigido
   por HU donde aplique (API: estructura de error por campo recomendada).
+
 
 ------------------------------------------------------------
 C) QUÉ NO HACER EN EL SPRINT 1 (para no romper el plan)
@@ -227,6 +234,7 @@ C) QUÉ NO HACER EN EL SPRINT 1 (para no romper el plan)
   extra.
 - No guardar PDF en MySQL.
 - No implementar HU opcionales.
+
 
 ------------------------------------------------------------
 D) Reparto sugerido de roles (flexible; ajustar a habilidades reales)

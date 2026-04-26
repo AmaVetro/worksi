@@ -63,6 +63,7 @@ React
 Vite
 Base de Datos
 MySQL 8
+Flyway Community (migraciones SQL versionadas)
 IA (Servicio separado)
 Python 3.11
 FastAPI
