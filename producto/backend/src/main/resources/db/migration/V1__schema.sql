@@ -93,130 +93,6 @@ CREATE TABLE users (
   KEY idx_users_lock_until (lock_until)
 ) ENGINE=InnoDB;
 
-CREATE TABLE onboarding_candidate_sessions (
-  id CHAR(36) NOT NULL,
-  email VARCHAR(190) NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
-  first_name VARCHAR(100) NOT NULL,
-  middle_name VARCHAR(100) NULL,
-  last_name_paternal VARCHAR(100) NOT NULL,
-  last_name_maternal VARCHAR(100) NOT NULL,
-  phone VARCHAR(25) NOT NULL,
-  rut VARCHAR(15) NOT NULL,
-  document_number VARCHAR(40) NOT NULL,
-  street VARCHAR(160) NULL,
-  region_id BIGINT UNSIGNED NOT NULL,
-  commune_id BIGINT UNSIGNED NOT NULL,
-  status ENUM('OPEN','COMPLETED','EXPIRED','CANCELLED') NOT NULL DEFAULT 'OPEN',
-  expires_at DATETIME NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  KEY idx_onboarding_candidate_sessions_email (email),
-  KEY idx_onboarding_candidate_sessions_status (status),
-  KEY idx_onboarding_candidate_sessions_expires_at (expires_at),
-  KEY idx_onboarding_candidate_sessions_commune_region (commune_id, region_id),
-  CONSTRAINT fk_onboarding_candidate_sessions_region
-    FOREIGN KEY (region_id) REFERENCES regions(id)
-    ON UPDATE CASCADE
-    ON DELETE RESTRICT,
-  CONSTRAINT fk_onboarding_candidate_sessions_commune_region
-    FOREIGN KEY (commune_id, region_id) REFERENCES communes(id, region_id)
-    ON UPDATE CASCADE
-    ON DELETE RESTRICT
-) ENGINE=InnoDB;
-
-CREATE TABLE onboarding_candidate_profiles (
-  onboarding_id CHAR(36) NOT NULL,
-  sector_id BIGINT UNSIGNED NULL,
-  profile_summary TEXT NULL,
-  salary_expected_min INT UNSIGNED NULL,
-  salary_expected_max INT UNSIGNED NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (onboarding_id),
-  KEY idx_onboarding_candidate_profiles_sector (sector_id),
-  CONSTRAINT fk_onboarding_candidate_profiles_onboarding
-    FOREIGN KEY (onboarding_id) REFERENCES onboarding_candidate_sessions(id)
-    ON UPDATE CASCADE
-    ON DELETE CASCADE,
-  CONSTRAINT fk_onboarding_candidate_profiles_sector
-    FOREIGN KEY (sector_id) REFERENCES sectors(id)
-    ON UPDATE CASCADE
-    ON DELETE SET NULL,
-  CONSTRAINT chk_onboarding_candidate_salary_range
-    CHECK (
-      (salary_expected_min IS NULL AND salary_expected_max IS NULL)
-      OR (salary_expected_min IS NOT NULL AND salary_expected_max IS NOT NULL AND salary_expected_min <= salary_expected_max)
-    )
-) ENGINE=InnoDB;
-
-CREATE TABLE onboarding_candidate_preferred_modalities (
-  onboarding_id CHAR(36) NOT NULL,
-  modality ENUM('REMOTE','HYBRID','ONSITE') NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (onboarding_id, modality),
-  CONSTRAINT fk_onboarding_candidate_pref_modalities_onboarding
-    FOREIGN KEY (onboarding_id) REFERENCES onboarding_candidate_sessions(id)
-    ON UPDATE CASCADE
-    ON DELETE CASCADE
-) ENGINE=InnoDB;
-
-CREATE TABLE onboarding_candidate_preferred_workloads (
-  onboarding_id CHAR(36) NOT NULL,
-  workload ENUM('FULL_TIME','PART_TIME','OTHER') NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (onboarding_id, workload),
-  CONSTRAINT fk_onboarding_candidate_pref_workloads_onboarding
-    FOREIGN KEY (onboarding_id) REFERENCES onboarding_candidate_sessions(id)
-    ON UPDATE CASCADE
-    ON DELETE CASCADE
-) ENGINE=InnoDB;
-
-CREATE TABLE onboarding_candidate_skills (
-  onboarding_id CHAR(36) NOT NULL,
-  skill_id BIGINT UNSIGNED NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (onboarding_id, skill_id),
-  KEY idx_onboarding_candidate_skills_skill (skill_id),
-  CONSTRAINT fk_onboarding_candidate_skills_onboarding
-    FOREIGN KEY (onboarding_id) REFERENCES onboarding_candidate_sessions(id)
-    ON UPDATE CASCADE
-    ON DELETE CASCADE,
-  CONSTRAINT fk_onboarding_candidate_skills_skill
-    FOREIGN KEY (skill_id) REFERENCES skills(id)
-    ON UPDATE CASCADE
-    ON DELETE RESTRICT
-) ENGINE=InnoDB;
-
-CREATE TABLE onboarding_candidate_cvs (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  onboarding_id CHAR(36) NOT NULL,
-  original_filename VARCHAR(255) NOT NULL,
-  storage_path VARCHAR(700) NOT NULL,
-  file_size_bytes INT UNSIGNED NOT NULL,
-  mime_type VARCHAR(100) NOT NULL DEFAULT 'application/pdf',
-  file_sha256 CHAR(64) NULL,
-  extracted_text MEDIUMTEXT NULL,
-  normalized_text MEDIUMTEXT NULL,
-  is_current TINYINT(1) NOT NULL DEFAULT 1,
-  uploaded_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  KEY idx_onboarding_candidate_cvs_onboarding (onboarding_id),
-  KEY idx_onboarding_candidate_cvs_onboarding_current (onboarding_id, is_current),
-  KEY idx_onboarding_candidate_cvs_uploaded_at (uploaded_at),
-  CONSTRAINT fk_onboarding_candidate_cvs_onboarding
-    FOREIGN KEY (onboarding_id) REFERENCES onboarding_candidate_sessions(id)
-    ON UPDATE CASCADE
-    ON DELETE CASCADE,
-  CONSTRAINT chk_onboarding_candidate_cvs_pdf
-    CHECK (LOWER(mime_type) = 'application/pdf'),
-  CONSTRAINT chk_onboarding_candidate_cvs_max_1mb
-    CHECK (file_size_bytes <= 1048576)
-) ENGINE=InnoDB;
-
 CREATE TABLE candidate_profiles (
   user_id BIGINT UNSIGNED NOT NULL,
   first_name VARCHAR(100) NOT NULL,
@@ -235,7 +111,6 @@ CREATE TABLE candidate_profiles (
   salary_expected_max INT UNSIGNED NULL,
   consent_given TINYINT(1) NOT NULL DEFAULT 0,
   consent_given_at DATETIME NULL,
-  onboarding_completed TINYINT(1) NOT NULL DEFAULT 0,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (user_id),

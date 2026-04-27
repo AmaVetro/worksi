@@ -1,6 +1,6 @@
 # WorkSi - Arranque local (Sprint 1)
 
-Este documento define el arranque minimo para que cualquier integrante clone el repo y levante el entorno base del proyecto usando Docker Compose.
+Este documento define el arranque mínimo para que cualquier integrante clone el repo y levante el entorno base del proyecto usando Docker Compose.
 
 ## 1) Requisitos previos
 
@@ -13,7 +13,7 @@ Este documento define el arranque minimo para que cualquier integrante clone el 
 
 ## 2) Estructura relevante
 
-Desde la raiz del repo (`worksi`), el codigo del producto vive en:
+Desde la raíz del repo (`worksi`), el código del producto vive en:
 
 - `producto/backend`
 - `producto/ai-service`
@@ -55,6 +55,30 @@ Respuesta esperada en ambos casos:
 {"status":"UP"}
 ```
 
+### 4.3 API Sprint 1 (catálogos y validación de registro candidato, sin persistir alta)
+
+Regiones (público):
+
+```powershell
+curl http://localhost:8080/api/v1/catalogs/regions
+```
+
+Comunas por región (público; `region_id` numérico según filas en `regions`):
+
+```powershell
+curl http://localhost:8080/api/v1/catalogs/regions/1/communes
+```
+
+Validación de datos de registro candidato (no crea usuario; útil con Postman). Debe usarse cuerpo JSON alineado al contrato (campos `email`, `password`, nombres, `phone`, `rut`, `document_number`, `region_id`, `commune_id`, etc.); ejemplo mínima de forma:
+
+```powershell
+curl -X POST http://localhost:8080/api/v1/validation/candidate-registration -H "Content-Type: application/json" -d "{\"email\":\"nuevo@ejemplo.cl\",\"password\":\"Abcdefghij1!\",\"first_name\":\"Juan\",\"last_name_paternal\":\"Perez\",\"last_name_maternal\":\"Lopez\",\"phone\":\"+56912345678\",\"rut\":\"11111111-1\",\"document_number\":\"11111111\",\"region_id\":1,\"commune_id\":1}"
+```
+
+(Usa un par `region_id` / `commune_id` coherente; con la semilla por defecto, la región 1 y la comuna 1 suelen corresponder a Arica y Parinacota. Si falla, consulta `GET /api/v1/catalogs/regions` y `GET /api/v1/catalogs/regions/{region_id}/communes` y asegúrate de que el correo no exista en `users`.)
+
+Éxito: `{"valid":true}`. Error de validación: cuerpo JSON de error bajo el manejador global (p. ej. email duplicado, política de contraseña, RUT, comuna no pertenece a región).
+
 ## 5) Puertos del entorno
 
 - MySQL: `localhost:3306`
@@ -85,7 +109,7 @@ docker compose down
 
 ## 8) Resetear entorno y borrar volumenes de datos
 
-Usar sólo si necesitas reiniciar base de datos, su contenido y volumenes:
+Usar sólo si se necesita reiniciar base de datos, su contenido y volumenes:
 
 ```powershell
 docker compose down -v
