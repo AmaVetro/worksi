@@ -82,12 +82,12 @@ Equilibrio: identidad completa (tipos de cuenta + autenticación) antes de capas
 Sprint 3:   4–10 mayo 2026
 
 Estado: Pendiente.
-Esfuerzo total estimado del equipo: 9 h (quizás un poco más).
+Esfuerzo total estimado del equipo: 9 h.
 Contenido:
-●    Onboarding candidato previo al alta oficial: apertura de sesión de borrador y uso de rutas /api/v1/onboarding/candidate/*.
-●    HU-06 — Subir CV en onboarding (antes de "Uso de datos"), con PDF <= 1 MB y almacenamiento en filesystem + referencia en BD.
-●    HU-04 — Captura de perfil en onboarding (skills, rubro, presentación y preferencias) sin usar skills de perfil para el porcentaje de matching.
-Equilibrio: se alinea la implementación al flujo real de pantallas móvil, dejando listo todo el borrador antes del consentimiento final.
+●    Registro candidato: pantallas previas a "Uso de datos" con estado en cliente (sin persistir candidato en backend, salvo GET /api/v1/catalogs/*) según Flujo App Móvil y Contrato 1.2.
+●    HU-06 — Subir CV antes de "Uso de datos": PDF <= 1 MB en cliente; el almacenamiento en filesystem + referencia en BD ocurre en el mismo alta (Sprint 4) vía POST /api/v1/auth/register/candidate multipart.
+●    HU-04 — Captura en UI de skills, rubro, presentación (si aplica) y preferencias, en estado local hasta "Uso de datos"; no usar skills de perfil para el porcentaje de matching.
+Equilibrio: se alinea a las pantallas móviles; la persistencia de CV y perfil en BD queda ligada al consentimiento (Sprint 4) y un solo POST multipart.
 
 
 Sprint 4:   11–17 mayo 2026
@@ -96,9 +96,9 @@ Estado: Pendiente.
 Esfuerzo total estimado del equipo: 10 h.
 Contenido:
 ●    HU-21 — Consentimiento de uso de datos en pantalla "Uso de datos" (última antes del alta oficial), con evidencia en BD (flag + timestamp).
-●    Alta oficial del candidato al aceptar consentimiento: creación de cuenta, emisión de JWT CANDIDATE y transición desde /onboarding/candidate/* a /candidate/*.
-●    Consolidación de HU-04 en cuenta creada: lectura/edición de perfil autenticado y persistencia final coherente con lo capturado en borrador.
-Equilibrio: se cierra la secuencia de onboarding de forma lógica (CV y perfil primero, consentimiento al final) y queda operativa la entrada a Perfil autenticado.
+●    Alta oficial del candidato: POST /api/v1/auth/register/candidate (multipart) con consent_given=true, datos, CV y preferencias; creación de cuenta, emisión de JWT CANDIDATE; uso de /api/v1/candidate/* con Bearer tras el alta.
+●    Consolidación de HU-04 en cuenta creada: GET/PATCH /api/v1/candidate/profile coherente con lo enviado en el registro.
+Equilibrio: se cierra la secuencia (flujo móvil con datos locales; consentimiento al final; un solo request de alta) y queda operativa la entrada a Perfil autenticado.
 
 
 Sprint 5 (Sprint pesado):   18–24 mayo 2026
@@ -189,7 +189,7 @@ LÓGICA DE DESARROLLO (RESUMEN)
 ●    Autenticación y tipos de cuenta antes del resto (registro + login + perfil base con skills; esas skills no son insumo del porcentaje).
 
 ●    Consentimiento (HU-21, checkbox + timestamp) en pantalla "Uso de datos", última pantalla antes del alta oficial; al aceptar se crea la cuenta y se pasa a Perfil.
-●    El orden del onboarding candidato se implementa así: sesión borrador -> subir CV -> skills/preferencias -> "Uso de datos" -> alta oficial -> Perfil autenticado.
+●    El orden del registro móvil se implementa así: datos y CV en cliente -> skills/preferencias en cliente -> "Uso de datos" -> un solo POST /auth/register/candidate (multipart) -> Perfil autenticado (JWT CANDIDATE).
 
 ●    Ofertas creadas y visibles (HU-15, HU-10) antes de consumir matching en producto; el score usa CV limpio, contenido de oferta, modalidades preferidas y cargas horarias preferidas; no skills de perfil del candidato.
 

@@ -1,7 +1,8 @@
 CONTRATO UNIFICADO DE INTEGRACION - WORKSI
-Version: 1.1
+Version: 1.2
 Estado: Oficial para desarrollo paralelo (Backend + Web + Android)
 Fecha base: 2026-04-25
+Cambio 1.2 (2026-04-27): Registro candidato en un unico paso al aceptar consentimiento en pantalla "Uso de datos" (sin sesion de borrador ni rutas /onboarding/candidate/*).
 
 
 
@@ -12,7 +13,7 @@ OBJETIVO
 
 
 ALCANCE
-- Incluye: endpoints, autenticacion, onboarding candidato, perfiles, catalogos, CV, ofertas, matching, swipe, postulaciones, vistas empresa.
+- Incluye: endpoints, autenticacion, registro candidato (incluido un solo request de alta con consentimiento), perfiles, catalogos, CV, ofertas, matching, swipe, postulaciones, vistas empresa.
 - Excluye del MVP obligatorio: HU-14, HU-16, HU-17 (descartada del diseño actual por estado único ACTIVE), HU-18 (descartada del diseño actual por estado único ACTIVE), HU-22, HU-24.
 
 
@@ -43,9 +44,8 @@ AUTENTICACION Y SESION
 - JWT solo access token (sin refresh).
 - Header en rutas protegidas:
   Authorization: Bearer <token>
-- Tres familias de credencial:
+- Dos familias de credencial:
   - Publicas: sin Authorization.
-  - ONBOARDING: Bearer <onboarding_access_token> devuelto por POST /api/v1/onboarding/candidate/session. Alcance solo rutas bajo /api/v1/onboarding/candidate/*.
   - CANDIDATE / COMPANY: Bearer <access_token> emitido por POST /api/v1/auth/register/candidate, POST /api/v1/auth/login o POST /api/v1/auth/register/company segun corresponda. Claim de rol CANDIDATE o COMPANY.
 - Roles en JWT de aplicacion:
   - CANDIDATE
@@ -121,7 +121,12 @@ ENDPOINTS DE AUTENTICACION
 1) Registro candidato
 - POST /api/v1/auth/register/candidate
 - Auth: publica
-- Request:
+- Momento funcional: unico request de alta, despues de que el postulante avanza por "Crear cuenta" -> (CV, skills, preferencias) en UI -> pantalla "Uso de datos" acepta consentimiento. Ahi el cliente envia de una vez identidad, password, preferencias, skills, rubro, CV y consent_given=true. No existen filas "borrador" en backend: todo se persiste en la misma operacion o falla.
+- Content-Type: multipart/form-data; charset=UTF-8
+- Partes (multipart, nombres oficiales):
+  - "data" (string JSON, application/json en la parte): cuerpo logico con todos los campos de registro y perfil inicial (ver abajo). obligatorio.
+  - "file" (binario, filename *.pdf, application/pdf): PDF del CV. obligatorio al menos en el flujo movil con pantallas que exigen subir CV antes de "Uso de datos" (mismo limite: max 1MB, solo PDF). Si se acordase flujo alterno sin CV, debe documentarse en OpenAPI; por defecto el contrato de producto exige el archivo.
+- Cuerpo logico (JSON en la parte "data"):
 {
   "email": "correo@dominio.cl",
   "password": "Aa!123456789",
@@ -136,26 +141,32 @@ ENDPOINTS DE AUTENTICACION
   "region_id": 7,
   "commune_id": 77,
   "consent_given": true,
-  "onboarding_id": "550e8400-e29b-41d4-a716-446655440000"
+  "sector_id": 1,
+  "profile_summary": null,
+  "salary_expected_min": 700000,
+  "salary_expected_max": 1200000,
+  "preferred_modalities": ["REMOTE", "HYBRID"],
+  "preferred_workloads": ["FULL_TIME", "OTHER"],
+  "skills_ids": [10, 11, 12]
 }
-- onboarding_id: obligatorio si el postulante uso las pantallas Subir CV / Skills / Ultimas preferencias contra /api/v1/onboarding/candidate/*; el backend fusiona borrador (perfil, CV, preferencias) a la cuenta creada. Si no hubo borrador, puede omitirse segun implementacion (debe documentarse en OpenAPI).
-- Validaciones:
+- Validaciones (data + file):
   - email formato valido y unico.
   - password politica obligatoria.
   - RUT valido (digito verificador).
   - comuna debe pertenecer a region.
   - consent_given debe ser true.
-  - la pantalla "Uso de datos" es la ultima pantalla antes de crear la cuenta oficialmente.
-  - consent_given se registra en pantalla "Uso de datos"; al aceptarlo se crea la cuenta, se emite sesion autenticada y se pasa a perfil.
+  - la pantalla "Uso de datos" es la ultima pantalla antes de persistir en backend: consent_given y alta ocurren juntos.
+  - skills_ids entre 3 y 12; sector_id requerido segun reglas de producto; preferred_modalities y preferred_workloads coherentes con enums; rango sueldo coherente si ambos informados.
+  - file: solo PDF, max 1MB, tipo application/pdf; debe coincidir con reglas de storage del backend.
 - Response 201:
 {
   "user_id": 101,
   "role": "CANDIDATE",
-  "onboarding_completed": false,
   "access_token": "jwt",
   "token_type": "Bearer",
   "expires_in": 3600
 }
+- Nota: el cliente mantiene en estado local (memoria de app) los datos y el archivo de CV mientras recorre las pantallas anteriores a "Uso de datos"; el backend no persiste nada de candidato hasta este POST. Si se pierde el estado (cierre forzado de app), el usuario reingresa la informacion.
 
 
 
@@ -329,84 +340,14 @@ CATALOGOS (AMBOS FRONTENDS)
 
 
 CLAVE VISUAL DE RUTAS CANDIDATO **********************
-- Prefijo /api/v1/onboarding/candidate/ = sesion de borrador antes de pantalla "Uso de datos". Header: Authorization: Bearer <onboarding_access_token> (JWT de alcance limitado exclusivamente a rutas bajo /onboarding/candidate/; distinto del access_token del candidato tras el alta o login).
-- Prefijo /api/v1/candidate/ = cuenta ya creada o sesion iniciada con login. Header: Authorization: Bearer <access_token> con role CANDIDATE. No usar /onboarding/candidate/* en Perfil u ofertas tras el alta.
-
-Resumen: Endpoints que digan onboarding son los de las pantallas de creación de cuenta, luego de crearla, ya no dicen "onboarding".
-
-
-
-ONBOARDING CANDIDATO (ANTES DE "USO DE DATOS")
-
-12) Abrir sesion de borrador candidato
-- POST /api/v1/onboarding/candidate/session
-- Auth: publica
-- Momento UX recomendado: al avanzar desde pantalla "Crear cuenta" hacia "Subir CV", una vez validado el formulario en cliente.
-- Request (datos de Crear cuenta; sin consent_given):
-{
-  "email": "correo@dominio.cl",
-  "password": "Aa!123456789",
-  "first_name": "Juan",
-  "middle_name": "Eduardo",
-  "last_name_paternal": "Ramirez",
-  "last_name_maternal": "Perez",
-  "phone": "+56912345678",
-  "rut": "12345678-5",
-  "document_number": "12345678",
-  "street": "Av. Siempre Viva 123",
-  "region_id": 7,
-  "commune_id": 77
-}
-- Response 201:
-{
-  "onboarding_id": "550e8400-e29b-41d4-a716-446655440000",
-  "onboarding_access_token": "jwt",
-  "token_type": "Bearer",
-  "expires_in": 3600
-}
-- Validaciones: email unico respecto a usuarios finales; password politica oficial; RUT; comuna-region.
-- Errores: mismos codigos que registro candidato donde aplique (409 email duplicado, etc.).
-
-
-13) Obtener perfil borrador
-- GET /api/v1/onboarding/candidate/profile
-- Auth: ONBOARDING (Bearer onboarding_access_token)
-- Response 200: mismo esquema que GET /api/v1/candidate/profile; consent_given sera false hasta fusion en alta.
-
-
-14) Editar perfil borrador
-- PATCH /api/v1/onboarding/candidate/profile
-- Auth: ONBOARDING
-- Request (campos opcionales), validaciones y Response 200: iguales que PATCH /api/v1/candidate/profile (skills_ids 3-12, rango sueldo, comuna-region).
-
-
-15) Subir CV borrador
-- POST /api/v1/onboarding/candidate/cv
-- Auth: ONBOARDING
-- Content-Type: multipart/form-data
-- Form-data:
-  - file: <pdf>
-- Validaciones:
-  - solo PDF.
-  - max 1MB.
-- Response 201: mismo cuerpo que POST /api/v1/candidate/cv.
-
-
-16) Obtener CV borrador actual (metadatos)
-- GET /api/v1/onboarding/candidate/cv/current
-- Auth: ONBOARDING
-
-
-17) Descargar CV borrador actual
-- GET /api/v1/onboarding/candidate/cv/current/file
-- Auth: ONBOARDING
-- Response: application/pdf
+- En el tramo de registro (antes de existir candidato en BD): solo catalogos publicos (GET /api/v1/catalogs/*) y, al aceptar "Uso de datos", un unico POST /api/v1/auth/register/candidate (multipart) que crea usuario, persiste CV, skills y preferencias.
+- Prefijo /api/v1/candidate/ = despues de POST /api/v1/auth/register/candidate o tras POST /api/v1/auth/login. Header: Authorization: Bearer <access_token> con role CANDIDATE. Edicion de CV, skills y preferencias en Perfil: mismos endpoints /api/v1/candidate/*.
 
 
 
 PERFIL Y CV CANDIDATO (CUENTA CREADA O LOGIN, JWT CANDIDATE, YA DENTRO DE LA APP AUTENTICADO)
 
-18) Obtener perfil candidato
+12) Obtener perfil candidato
 - GET /api/v1/candidate/profile
 - Auth: CANDIDATE
 - Response 200:
@@ -430,12 +371,11 @@ PERFIL Y CV CANDIDATO (CUENTA CREADA O LOGIN, JWT CANDIDATE, YA DENTRO DE LA APP
     { "id": 10, "name": "Integracion de APIs REST" }
   ],
   "consent_given": true,
-  "consent_given_at": "2026-04-25T03:10:00Z",
-  "onboarding_completed": true
+  "consent_given_at": "2026-04-25T03:10:00Z"
 }
+- Nota: si el esquema de BD aun tuviera columna onboarding_completed, se depreca en producto: el alta ya es en un paso; alinear modelo y response en implementacion.
 
-
-19) Editar perfil candidato
+13) Editar perfil candidato
 - PATCH /api/v1/candidate/profile
 - Auth: CANDIDATE
 - Request (campos opcionales):
@@ -457,7 +397,7 @@ PERFIL Y CV CANDIDATO (CUENTA CREADA O LOGIN, JWT CANDIDATE, YA DENTRO DE LA APP
 - Response 200: perfil actualizado completo.
 
 
-20) Subir CV candidato
+14) Subir CV candidato
 - POST /api/v1/candidate/cv
 - Auth: CANDIDATE
 - Content-Type: multipart/form-data
@@ -476,12 +416,12 @@ PERFIL Y CV CANDIDATO (CUENTA CREADA O LOGIN, JWT CANDIDATE, YA DENTRO DE LA APP
 }
 
 
-21) Obtener CV actual (metadatos)
+15) Obtener CV actual (metadatos)
 - GET /api/v1/candidate/cv/current
 - Auth: CANDIDATE
 
 
-22) Descargar CV actual
+16) Descargar CV actual
 - GET /api/v1/candidate/cv/current/file
 - Auth: CANDIDATE
 - Response: application/pdf
@@ -489,7 +429,7 @@ PERFIL Y CV CANDIDATO (CUENTA CREADA O LOGIN, JWT CANDIDATE, YA DENTRO DE LA APP
 
 OFERTAS (EMPRESA)
 
-23) Crear oferta
+17) Crear oferta
 - POST /api/v1/company/jobs
 - Auth: COMPANY
 - Request:
@@ -519,11 +459,11 @@ OFERTAS (EMPRESA)
   "published_at": "2026-04-25T03:40:00Z"
 }
 
-24) Listar mis ofertas empresa
+18) Listar mis ofertas empresa
 - GET /api/v1/company/jobs?page=1&size=20&sort=created_at,desc
 - Auth: COMPANY
 
-25) Ver detalle oferta propia
+19) Ver detalle oferta propia
 - GET /api/v1/company/jobs/{job_id}
 - Auth: COMPANY
 - Regla autorizacion:
@@ -531,7 +471,7 @@ OFERTAS (EMPRESA)
 
 OFERTAS (CANDIDATO)
 
-26) Feed ofertas para swipe
+20) Feed ofertas para swipe
 - GET /api/v1/candidate/jobs/feed?page=1&size=20
 - Auth: CANDIDATE
 - Reglas:
@@ -558,7 +498,7 @@ OFERTAS (CANDIDATO)
 
 
 
-27) Detalle de oferta para candidato
+21) Detalle de oferta para candidato
 - GET /api/v1/candidate/jobs/{job_id}
 - Auth: CANDIDATE
 - Incluye:
@@ -573,7 +513,7 @@ SWIPE Y POSTULACIONES CANDIDATO
 
 
 
-28) Registrar swipe
+22) Registrar swipe
 - POST /api/v1/candidate/swipes
 - Auth: CANDIDATE
 - Request:
@@ -592,7 +532,7 @@ SWIPE Y POSTULACIONES CANDIDATO
 
 
 
-29) Confirmar postulacion (desde swipe APPLY o boton)
+23) Confirmar postulacion (desde swipe APPLY o boton)
 - POST /api/v1/candidate/applications
 - Auth: CANDIDATE
 - Request:
@@ -612,7 +552,7 @@ SWIPE Y POSTULACIONES CANDIDATO
 
 
 
-30) Listar mis postulaciones
+24) Listar mis postulaciones
 - GET /api/v1/candidate/applications?page=1&size=20&sort=applied_at,desc
 - Auth: CANDIDATE
 - Estados visibles MVP: APPLIED, VIEWED.
@@ -620,7 +560,7 @@ SWIPE Y POSTULACIONES CANDIDATO
 
 
 
-31) Ver detalle de mi postulacion
+25) Ver detalle de mi postulacion
 - GET /api/v1/candidate/applications/{application_id}
 - Auth: CANDIDATE
 
@@ -630,7 +570,7 @@ SWIPE Y POSTULACIONES CANDIDATO
 POSTULACIONES EMPRESA
 
 
-32) Listar postulaciones de una oferta
+26) Listar postulaciones de una oferta
 - GET /api/v1/company/jobs/{job_id}/applications?page=1&size=20&sort=match_score,desc
 - Auth: COMPANY
 - Reglas:
@@ -639,7 +579,7 @@ POSTULACIONES EMPRESA
 
 
 
-33) Marcar postulacion como VIEWED
+27) Marcar postulacion como VIEWED
 - PATCH /api/v1/company/applications/{application_id}/viewed
 - Auth: COMPANY
 - Request: {}
@@ -658,7 +598,7 @@ POSTULACIONES EMPRESA
 
 MATCHING API EXTERNA (CONSUMIDA SOLO POR SPRING)
 
-34) Match interno IA
+28) Match interno IA
 - URL interna sugerida: /match (FastAPI)
 - Request:
 {
@@ -711,12 +651,6 @@ MATRIZ DE AUTORIZACION
   - auth/register/*
   - auth/password-recovery/*
   - catalogs/*
-  - onboarding/candidate/session
-- ONBOARDING (Bearer onboarding_access_token; solo prefijo onboarding/candidate):
-  - onboarding/candidate/profile
-  - onboarding/candidate/cv
-  - onboarding/candidate/cv/current
-  - onboarding/candidate/cv/current/file
 - CANDIDATE (Bearer access_token rol CANDIDATE):
   - auth/me
   - candidate/profile
@@ -737,7 +671,7 @@ MATRIZ DE AUTORIZACION
 
 CHECKLIST DE INTEGRACION FINAL
 - Login candidato y empresa operativos con JWT.
-- Registro candidato: sesion borrador con POST /onboarding/candidate/session antes de Subir CV cuando aplique; fusion con onboarding_id en POST /auth/register/candidate; consentimiento en "Uso de datos" y JWT CANDIDATE al crear la cuenta.
+- Registro candidato: un solo POST /api/v1/auth/register/candidate (multipart: data JSON + file PDF) con consent_given=true y todos los datos de identidad, perfil, skills y preferencias; consentimiento en "Uso de datos"; JWT CANDIDATE en la respuesta.
 - Registro empresa completo con region/comuna/sector.
 - CV PDF <= 1MB validado y almacenado.
 - Oferta creada con 3..8 skills.

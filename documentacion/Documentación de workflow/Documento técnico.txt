@@ -205,7 +205,7 @@ Subida de CV (PDF en filesystem; referencia en BD; extracción con Tika; MVP: so
 Gestión de skills en perfil (persistidas; no intervienen en el porcentaje ni en el request de matching)
 Consentimiento obligatorio para uso de datos en pantalla "Uso de datos", que es la última pantalla antes de crear la cuenta del postulante; al aceptar el consentimiento se crea la cuenta y se pasa a Perfil
 En app móvil de postulantes: carga de CV con límite de 1 MB
-En app móvil de postulantes: selección de skills con mínimo 3 y máximo 12 durante onboarding
+En app móvil de postulantes: selección de skills con mínimo 3 y máximo 12 en el flujo de registro (pantallas previas a "Uso de datos", estado en cliente) o en edición de perfil autenticado
 12.3 Módulo Ofertas
 Crear
 Editar (solo si sobra tiempo)
@@ -232,7 +232,7 @@ Perfil
 Swipe de ofertas
 Visualización de match
 Postulaciones
-Flujo móvil oficial de postulantes incluye además: recuperación de contraseña, formulario de creación de cuenta con validaciones, apertura de sesión de borrador onboarding, carga/visualización de CV en onboarding, selección de rubro y skills en onboarding, últimas preferencias en onboarding, pantalla final de consentimiento de uso de datos (última antes del alta oficial), creación de cuenta en backend al aceptar consentimiento y paso inmediato a Perfil; luego desde Perfil se continúa con edición de perfil ya autenticado, consumo de ofertas (incluida vista detalle) y vista previa desde postulaciones
+Flujo móvil oficial de postulantes incluye además: recuperación de contraseña, formulario de creación de cuenta con validaciones, carga y visualización de CV en el dispositivo (hasta 1 MB, PDF) antes de "Uso de datos", selección de rubro y skills y últimas preferencias en estado local, pantalla de consentimiento de uso de datos (última antes de llamar al backend), y un solo POST /api/v1/auth/register/candidate (multipart) al aceptar que crea la cuenta, persiste CV y perfil, emite JWT y pasa a Perfil; luego desde Perfil se continúa con edición de perfil ya autenticado, consumo de ofertas (incluida vista detalle) y vista previa desde postulaciones
 En flujo móvil de recuperación (MVP): los pasos de envío/reenvío y confirmación por correo se muestran en UI como mockup, sin despacho real de emails
 En pantalla de ofertas: swipe izquierda = pasar, swipe derecha = postular con confirmación
 En postulaciones móviles (MVP): estados visibles APPLIED y VIEWED; CANCELLED queda para backlog opcional

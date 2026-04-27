@@ -106,8 +106,9 @@ semana).
 
 Objetivo del sprint en una frase:
 Dejar el proyecto “arrancable” por todos con Docker + MySQL + esqueletos de
-servicios y cumplir HU-01 en su tramo inicial (captura de datos de Crear cuenta
-y apertura de sesión de borrador onboarding) con validaciones esenciales.
+servicios y cumplir HU-01 en su tramo inicial (validaciones de datos de Crear cuenta
+y catálogos o reglas compartidas alineadas al registro en un paso; sin persistencia
+de candidato hasta "Uso de datos" según Contrato 1.2) con validaciones esenciales.
 
 ------------------------------------------------------------
 A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 1 (Definition of Done)
@@ -148,9 +149,9 @@ Validaciones obligatorias según HU y reglas:
   con guion/k verificador).
 - No permitir emails duplicados: si el correo ya existe, error visible y
   claro para el cliente.
-- Este paso NO crea aún la cuenta tipo “candidato”; crea sesión de borrador
-  onboarding para continuar con CV/skills/preferencias y cerrar luego en
-  pantalla "Uso de datos".
+- Este paso NO crea aún la cuenta tipo “candidato”; en producto el cliente
+  mantiene CV/skills/preferencias en estado local hasta pantalla "Uso de datos"
+  (sin borrador de candidato en servidor; ver Flujo App Móvil y Contrato 1.2).
 - Si falta un campo obligatorio, no avanza y se muestra el texto exacto:
   “Completa este campo” (en API puede traducirse a errores por campo; si aún
   no hay pantalla móvil, debe quedar demostrable vía API con herramienta tipo
@@ -169,7 +170,8 @@ B) DESGLOSE ULTRA DETALLADO (orden sugerido para minimizar bloqueos)
 B1) Tarea 1 — Acuerdo de datos mínimos del candidato (30 a 60 minutos equipo)
 (Estado: lista)
 - Listar columnas mínimas de users o tabla equivalente acordada para MVP.
-- Definir estructura de borrador onboarding (onboarding_id y expiración).
+- Definir esquema de candidato sin tablas de borrador (alta única por POST
+  /auth/register/candidate multipart en Sprint 4).
 - Decidir cómo se guarda contraseña: hash con algoritmo estándar (por ejemplo
   BCrypt) vía Spring Security o componente equivalente; nunca texto plano.
 - Asegurar regla de complejidad de contraseña en API alineada a HU sin épicas y
@@ -188,7 +190,7 @@ B2) Tarea 2 — Docker Compose “feliz path” (2 a 3 horas equipo)
 - Levantar MySQL con usuario, password, base de datos y puerto fijos acordados.
 - Definir volumen para datos de MySQL.
 - Definir volumen o carpeta persistente futura para CV (aunque CV se implemente
-  en Sprint 3 onboarding, puede crearse carpeta montada ya para no rearmar compose).
+  previa a persistir CV en Sprint 4, puede crearse carpeta montada ya para no rearmar compose).
 - Spring Boot contenedor o local: si es local, igual debe existir compose de
   MySQL estable; documentar ambos modos si se usa mixto.
 
@@ -197,30 +199,29 @@ DoD compose:
   llamar a otro integrante.
 
 
-B3) Tarea 3 — Modelo de usuario y onboarding + repositorio + migraciones (2 a 3 horas)
+B3) Tarea 3 — Modelo de usuario + repositorio + migraciones (2 a 3 horas)
 (Estado: en proceso)
-- Crear entidad User base y estructura de onboarding con campos HU-01.
+- Crear entidad User base alineada a HU-01; sin tablas onboarding_* (alta en un
+  paso en Sprint 4 según contrato).
 - Crear repositorio JPA.
 - Implementar restricción única a nivel BD para email si es posible, y validar
   también en servicio para mensaje amigable.
 
 
-B4) Tarea 4 — Endpoint de sesión onboarding candidato (2 a 3 horas)
-- POST /api/v1/onboarding/candidate/session (ruta acordada) que reciba DTO con
-  campos HU-01.
-- Validaciones:
-  - Bean Validation o validación manual consistente.
-  - Contraseña: cumple política oficial (mínimo 12 caracteres, al menos un
-    símbolo, al menos un número, mayúsculas y minúsculas).
-  - RUT: función clara y testeable (aunque el testing sea mínimo crítico, la
-    función debe ser verificable manualmente con casos buenos/malos).
-  - Email duplicado: 409 Conflict o código acordado, con mensaje claro.
-- Persistencia exitosa devuelve 201 Created con onboarding_id y
-  onboarding_access_token (sin crear aún cuenta final CANDIDATE).
+B4) Tarea 4 — Catálogos y validaciones compartidas (2 a 3 horas)
+- GET /api/v1/catalogs/regions y GET /api/v1/catalogs/regions/{region_id}/communes
+  (o equivalente mínimo al contrato) para soportar flujo móvil.
+- Servicio o utilidades de validación reutilizables: email, RUT, política de
+  contraseña (misma que en registro final), alineadas a HU-01.
+- No implementar POST /api/v1/auth/register/candidate completo en Sprint 1 si
+  el equipo prioriza infraestructura; en ese caso dejar documentado el contrato
+  multipart (data + file) para Sprint 4.
+- No persistir fila de candidato hasta el alta con consentimiento (Contrato 1.2).
 
 
 B5) Tarea 5 — Verificación cruzada (1 a 2 horas)
-- Caso feliz Postman: apertura de sesión onboarding con onboarding_id.
+- Caso feliz Postman: catálogos region/comuna y health; validación de campo
+  inválico en servicio compartido si aplica.
 - Caso email duplicado.
 - Caso contraseña que no cumple política (por ejemplo longitud o falta de tipo
   de carácter): rechazo con error controlado.
@@ -355,68 +356,64 @@ C) QUÉ NO HACER EN EL SPRINT 2
 SPRINT 3 — SEMANA 4 AL 10 DE MAYO DE 2026
 ================================================================================
 Esfuerzo total estimado del equipo: 9 horas (puede rozar un poco más).
-Contenido oficial: Onboarding candidato previo al alta oficial + HU-06 Subir CV + HU-04 Perfil en borrador.
+Contenido oficial: HU-06 (CV en flujo móvil antes de "Uso de datos") + HU-04
+(captura de skills, rubro, presentación y preferencias en flujo) + catálogos
+necesarios; sin persistir candidato en backend hasta el alta (Contrato 1.2).
 
 Objetivo del sprint en una frase:
-Dejar listo el onboarding previo al alta oficial: abrir sesión de borrador,
-subir CV, guardar skills y preferencias del postulante y preparar el paso final
-hacia "Uso de datos" sin crear aún la cuenta definitiva.
+Alinear app móvil (y apoyo de API) al flujo: datos y CV en cliente,
+skills/rubro/preferencias en cliente, catálogos en servidor; preparar criterios
+y límites (PDF 1 MB) documentados; persistencia de CV y perfil en BD se realiza
+en Sprint 4 con un solo POST /auth/register/candidate (multipart).
 
 ------------------------------------------------------------
 A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 3
 ------------------------------------------------------------
-1) Onboarding de candidato (sesión de borrador)
-- Existe apertura de sesión de borrador al terminar "Crear cuenta":
-  POST /api/v1/onboarding/candidate/session.
-- Las pantallas previas al alta oficial usan Bearer onboarding_access_token y
-  rutas /api/v1/onboarding/candidate/*.
+1) Flujo móvil (prioridad)
+- Pantallas Subir CV / Mostrar CV: archivo PDF solo en dispositivo hasta
+  "Uso de datos"; validación de tamaño y tipo en cliente (Contrato/Flujo).
+- Pantallas Skills y Últimas preferencias: sector_id, skills_ids (3..12),
+  sueldos y preferencias en estado local, coherentes con el JSON "data" del
+  registro.
+- No existe POST /onboarding/* ni filas de borrador en MySQL.
 
-2) HU-06 Subir CV en onboarding
-- Subida de CV en borrador por endpoint de onboarding.
-- Solo PDF y máximo 1 MB.
-- Archivo en filesystem y referencia en BD, sin binario en MySQL.
-- Flujo alineado a pantallas: subir CV y mostrar CV subido antes de "Uso de datos".
+2) HU-06 (producto móvil)
+- El almacenamiento en filesystem y referencia en BD se implementa al crear la
+  cuenta (Sprint 4), en la misma transacción del multipart de alta.
 
-3) HU-04 Perfil en borrador (antes del alta)
-- Persistencia en borrador de skills, rubro, presentación y preferencias.
-- Validaciones: skills candidatas 3..12, rango de pretensión coherente.
-- Skills de perfil NO se usan para porcentaje de matching.
+3) HU-04
+- Misma lógica: lo capturado se envía al backend en el "data" del multipart
+  al aceptar consentimiento; skills de perfil no entran al score de matching.
 
-Reglas que DEBEN quedar implementadas en lógica/documentación de API:
-- El borrador no crea cuenta CANDIDATE final hasta consentimiento.
-- onboarding_id queda disponible para fusionar borrador en alta oficial.
-- Diseñar DTOs separados para evitar que skills de perfil entren a matching.
+4) API de apoyo
+- GET /api/v1/catalogs/sectors y GET /api/v1/catalogs/sectors/{sector_id}/skills
+  (si aún faltan), públicos, alineados al contrato.
+
+Reglas: sin cuenta CANDIDATE en BD hasta POST /auth/register/candidate; sin
+onboarding_id ni fusión: un solo request de alta.
 
 ------------------------------------------------------------
 B) DESGLOSE ULTRA DETALLADO
 ------------------------------------------------------------
-B1) Onboarding session + seguridad de borrador (2 a 3 horas)
-- Modelo de borrador con onboarding_id y expiración.
-- Token de onboarding con alcance restringido a /onboarding/candidate/*.
+B1) App móvil: estado unificado (ViewModel/estado) para datos de registro, CV
+  y skills (2 a 3 horas).
 
-B2) CV en onboarding (2 a 3 horas)
-- Endpoint multipart para CV borrador.
-- Endpoint de lectura de metadatos/archivo CV borrador actual.
+B2) Validaciones cliente: PDF, 1 MB, 3..12 skills, rango de sueldo (2 a 3 h).
 
-B3) Tablas de skills (1 a 2 horas)
-- Catálogo de skills precargado o endpoint admin mínimo para carga inicial;
-  el Documento técnico menciona precarga por rubro; si no hay tiempo, definir
-  MVP mínimo: lista global precargada por script SQL, y en Sprint posterior se
-  refina por rubro si el equipo lo necesita. Lo crítico: skills seleccionables
-  y persistidas en relación usuario-skill.
+B3) Catálogos en backend: sectores y skills por sector si aplica (1 a 2 h).
 
-B4) Perfil API en borrador (2 a 3 horas)
-- GET/PATCH perfil de onboarding para skills, rubro y preferencias.
+B4) Documentación: ejemplo de request multipart (part "data" + "file")
+  hacia POST /api/v1/auth/register/candidate para Sprint 4.
 
-B5) Verificación crítica de secuencia (1 hora)
-- Crear sesión onboarding -> subir CV -> guardar perfil borrador -> mantener
-  onboarding_id listo para alta final de Sprint 4.
+B5) Verificación: recorrido Crear cuenta -> ... -> "Uso de datos" sin llamadas
+  que creen fila de candidato; solo catálogos.
 
 ------------------------------------------------------------
 C) QUÉ NO HACER EN EL SPRINT 3
 ------------------------------------------------------------
 - No calcular matching aún.
 - No crear ofertas aún (Sprint 5).
+- No implementar tablas o endpoints de borrador (obsoleto bajo contrato 1.2).
 
 
 
@@ -428,11 +425,13 @@ SPRINT 4 — SEMANA 11 AL 17 DE MAYO DE 2026
 ================================================================================
 Esfuerzo total estimado del equipo: 10 horas.
 Contenido oficial: HU-21 Consentimiento de datos + alta oficial del candidato +
-cierre de perfil autenticado posterior al onboarding.
+perfil autenticado (un solo POST multipart que persiste todo lo recopilado en
+cliente).
 
 Objetivo del sprint en una frase:
-Cerrar el onboarding con consentimiento en "Uso de datos", crear la cuenta
-oficial del candidato y dejar operativo el flujo autenticado de Perfil.
+Al aceptar en "Uso de datos", crear en un solo request la cuenta CANDIDATE,
+persistir CV y perfil (POST /api/v1/auth/register/candidate multipart) y dejar
+operativo GET/PATCH /api/v1/candidate/profile.
 
 ------------------------------------------------------------
 A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 4
@@ -444,24 +443,24 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 4
 - Si acepta, se crea cuenta CANDIDATE y se emite access_token.
 - Persistencia en BD de consentimiento: flag + timestamp.
 
-2) Alta oficial fusionando borrador
-- POST /api/v1/auth/register/candidate acepta onboarding_id para fusionar:
-  datos base, CV, skills y preferencias previamente guardadas.
-- Al completar alta, el flujo deja de usar /onboarding/candidate/* y pasa a
-  /api/v1/candidate/* con JWT CANDIDATE.
+2) Alta oficial en un paso (Contrato 1.2)
+- POST /api/v1/auth/register/candidate con Content-Type multipart/form-data:
+  parte "data" (JSON con consent_given=true, identidad, sector_id, skills_ids,
+  sueldos, preferred_modalities, preferred_workloads, etc.) y parte "file"
+  (PDF del CV, max 1 MB).
+- Transacción: usuario, perfil, skills, preferencias, CV en filesystem +
+  metadatos en BD; sin onboarding_id ni fusión de borrador.
 
 3) Perfil autenticado posterior al alta
-- GET/PATCH /api/v1/candidate/profile operativo y coherente con lo cargado en
-  onboarding.
-- Persistencia correcta sin pérdida de datos del borrador.
+- GET/PATCH /api/v1/candidate/profile operativo y coherente con lo persistido
+  en el alta.
+- Rutas /api/v1/candidate/* con Bearer access_token rol CANDIDATE.
 
 ------------------------------------------------------------
 B) DESGLOSE ULTRA DETALLADO
 ------------------------------------------------------------
-B1) Endpoint de alta oficial candidato (3 a 4 horas)
-- Validar consentimiento obligatorio y onboarding_id.
-- Fusionar borrador a cuenta final.
-- Emitir JWT rol CANDIDATE.
+B1) Endpoint POST /api/v1/auth/register/candidate (3 a 4 horas)
+- Parseo multipart, validaciones, persistencia atómica, emisión JWT CANDIDATE.
 
 B2) Modelo de consentimiento en cuenta final (1 a 2 horas)
 - consent_given + consent_given_at consistentes.
@@ -470,15 +469,16 @@ B3) Perfil autenticado candidato (2 a 3 horas)
 - GET/PATCH /api/v1/candidate/profile sobre cuenta creada.
 
 B4) Pruebas críticas (1 a 2 horas)
-- Caso sin consentimiento: rechazo controlado.
-- Caso con consentimiento + onboarding_id válido: alta exitosa y acceso a Perfil.
-- Verificar transición de rutas onboarding -> candidate.
+- Caso sin consentimiento: no se llama al endpoint o rechazo controlado.
+- Caso con consentimiento + multipart válido: alta exitosa y acceso a Perfil.
+- Verificar ausencia de rutas /onboarding/* en el flujo final.
 
 ------------------------------------------------------------
 C) QUÉ NO HACER EN EL SPRINT 4
 ------------------------------------------------------------
 - No saltarse "Uso de datos" para crear cuentas.
 - No implementar fairness todavía.
+- No implementar POST /onboarding/candidate/* (obsoleto).
 
 
 
@@ -722,7 +722,7 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 7
   nueva contraseña en ese flujo, misma política de complejidad que en registro
   (mínimo 12 caracteres, al menos un símbolo, al menos un número, mayúsculas y
   minúsculas), alineada a HU sin épicas y Flujos de pantalla.
-- Onboarding/registro/perfil puede estar parcial si ya existe por API, pero debe
+- Registro de candidato y perfil puede estar parcial si ya existe por API, pero debe
   ser coherente: lo crítico de este sprint es swipe + confirmación + consumo
   de score.
 
@@ -929,7 +929,7 @@ A) CHECKLIST OBLIGATORIA DE CIERRE (sin atajos)
 ------------------------------------------------------------
 1) Flujo E2E mínimo demostrable
 - Registrar candidato y empresa (o usar seeds).
-- Subir CV válido en onboarding, completar skills/preferencias y luego aceptar consentimiento candidato en pantalla "Uso de datos" como ultima pantalla antes de crear cuenta; al aceptar se crea la cuenta y se pasa a Perfil.
+- Completar flujo móvil: CV y datos en cliente, skills/preferencias en cliente, aceptar consentimiento en "Uso de datos" y un solo POST /auth/register/candidate (multipart); al éxito se crea la cuenta y se pasa a Perfil.
 - Extraer texto de CV, crear oferta empresa.
 - Ver ofertas candidato, ver score, swipe, confirmar postulación.
 - Empresa ve postulante, marca VIEWED, candidato ve estado.
@@ -978,8 +978,8 @@ APÉNDICE A — MAPEO RÁPIDO HU → SPRINT (MVP OBLIGATORIO)
 ================================================================================
 Sprint 1: HU-01
 Sprint 2: HU-02, HU-03
-Sprint 3: HU-06, HU-04 (en borrador onboarding)
-Sprint 4: HU-21 (+ alta oficial y fusión de onboarding)
+Sprint 3: HU-06, HU-04 (flujo en cliente + catálogos; sin borrador en servidor)
+Sprint 4: HU-21 (+ alta oficial en un paso: POST /auth/register/candidate multipart)
 Sprint 5: HU-15, HU-10 (+ Tika extracción)
 Sprint 6: HU-09, HU-07, HU-08
 Sprint 7: HU-11, HU-12

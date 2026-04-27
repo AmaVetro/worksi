@@ -15,11 +15,11 @@ Validación real de RUT chileno (dígito verificador/lógica completa).
 
 Mensajes funcionales por campo como “Completa este campo”.
 
-Orden/secuencia de onboarding por pantallas (crear cuenta -> abrir sesión de borrador onboarding -> subir CV -> skills -> últimas preferencias -> uso de datos [última pantalla antes del alta oficial] -> creación de cuenta en backend con consent_given=true y onboarding_id -> perfil).
+Orden/secuencia del registro móvil (alineado a Flujo App Móvil y Contrato 1.2): crear cuenta y capturas [estado en cliente] -> subir CV [en cliente, PDF <= 1 MB] -> skills y últimas preferencias [en cliente] -> pantalla "Uso de datos" [última antes del backend] -> un solo POST /api/v1/auth/register/candidate (multipart, consent_given=true, parte "data" + "file" PDF) que crea usuario y perfil en BD -> Perfil con JWT; sin borrador de candidato en servidor.
 
 
 Reglas de negocio de skills por momento:
-candidato mínimo 3 / máximo 12 en onboarding/edición,
+candidato mínimo 3 / máximo 12 en registro (cuerpo "data" del multipart) o en edición de perfil,
 oferta mínimo 3 / máximo 8 al crear/publicar.
 
 
