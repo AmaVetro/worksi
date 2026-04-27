@@ -118,7 +118,7 @@ Al cerrar el sprint, debe cumplirse TODO lo siguiente:
 1) Infraestructura base
 - Existe docker-compose funcional para al menos: MySQL, contenedor/servicio
   backend Spring Boot (aunque sea salud básica), y la estructura preparada
-  para FastAPI aunque FastAPI aún no haga matching (puede exponer health).
+  para FastAPI aunque FastAPI aún no haga matching (puede exponer health del servicio, testeable mediante comandos curl).
 - MySQL levanta con volumen persistente o estrategia acordada para no perder
   datos en cada reinicio de desarrollo.
 - Documentación mínima en README del repo: cómo levantar compose, puertos,
@@ -132,7 +132,7 @@ Al cerrar el sprint, debe cumplirse TODO lo siguiente:
 - Manejo básico de errores: respuestas HTTP coherentes cuando falla validación
   o reglas de negocio (no silenciar errores).
 
-3) HU-01 Registro de candidato (tramo inicial, antes del alta oficial)
+3) HU-01 Registro de candidato (SÓLO tramo inicial, antes del alta oficial)
 Debe poder ingresarse en el registro de candidato:
 - Obligatorios: nombre, apellido paterno, apellido materno, correo, contraseña,
   celular, rut, nro. documento, región, comuna.

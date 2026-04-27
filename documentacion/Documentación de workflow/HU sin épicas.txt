@@ -11,8 +11,8 @@ Se evita toda batería de testing opcional, de baja prioridad o repartida por sp
 
 HU-01 — Registro de candidato
 Como candidato
-Quiero registrarme en la plataforma
-Para poder postular a ofertas laborales
+* Quiero registrarme en la plataforma
+* Para poder postular a ofertas laborales
 Criterios de aceptación:
 * Se puede ingresar: nombre, apellido paterno, apellido materno, correo, contraseña, celular, rut, 
 nro. documento, región y comuna como obligatorios; segundo nombre y calle como opcionales.
@@ -34,27 +34,27 @@ el flujo de recuperación, según esos flujos.
 
 HU-02 — Registro de empresa
 Como empresa
-Quiero registrarme en la plataforma
-Para poder publicar ofertas laborales
+* Quiero registrarme en la plataforma
+* Para poder publicar ofertas laborales
 Criterios de aceptación (alineados a Flujo Pantallas App Web, pantalla “Crear cuenta” versión web):
-Campos obligatorios: nombre y apellidos; teléfono; correo de acceso; contraseña; nombre comercial 
+* Campos obligatorios: nombre y apellidos; teléfono; correo de acceso; contraseña; nombre comercial 
 de la empresa; razón social; RUT en formato sin puntos y con guión; región (desplegable desde datos 
 en BD); comuna (desplegable desde BD, solo comunas de la región seleccionada); sector o ámbito de 
 trabajo (desplegable desde sectores o ámbitos precargados en BD); N° de trabajadores 
 aproximado; N° de vacantes anuales aproximado
-Se valida formato de email
-En creación de contraseña aplica la política alineada a Flujo Pantallas App Web y 
-Flujo Pantallas App Móvil: mínimo 12 caracteres, al menos un símbolo, al menos un número, y letras en 
+* Se valida formato de email
+* En creación de contraseña aplica la política alineada a Flujo Pantallas App Web y 
+* Flujo Pantallas App Móvil: mínimo 12 caracteres, al menos un símbolo, al menos un número, y letras en 
 mayúscula y minúscula; misma política al definir o cambiar contraseña en el flujo de recuperación, según esos flujos
-Se valida RUT según reglas acordadas para el formato exigido en web (sin puntos, con guión)
-No permite emails duplicados
-El registro crea una cuenta tipo "empresa"
-Si falta un campo obligatorio no permite avanzar y se muestra el mensaje "Completa este campo" en los campos correspondientes
-La imagen de empresa es opcional en el registro (campo image_url en POST /api/v1/auth/register/company)
-Con la cuenta ya creada y el usuario empresa logueado, la imagen de empresa debe poder subirse,
+*Se valida RUT según reglas acordadas para el formato exigido en web (sin puntos, con guión)
+* No permite emails duplicados
+* El registro crea una cuenta tipo "empresa"
+* Si falta un campo obligatorio no permite avanzar y se muestra el mensaje "Completa este campo" en los campos correspondientes
+* La imagen de empresa es opcional en el registro (campo image_url en POST /api/v1/auth/register/company)
+*Con la cuenta ya creada y el usuario empresa logueado, la imagen de empresa debe poder subirse,
  eliminarse o cambiarse mediante endpoint autenticado (PATCH /api/v1/company/profile/image)
-Esta imagen de empresa no tiene relación con la imagen de oferta usada al crear ofertas laborales
-Manejo de errores visible si falla el registro o validaciones de servidor
+* Esta imagen de empresa no tiene relación con la imagen de oferta usada al crear ofertas laborales
+* Manejo de errores visible si falla el registro o validaciones de servidor
 
 
 
@@ -62,17 +62,17 @@ Manejo de errores visible si falla el registro o validaciones de servidor
 
 HU-03 — Login
 Como usuario (candidato o empresa)
-Quiero iniciar sesión
-Para acceder a mis funcionalidades
+* Quiero iniciar sesión
+* Para acceder a mis funcionalidades
 Criterios de aceptación:
-Login con email y contraseña
-Retorna token JWT válido
-Manejo de credenciales incorrectas
-Persistencia de sesión en cliente
-Logout elimina sesión
-En ambos frontends (app móvil de postulantes y app web de empresas), tras 4 intentos fallidos
+* Login con email y contraseña
+* Retorna token JWT válido
+* Manejo de credenciales incorrectas
+* Persistencia de sesión en cliente
+* Logout elimina sesión
+* En ambos frontends (app móvil de postulantes y app web de empresas), tras 4 intentos fallidos
  se bloquea el acceso y se deriva al flujo de recuperación de contraseña
-En app móvil de postulantes (MVP), el flujo de recuperación por correo es mockup: no se 
+* En app móvil de postulantes (MVP), el flujo de recuperación por correo es mockup: no se 
 envían correos reales
 
 
@@ -81,16 +81,16 @@ envían correos reales
 
 HU-04 — Crear perfil de candidato
 Como candidato
-Quiero completar mi perfil
-Para registrar mis datos y habilidades declaradas
+* Quiero completar mi perfil
+* Para registrar mis datos y habilidades declaradas
 Criterios de aceptación:
-Puede ingresar:
-skills
-presentación personal
-pretensión de renta
-Validación de campos
-Persistencia correcta
-Las skills del perfil no se usan para calcular el porcentaje de matching; ese porcentaje usa
+* Puede ingresar:
+- skills
+- presentación personal
+- pretensión de renta
+* Validación de campos
+* Persistencia correcta
+* Las skills del perfil no se usan para calcular el porcentaje de matching; ese porcentaje usa
  CV limpio frente al contenido de la oferta, considerando además modalidades preferidas y 
  cargas horarias preferidas del postulante
 
@@ -100,12 +100,12 @@ Las skills del perfil no se usan para calcular el porcentaje de matching; ese po
 
 HU-05 — Editar perfil
 Como candidato
-Quiero editar mi perfil
-Para mantener mis datos actualizados
+* Quiero editar mi perfil
+* Para mantener mis datos actualizados
 Criterios de aceptación:
-Puede modificar todos los campos
-Los cambios se guardan correctamente
-No se pierden datos previos
+* Puede modificar todos los campos
+* Los cambios se guardan correctamente
+* No se pierden datos previos
 
 
 
@@ -113,14 +113,14 @@ No se pierden datos previos
 
 HU-06 — Subir CV
 Como candidato
-Quiero subir mi CV en PDF
-Para que el sistema analice mi perfil automáticamente
+* Quiero subir mi CV en PDF
+* Para que el sistema analice mi perfil automáticamente
 Criterios de aceptación:
-Solo acepta PDF
-Tamaño máximo 1 MB
-Se almacena correctamente
-Se procesa posteriormente por IA
-Manejo de error si archivo inválido
+* Solo acepta PDF
+* Tamaño máximo 1 MB
+* Se almacena correctamente
+* Se procesa posteriormente por IA
+* Manejo de error si archivo inválido
 
 
 
@@ -128,20 +128,20 @@ Manejo de error si archivo inválido
 
 HU-07 — Calcular compatibilidad (HU importante/core, priorizar)
 Como candidato
-Quiero ver un porcentaje de compatibilidad con una oferta
-Para saber qué tan adecuado soy para el puesto
+* Quiero ver un porcentaje de compatibilidad con una oferta
+* Para saber qué tan adecuado soy para el puesto
 Criterios de aceptación:
-Se muestra porcentaje (0–100%)
-Se calcula usando IA a partir del CV limpio frente al contenido de la oferta, considerando 
+* Se muestra porcentaje (0–100%)
+* Se calcula usando IA a partir del CV limpio frente al contenido de la oferta, considerando 
 además modalidades preferidas y cargas horarias preferidas del postulante
-No usa skills declaradas en el perfil
-No usa presentación personal del perfil
-No usa rango de sueldo esperado
-No usa sueldo ofrecido de la oferta
-No usa años de experiencia requeridos por la oferta
-No usa años de experiencia declarados por el postulante dentro del CV
-No usa nacionalidad del postulante
-Manejo de error si falla IA
+* No usa skills declaradas en el perfil
+* No usa presentación personal del perfil
+* No usa rango de sueldo esperado
+* No usa sueldo ofrecido de la oferta
+* No usa años de experiencia requeridos por la oferta
+* No usa años de experiencia declarados por el postulante dentro del CV
+* No usa nacionalidad del postulante
+* Manejo de error si falla IA
 
 
 
@@ -149,14 +149,14 @@ Manejo de error si falla IA
 
 HU-08 — Explicación del match (HU importante/core, priorizar)
 Como candidato
-Quiero entender por qué tengo cierto nivel de compatibilidad
-Para tomar mejores decisiones al postular
+* Quiero entender por qué tengo cierto nivel de compatibilidad
+* Para tomar mejores decisiones al postular
 Criterios de aceptación:
-Resume coincidencias o temas relevantes entre el CV y la oferta, sin tratar 
+* Resume coincidencias o temas relevantes entre el CV y la oferta, sin tratar 
 la lista de skills del perfil como fuente del score
-Muestra razones del score alineadas con ese criterio
-Información clara y legible
-No muestra datos sensibles
+* Muestra razones del score alineadas con ese criterio
+* Información clara y legible
+* No muestra datos sensibles
 
 
 
@@ -164,19 +164,11 @@ No muestra datos sensibles
 
 HU-09 — Eliminación de datos sensibles
 Como candidato
-Quiero que mis datos sensibles no sean usados en el matching
-Para evitar discriminación
+* Quiero que mis datos sensibles no sean usados en el matching
+* Para evitar discriminación
 Criterios de aceptación:
-No se usan:
-nombre
-edad
-género
-institución de procedencia
-correo
-rut
-nacionalidad
-años de experiencia declarados dentro del CV
-El procesamiento elimina estos datos antes del análisis
+* No se usan: nombre, edad, género, institución de procedencia, correo, rut, nacionalidad, años de experiencia declarados dentro del CV
+* El procesamiento elimina estos datos antes del análisis
 
 
 
@@ -184,13 +176,13 @@ El procesamiento elimina estos datos antes del análisis
 
 HU-10 — Ver ofertas
 Como candidato
-Quiero visualizar ofertas laborales
-Para explorar oportunidades
+* Quiero visualizar ofertas laborales
+* Para explorar oportunidades
 Criterios de aceptación:
-Se muestran ofertas disponibles
-Incluye info básica (título, empresa, ubicación)
-Carga inicial funciona sin errores
-Manejo si no hay ofertas
+* Se muestran ofertas disponibles
+* Incluye info básica (título, empresa, ubicación)
+* Carga inicial funciona sin errores
+* Manejo si no hay ofertas
 
 
 
@@ -198,13 +190,13 @@ Manejo si no hay ofertas
 
 HU-11 — Swipe de ofertas
 Como candidato
-Quiero deslizar ofertas izquierda/derecha
-Para decidir rápidamente si postulo o descarto
+* Quiero deslizar ofertas izquierda/derecha
+* Para decidir rápidamente si postulo o descarto
 Criterios de aceptación:
-Swipe derecha → postular
-Swipe izquierda → descartar
-No se repiten ofertas vistas
-Feedback visual claro
+* Swipe derecha → postular
+* Swipe izquierda → descartar
+* No se repiten ofertas vistas
+* Feedback visual claro
 
 
 
@@ -212,12 +204,12 @@ Feedback visual claro
 
 HU-12 — Confirmar postulación
 Como candidato
-Quiero confirmar mi postulación
-Para evitar acciones accidentales
+* Quiero confirmar mi postulación
+* Para evitar acciones accidentales
 Criterios de aceptación:
-Se muestra confirmación
-Solo se guarda si se confirma
-Se puede cancelar
+* Se muestra confirmación
+* Solo se guarda si se confirma
+* Se puede cancelar
 
 
 
@@ -225,15 +217,12 @@ Se puede cancelar
 
 HU-13 — Ver postulaciones
 Como candidato
-Quiero ver mis postulaciones
-Para hacer seguimiento
+* Quiero ver mis postulaciones
+* Para hacer seguimiento
 Criterios de aceptación:
-Lista de postulaciones
-Estados:
-APPLIED
-VIEWED
-CANCELLED (solo si sobra tiempo)
-Información clara
+* Lista de postulaciones
+* Estados: APPLIED, VIEWED, CANCELLED (solo si sobra tiempo)
+* Información clara
 
 
 
@@ -241,12 +230,12 @@ Información clara
 
 HU-14 — Cancelar postulación (SÓLO SI SOBRA TIEMPO)
 Como candidato
-Quiero cancelar una postulación
-Para retractarme si es necesario
+* Quiero cancelar una postulación
+* Para retractarme si es necesario
 Criterios de aceptación:
-Cambia estado a CANCELLED
-No permite cancelar dos veces
-Feedback visual
+* Cambia estado a CANCELLED
+* No permite cancelar dos veces
+* Feedback visual
 
 
 
@@ -254,10 +243,10 @@ Feedback visual
 
 HU-15 — Crear oferta laboral
 Como empresa
-Quiero crear una oferta laboral
-Para atraer candidatos
+* Quiero crear una oferta laboral
+* Para atraer candidatos
 Criterios de aceptación:
-Campos obligatorios:
+* Campos obligatorios:
 título
 descripción
 requisitos
@@ -267,20 +256,20 @@ ubicación (ciudad y comuna, coherentes con región/comuna o criterio equivalent
 modalidad de trabajo (remoto, presencial o híbrido)
 carga horaria de la oferta (por ejemplo full time, part time, otro; dato requerido para el
  ajuste de matching con las preferencias del postulante en producto)
-Campos opcionales:
+* Campos opcionales:
 salario ofrecido
 imagen de la oferta
-Otros datos de ficha (por ejemplo años de experiencia requeridos por el puesto) pueden existir, 
+* Otros datos de ficha (por ejemplo años de experiencia requeridos por el puesto) pueden existir, 
 guardarse y mostrarse; no forman parte del insumo hacia POST /match ni del cálculo semántico 
 base del score: hacia el servicio de IA el texto de oferta (job_text) se construye en backend 
 concatenando únicamente título, descripción, requisitos, modalidad y carga horaria de la oferta;
  quedan excluidos del job_text de matching el bloque o listas de skills requeridas de la oferta,
   el sueldo ofrecido y los años de experiencia requeridos, de acuerdo a las reglas oficiales del proyecto.
-En el producto, el porcentaje final de compatibilidad considera además la comparación de modalidades 
+* En el producto, el porcentaje final de compatibilidad considera además la comparación de modalidades 
 preferidas y cargas horarias preferidas del postulante frente a modalidad y carga horaria de la oferta, 
 además del score semántico derivado de los textos permitidos.
-Validación de campos
-Se guarda correctamente
+* Validación de campos
+* Se guarda correctamente
 
 
 
@@ -288,12 +277,12 @@ Se guarda correctamente
 
 HU-16 — Editar oferta (SÓLO SI SOBRA TIEMPO)
 Como empresa
-Quiero editar una oferta
-Para actualizar información
+* Quiero editar una oferta
+* Para actualizar información
 Criterios de aceptación:
-Puede modificar campos
-Cambios persistentes
-Validaciones activas
+* Puede modificar campos
+* Cambios persistentes
+* Validaciones activas
 
 
 
@@ -301,12 +290,12 @@ Validaciones activas
 
 HU-17 — Eliminar oferta (SÓLO SI SOBRA TIEMPO, descartada del diseño actual por estado único ACTIVE)
 Como empresa
-Quiero eliminar una oferta
-Para retirar publicaciones
+* Quiero eliminar una oferta
+* Para retirar publicaciones
 Criterios de aceptación:
-Eliminación confirmada
-No visible para candidatos
-No rompe postulaciones previas
+* Eliminación confirmada
+* No visible para candidatos
+* No rompe postulaciones previas
 
 
 
@@ -314,11 +303,11 @@ No rompe postulaciones previas
 
 HU-18 — Activar/desactivar oferta (SÓLO SI SOBRA TIEMPO, descartada del diseño actual por estado único ACTIVE)
 Como empresa
-Quiero activar o desactivar una oferta
-Para controlar su visibilidad
+* Quiero activar o desactivar una oferta
+* Para controlar su visibilidad
 Criterios de aceptación:
-No aplica en el diseño actual (estado único ACTIVE)
-Todas las ofertas del sistema son ACTIVE
+* No aplica en el diseño actual (estado único ACTIVE)
+* Todas las ofertas del sistema son ACTIVE
 
 
 
@@ -326,12 +315,12 @@ Todas las ofertas del sistema son ACTIVE
 
 HU-19 — Ver postulantes
 Como empresa
-Quiero ver los candidatos que postularon
-Para evaluarlos
+* Quiero ver los candidatos que postularon
+* Para evaluarlos
 Criterios de aceptación:
-Lista de candidatos por oferta
-Información básica visible
-Carga sin errores
+* Lista de candidatos por oferta
+* Información básica visible
+* Carga sin errores
 
 
 
@@ -339,12 +328,12 @@ Carga sin errores
 
 HU-20 — Ordenar por compatibilidad
 Como empresa
-Quiero ver candidatos ordenados por compatibilidad
-Para priorizar mejores perfiles
+* Quiero ver candidatos ordenados por compatibilidad
+* Para priorizar mejores perfiles
 Criterios de aceptación:
-Orden descendente por score
-Score visible
-Consistencia con IA
+* Orden descendente por score
+* Score visible
+* Consistencia con IA
 
 
 
@@ -352,13 +341,13 @@ Consistencia con IA
 
 HU-21 — Consentimiento de uso de datos
 Como candidato
-Quiero aceptar el uso de mis datos
-Para poder crear mi cuenta en la app
+* Quiero aceptar el uso de mis datos
+* Para poder crear mi cuenta en la app
 Criterios de aceptación:
-La pantalla "Uso de datos" es la última pantalla antes de crear la cuenta oficialmente
-Checkbox obligatorio
-No permite crear la cuenta sin aceptar en la pantalla "Uso de datos"
-Al aceptar el consentimiento, se crea la cuenta y se pasa a la pantalla Perfil
+* La pantalla "Uso de datos" es la última pantalla antes de crear la cuenta oficialmente
+* Checkbox obligatorio
+* No permite crear la cuenta sin aceptar en la pantalla "Uso de datos"
+* Al aceptar el consentimiento, se crea la cuenta y se pasa a la pantalla Perfil
 
 
 
@@ -366,12 +355,12 @@ Al aceptar el consentimiento, se crea la cuenta y se pasa a la pantalla Perfil
 
 HU-22 — Eliminación de cuenta (SÓLO SI SOBRA TIEMPO)
 Como usuario
-Quiero eliminar mi cuenta
-Para borrar mis datos del sistema
+* Quiero eliminar mi cuenta
+* Para borrar mis datos del sistema
 Criterios de aceptación:
-Eliminación completa de datos
-Confirmación previa
-No reversible
+* Eliminación completa de datos
+* Confirmación previa
+* No reversible
 
 
 
@@ -379,13 +368,13 @@ No reversible
 
 HU-23 — Marcar postulación como vista
 Como empresa
-Quiero marcar una postulación como vista
-Para llevar seguimiento del estado de los candidatos
+* Quiero marcar una postulación como vista
+* Para llevar seguimiento del estado de los candidatos
 Criterios de aceptación:
-Existe una acción manual para marcar como “VIEWED”
-El estado cambia solo cuando la empresa ejecuta esa acción
-El estado se refleja correctamente en la lista de postulantes
-No afecta otras postulaciones fuera de la seleccionada
+* Existe una acción manual para marcar como “VIEWED”
+* El estado cambia solo cuando la empresa ejecuta esa acción
+* El estado se refleja correctamente en la lista de postulantes
+* No afecta otras postulaciones fuera de la seleccionada
 
 
 
@@ -393,11 +382,11 @@ No afecta otras postulaciones fuera de la seleccionada
 
 HU-24 — Guardar oferta (SÓLO SI SOBRA TIEMPO)
 Como candidato
-Quiero guardar ofertas laborales
-Para revisarlas más tarde antes de decidir si postulo o no
+* Quiero guardar ofertas laborales
+* Para revisarlas más tarde antes de decidir si postulo o no
 Criterios de aceptación:
-Existe opción para guardar una oferta (botón o acción)
-La oferta guardada se almacena correctamente
-El usuario puede acceder a una sección “Guardadas”
-El usuario puede quitar una oferta de guardadas
-No se duplica una oferta si se guarda más de una vez
+* Existe opción para guardar una oferta (botón o acción)
+* La oferta guardada se almacena correctamente
+* El usuario puede acceder a una sección “Guardadas”
+* El usuario puede quitar una oferta de guardadas
+* No se duplica una oferta si se guarda más de una vez
