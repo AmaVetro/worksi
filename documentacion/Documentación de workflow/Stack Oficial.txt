@@ -43,7 +43,7 @@ marcado automático de VIEWED en postulaciones
 📱 Mobile ***************************
 Kotlin
 Android Studio
-Jetpack básico (ViewModel + LiveData o State)
+Jetpack Compose (con ViewModel + State)
 
 ✅ Recomendaciones clave
 UI simple (no te enfoques en diseño complejo)

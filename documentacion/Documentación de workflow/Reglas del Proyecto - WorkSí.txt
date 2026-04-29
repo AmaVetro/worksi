@@ -113,7 +113,7 @@ Objetivo: centralizar reglas esenciales para que cualquier integrante encuentre 
 - Base de datos: MySQL 8 + Flyway Community (migraciones SQL versionadas).
 - IA: Python 3.11, FastAPI, sentence-transformers, spaCy, scikit-learn.
 - Modelo de embeddings acordado: all-MiniLM-L6-v2.
-- Mobile candidato: Kotlin (Android Studio, enfoque funcional).
+- Mobile candidato: Kotlin (Android Studio, Jetpack Compose con ViewModel + State, enfoque funcional).
 - Web empresa: React + Vite.
 - Infraestructura: Docker + Docker Compose.
 - Convención obligatoria de nombres API/código:

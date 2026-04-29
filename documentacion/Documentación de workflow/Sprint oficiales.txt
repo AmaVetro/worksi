@@ -67,6 +67,8 @@ Contenido:
 Equilibrio: se mantiene el arranque técnico y se concentra un solo registro para no sobrecargar la primera semana.
 
 
+
+
 Sprint 2:   27 abril – 3 mayo 2026
 
 Estado: Pendiente.
@@ -77,6 +79,8 @@ Contenido:
 ●    Misma validación de contraseña en registro empresa que en Sprint 1 (mínimo 12 caracteres, al menos un símbolo, al menos un número, mayúsculas y minúsculas, según HU sin épicas y flujos de pantalla; igual para nueva contraseña en recuperación mock si aplica en este sprint o después).
 ●    HU-03 — Login (incluir logout en cliente según HU-03).
 Equilibrio: identidad completa (tipos de cuenta + autenticación) antes de capas funcionales posteriores.
+
+
 
 
 Sprint 3:   4–10 mayo 2026
@@ -90,6 +94,8 @@ Contenido:
 Equilibrio: se alinea a las pantallas móviles; la persistencia de CV y perfil en BD queda ligada al consentimiento (Sprint 4) y un solo POST multipart.
 
 
+
+
 Sprint 4:   11–17 mayo 2026
 
 Estado: Pendiente.
@@ -101,6 +107,8 @@ Contenido:
 Equilibrio: se cierra la secuencia (flujo móvil con datos locales; consentimiento al final; un solo request de alta) y queda operativa la entrada a Perfil autenticado.
 
 
+
+
 Sprint 5 (Sprint pesado):   18–24 mayo 2026
 
 Estado: Pendiente.
@@ -110,6 +118,8 @@ Contenido:
 ●    HU-15 — Crear oferta laboral.
 ●    HU-10 — Ver ofertas.
 Equilibrio: se deja listo el texto de CV y también el texto de oferta, preparando ambos insumos antes de fairness y score.
+
+
 
 
 Sprint 6 (Sprint pesado):   25–31 mayo 2026
@@ -124,6 +134,8 @@ Contenido:
 Equilibrio: se ejecuta de forma compacta el bloque IA core (fairness + score + explicación) luego de tener CV y oferta listos.
 
 
+
+
 Sprint 7 (Sprint pesado):   1–7 junio 2026
 
 Estado: Pendiente.
@@ -135,6 +147,8 @@ Contenido:
 Equilibrio: se consolida la experiencia core de candidato sobre la base del score ya disponible.
 
 
+
+
 Sprint 8:   8–14 junio 2026
 
 Estado: Pendiente.
@@ -142,6 +156,8 @@ Esfuerzo total estimado del equipo: 9 h.
 Contenido:
 ●    HU-13 — Ver postulaciones (candidato), estados al menos APPLIED y transiciones coherentes con lo que la empresa marcará como vista en Sprint 9.
 Equilibrio: seguimiento candidato posterior a la postulación, sin depender de HU opcionales.
+
+
 
 
 Sprint 9:   15–21 junio 2026
@@ -154,6 +170,8 @@ Contenido:
 Equilibrio: se construye la base de gestión empresa y transición manual de estado antes de ordenar.
 
 
+
+
 Sprint 10:  22–28 junio 2026
 
 Estado: Pendiente.
@@ -162,6 +180,8 @@ Contenido:
 ●    HU-20 — Ordenar por compatibilidad.
 ●    HU-05 — Editar perfil (datos y skills en perfil; el porcentaje de matching sigue basado en CV + oferta + modalidades preferidas + cargas horarias preferidas).
 Equilibrio: semana de cierre funcional con tareas de complejidad media sobre módulos ya existentes.
+
+
 
 
 Sprint 11 (Sprint pesado):  29 junio – 5 julio 2026   (semana que comienza el 29 de junio de 2026)

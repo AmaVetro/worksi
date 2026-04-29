@@ -57,7 +57,7 @@ Apache Tika (extracción de texto desde PDF en el backend)
 Mobile
 Kotlin
 Android Studio
-ViewModel + LiveData
+Jetpack Compose (con ViewModel + State)
 Web
 React
 Vite
