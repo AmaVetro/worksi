@@ -2,9 +2,9 @@
 📘 WorkSí — Documento Oficial del Proyecto (Versión Final Consolidada)
 1. INTRODUCCIÓN
 
-WorkSí es una plataforma de reclutamiento laboral que combina una aplicación móvil para candidatos y una aplicación web para empresas, integrando inteligencia artificial para mejorar el proceso de selección mediante un sistema de matching semántico.
+WorkSí es una plataforma de reclutamiento laboral que combina una aplicación móvil para candidatos (rol CANDIDATE) y una aplicación web para administración del sistema (rol ADMIN) y operación de ofertas por reclutadores vinculados a una ficha empresa (rol RECRUITER), integrando inteligencia artificial para mejorar el proceso de selección mediante un sistema de matching semántico. El detalle de endpoints y campos oficiales está en Flujo Pantallas App Web y Contrato Unificado API.
 
-El sistema permite a los candidatos interactuar con ofertas laborales mediante una experiencia tipo swipe, mientras que las empresas gestionan ofertas y visualizan postulantes desde un panel web.
+El sistema permite a los candidatos interactuar con ofertas laborales mediante una experiencia tipo swipe, mientras que en la web el administrador da de alta empresas (sin usuario de login para la empresa) y reclutadores; quienes publican ofertas y revisan postulantes lo hacen autenticados como RECRUITER según ese mismo contrato.
 
 El objetivo principal es optimizar el proceso de selección, reducir sesgos y mejorar la calidad del matching entre candidatos y empleos.
 
@@ -26,17 +26,16 @@ Matching inteligente basado en IA
 Explicación simple del resultado del match
 Interfaz moderna tipo swipe
 Reducción de sesgos mediante procesamiento previo de datos
-Experiencia diferenciada para candidatos y empresas
+Experiencia diferenciada para candidatos (móvil) y para administración/reclutamiento (web)
 4. DEFINICIÓN DEL PRODUCTO
 4.1 Aplicación móvil (Candidatos)
 Exploración de ofertas mediante swipe
 Visualización de porcentaje de compatibilidad
 Postulación rápida
 Gestión de perfil
-4.2 Aplicación web (Empresas)
-Creación y gestión de ofertas laborales
-Visualización de candidatos
-Ordenamiento por compatibilidad
+4.2 Aplicación web (ADMIN y RECRUITER)
+Portal administrador: alta de ficha empresa (datos de negocio, sin credencial de empresa) y alta de reclutadores vinculados a company_id; listado de empresas.
+Portal reclutador: creación y gestión de ofertas bajo /api/v1/company/*, visualización de postulantes, orden por compatibilidad, marcado manual VIEWED (ver Flujo Pantallas App Web y Contrato Unificado API).
 5. USUARIOS OBJETIVO
 Candidatos
 Personas en búsqueda de empleo
@@ -83,11 +82,17 @@ Comunicación principal:
 Spring Boot → POST /match → FastAPI
 8. MODELO DE DATOS
 
-Tablas principales:
+Tablas principales (conjunto efectivo definido por migraciones Flyway y Contrato):
 
-users
-jobs
+users (roles CANDIDATE | ADMIN | RECRUITER)
+
+companies (ficha empresa sin cuenta de login)
+
+jobs (company_id)
+
 applications
+
+entre otras (perfiles candidato/recruiter, CV metadatos, catálogos, etc.)
 
 ❌ No se utiliza tabla matches
 
@@ -194,11 +199,10 @@ Código Java interno (entidades/DTOs/servicios): camelCase.
 El puente entre ambos se implementa con mapeo explícito (anotaciones/configuración de serialización) para mantener contrato estable.
 
 12.1 Autenticación
-Registro (candidato / empresa)
-Login
-JWT (solo access token)
-En ambos frontends (app móvil de postulantes y app web de empresas): bloqueo tras 4 intentos fallidos de login y derivación a recuperación de contraseña
-En app móvil de postulantes (MVP): recuperación de contraseña en modo mockup; no se envían mensajes reales al correo electrónico
+Registro candidato en app móvil vía POST /api/v1/auth/register/candidate (multipart) tras consentimiento; en web MVP no hay registro público de empresa: alta empresa y reclutadores solo por ADMIN (Contrato Unificado API).
+Login unificado web (ADMIN y RECRUITER) y login candidato (móvil): POST /api/v1/auth/login; JWT solo access token; roles oficiales CANDIDATE, ADMIN, RECRUITER (sin usuario empresa ni rol COMPANY).
+En app móvil de postulantes y en web (admin/reclutador): bloqueo tras 4 intentos fallidos de login y derivación a recuperación de contraseña.
+En app móvil de postulantes (MVP): recuperación de contraseña en modo mockup; no se envían mensajes reales al correo electrónico.
 12.2 Módulo Candidatos
 CRUD perfil
 Subida de CV (PDF en filesystem; referencia en BD; extracción con Tika; MVP: solo PDF con texto seleccionable, sin OCR)
@@ -215,7 +219,7 @@ Activar/desactivar (solo si sobra tiempo)
 Crear postulación
 Listar postulaciones
 Cancelar postulación (solo si sobra tiempo)
-Marcar postulación como VIEWED de forma manual por empresa
+Marcar postulación como VIEWED de forma manual desde el portal empresa (usuario RECRUITER), sin automatismo en backend.
 
 Estados:
 
@@ -223,7 +227,7 @@ APPLIED
 VIEWED
 CANCELLED (solo si sobra tiempo)
 12.5 Integración IA
-Consumo de /match
+Consumo de POST /match (FastAPI, URI /match del servicio de IA; sin prefijo /api/v1 del monolito)
 Manejo de score y explicación
 13. FRONTEND
 Mobile (Candidatos)
@@ -236,11 +240,9 @@ Flujo móvil oficial de postulantes incluye además: recuperación de contraseñ
 En flujo móvil de recuperación (MVP): los pasos de envío/reenvío y confirmación por correo se muestran en UI como mockup, sin despacho real de emails
 En pantalla de ofertas: swipe izquierda = pasar, swipe derecha = postular con confirmación
 En postulaciones móviles (MVP): estados visibles APPLIED y VIEWED; CANCELLED queda para backlog opcional
-Web (Empresas)
-Login / registro
-CRUD de ofertas
-Visualización de postulantes
-Orden por compatibilidad
+Web (ADMIN + RECRUITER)
+Login único sin registro público en landing; administrador inicial vía datos sembrados (password_hash); reclutadores creados por ADMIN con company_id.
+Panel administrador: registrar empresa (ficha) y registrar reclutadores; panel reclutador: ofertas, postulantes, marcado VIEWED, orden por compatibilidad (alinear a Flujo Pantallas App Web y Contrato Unificado API).
 14. INFRAESTRUCTURA
 
 Servicios en Docker:
@@ -259,7 +261,7 @@ docker-compose.yml
 
 15. TESTING
 
-No se implementa testing en los frontends: no se añaden carpetas de testing ni frameworks de prueba de UI en la web (React) ni en la app móvil. Los integrantes de frontend se limitan a comprobar visualmente y por uso que las pantallas y flujos respondan como se espera. La fase de pruebas con alcance acotado se concentra al final del proyecto, con el producto entero desplegado, y consiste en un número reducido de pruebas, solo de las partes más críticas, para asegurar que lo esencial del sistema encaja. Dentro de esa fase, si el equipo acuerda, puede incluirse verificación mínima con Postman sobre endpoints clave, integración entre Spring Boot y FastAPI y un recorrido E2E candidato-empresa; no se planifica por sprint un paquete de tests formal en clientes.
+No se implementa testing en los frontends: no se añaden carpetas de testing ni frameworks de prueba de UI en la web (React) ni en la app móvil. Los integrantes de frontend se limitan a comprobar visualmente y por uso que las pantallas y flujos respondan como se espera. La fase de pruebas con alcance acotado se concentra al final del proyecto, con el producto entero desplegado, y consiste en un número reducido de pruebas, solo de las partes más críticas, para asegurar que lo esencial del sistema encaja. Dentro de esa fase, si el equipo acuerda, puede incluirse verificación mínima con Postman sobre endpoints clave, integración entre Spring Boot y FastAPI y un recorrido E2E candidato y flujo empresa (reclutador); no se planifica por sprint un paquete de tests formal en clientes.
 
 ❌ No se realizan: tests de performance avanzados, tests automatizados complejos, testing opcional o de baja prioridad, ni baterías de prueba en frontends a lo largo del desarrollo.
 16. REGLAS DE DISEÑO

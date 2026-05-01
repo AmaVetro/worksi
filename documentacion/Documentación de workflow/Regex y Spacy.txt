@@ -29,6 +29,9 @@ Punto crítico que debes cuidar (muy importante)
 Si borras ORG de forma agresiva con spaCy, puedes eliminar empresas/herramientas relevantes del CV y bajar calidad del matching.
 Lo correcto es remover institución de procedencia (sesgo), pero no destruir todo el contexto profesional útil.
 
+Referencias de producto/API
+Este documento detalla sólo técnica de extracción/limpieza. Orden oficial del pipeline antes de embeddings, roles y construcción de job_text están en Contrato Unificado API y Flujo Pantallas App Web donde aplique integración IA.
+
 Conclusión
 Tu diseño actual (spaCy + regex) es el correcto para MVP.
 La mejor versión es:

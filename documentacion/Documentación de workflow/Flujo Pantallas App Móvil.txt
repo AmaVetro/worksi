@@ -1,7 +1,7 @@
 Flujo de las pantallas de app móvil WorkSí
 
-En este documento se explicará el flujo de lo que va mostrando la UI en ambos frontends.
-No es que realmente se utilice una pantalla para cada cosa, aquí solo se divide en pantallas distintas por fines explicativos, en realidad, en los frontends, será la misma pantalla/componente en algunos casos, solo que irán apareciendo nuevos textos o botones o visuales, e irán desapareciendo otros, ya sabes, esto es solo para explicar, pero en verdad todo funcionará en su momento como suele funcionar android studio para frontends de app móvil y react + vite en el caso del frontend web.
+Este documento describe solo el flujo de pantallas de la app móvil para postulantes (rol CANDIDATE). Login unificado del sitio web que usan administrador (ADMIN) y reclutador (RECRUITER), catálogo de endpoints oficiales y modelo de datos en MySQL quedan definidos en Flujo Pantallas App Web.txt, Contrato Unificado API - WorkSí.txt y en las migraciones Flyway bajo producto/backend/src/main/resources/db/migration/; aquí solo se citan cuando el candidato móvil consume la misma API.
+No es que realmente se utilice una pantalla para cada cosa: aquí solo se divide en pantallas distintas por fines explicativos. En la app móvil será la misma pantalla o componente en algunos casos, con textos o botones que van apareciendo u ocultándose según el paso, como suele hacerse en Android Studio.
 
 
 1. App Móvil (postulantes):
@@ -10,7 +10,7 @@ Pantalla "al abrir la app":
 - Muestra botones iniciar sesión y crear cuenta, botón iniciar sesión lleva a Pantalla Iniciar Sesión. Botón crear cuenta lleva a Pantalla "Crear Cuenta".
 
 
-Pantalla Iniciar Sesión --> Pide email y contraseña, con botón "iniciar sesión" (endpoint: POST /api/v1/auth/login). También está el botón "Olvidé mi contraseña" (navegación UI local). Debe tener validaciones de email y contraseña en UI y backend. Este bloqueo por intentos fallidos aplica en ambos frontends (móvil y web): con 4 intentos incorrectos se bloquea (mismo endpoint: POST /api/v1/auth/login). Si se bloquea se muestra pantalla "Recuperar contraseña". 
+Pantalla Iniciar Sesión --> Pide email y contraseña, con botón "iniciar sesión" (endpoint: POST /api/v1/auth/login). También está el botón "Olvidé mi contraseña" (navegación UI local). Debe tener validaciones de email y contraseña en UI y backend. Este bloqueo por intentos fallidos aplica igual que en la web (Contrato Unificado API): con 4 intentos incorrectos se bloquea (mismo endpoint: POST /api/v1/auth/login). Si se bloquea se muestra pantalla "Recuperar contraseña". En esta app móvil el postulante opera con rol CANDIDATE; los roles ADMIN y RECRUITER son del flujo web empresa (ver Flujo Pantallas App Web). 
 
 
 Pantalla "Recuperar contraseña", muestra mensaje "Excediste el límite de intentos. Por nuestros lineamientos de seguridad, deberás recuperar tu contraseña" "Pulsa aquí:" y aparece el botón "Recuperar contraseña" que lleva a pantalla "Olvidé mi contraseña", es decir, se lleva a la misma pantalla que botón "Olvidé mi contraseña" que esta en Pantalla Iniciar Sesión.
@@ -30,7 +30,7 @@ Debajo de ese texto el botón "Aceptar" (endpoint: POST /api/v1/auth/password-re
 
 
 Pantalla "Confirmar en bandeja" --> Dice "Tu nueva contraseña ha sido creada con éxito.
-Vé a la bandeja de entrada del correo asociado y confirma el cambio clickeando el link que te hemos enviado." y abajo el botón "Volver a Log In". Obviamente nunca se envía nada al correo, así que al llegar a Pantalla "Confirmar en bandeja" nueva contraseña ya se registra en la BD para el usuario. Al presionar "Volver a Log In" se va a Pantalla Iniciar Sesión.
+Vé a la bandeja de entrada del correo asociado y confirma el cambio clickeando el link que te hemos enviado." y abajo el botón "Volver a Log In". Obviamente nunca se envía nada al correo, así que al llegar a Pantalla "Confirmar en bandeja" la nueva contraseña en texto claro ya fue enviada al backend y allí se persiste solo como password_hash en la tabla users (alineado a Contrato Unificado API y esquema Flyway). Al presionar "Volver a Log In" se va a Pantalla Iniciar Sesión.
 
 
 Pantalla "Crear cuenta" --> Dice "Completa tus datos", y abajo solicita:
@@ -39,7 +39,7 @@ Nombre
 Apellido Paterno
 Apellido Materno
 Correo
-Contraseña (creación de cuenta: mínimo 12 caracteres, al menos un símbolo, al menos un número, y letras en mayúscula y minúscula; misma política en Pantalla "Nueva contraseña")
+Contraseña (creación de cuenta: mínimo 12 caracteres, al menos un símbolo, al menos un número, y letras en mayúscula y minúscula; misma política que en Pantalla "Nueva contraseña" y que exige el Contrato Unificado API para password al registrar; el cliente envía texto claro y el backend guarda password_hash)
 Celular
 Rut (debe verificar lógica numérica de formato de ruts de chile).
 Nro. Documento (por ahora, se podrá poner cualquier número ahí).
@@ -72,7 +72,7 @@ Pantalla "Últimas preferencias" --> Aquí se solicita al postulante elegir su s
 En lo más abajo de esta pantalla, habrá flecha para avanzar. Esa flecha lleva directamente a la pantalla "Uso de datos". Es decir, la pantalla que lleva a "Uso de datos" es "Últimas preferencias".
 
 
-Pantalla "Uso de datos" --> Ahí hay un escrito acerca de información para el usuario de qué cosas está aceptando, como serán usados sus datos y qué nivel de privacidad tiene. Esta es la última pantalla antes de crear la cuenta oficialmente y se accede a ella desde "Últimas preferencias". En esta pantalla se debe aceptar el consentimiento obligatorio con la casilla "He leído y acepto el uso de mis datos personales conforme a la Política de Privacidad". El backend debe exigir ese consentimiento para crear la cuenta del candidato. Al aceptar y avanzar, se envía un unico request (endpoint: POST /api/v1/auth/register/candidate) en multipart: parte "data" con JSON (email, password, datos personales, consent_given=true, sector_id, skills_ids, sueldos, modalidades, cargas horarias, etc.) y parte "file" con el PDF del CV. Auth: pública. Si no se acepta, no se envía nada. Al éxito, la respuesta incluye access_token JWT rol CANDIDATE y se va a Pantalla "Perfil".
+Pantalla "Uso de datos" --> Ahí hay un escrito acerca de información para el usuario de qué cosas está aceptando, como serán usados sus datos y qué nivel de privacidad tiene. Esta es la última pantalla antes de crear la cuenta oficialmente y se accede a ella desde "Últimas preferencias". En esta pantalla se debe aceptar el consentimiento obligatorio con la casilla "He leído y acepto el uso de mis datos personales conforme a la Política de Privacidad". El backend debe exigir ese consentimiento para crear la cuenta del candidato. Al aceptar y avanzar, se envía un único request (endpoint: POST /api/v1/auth/register/candidate) en multipart: parte "data" con JSON según Contrato Unificado API (email, password, nombres, rut, document_number, phone, street opcional, region_id y commune_id coherentes con catálogo, consent_given=true, sector_id, profile_summary opcional, salary_expected_min y salary_expected_max si aplican las reglas de rango, preferred_modalidades, preferred_workloads, skills_ids entre 3 y 12 como en migraciones y contrato; ver detalle nominal de campos en el mismo contrato) y parte "file" con el PDF del CV (máximo 1MB, solo PDF). Auth: pública. Si no se acepta, no se envía nada. Al éxito, la respuesta incluye access_token JWT con rol CANDIDATE y se va a Pantalla "Perfil".
 
 Nota de integración: antes de "Uso de datos" no existe Bearer de candidato; solo GET de catálogos y el estado en la app. Tras el alta, Perfil y el resto usan /api/v1/candidate/* con el JWT. Si el usuario cierra la app antes de aceptar "Uso de datos", deberá volver a completar o reingresar datos.
 
@@ -98,7 +98,7 @@ Carga de datos de perfil (endpoint: GET /api/v1/candidate/profile). Guardado de 
 
 
 Pantalla "Ofertas" --> Ahí ya ve las ofertas con (endpoint de carga feed: GET /api/v1/candidate/jobs/feed?page=1&size=20):
-- Su imagen (adjunta a la oferta por la misma empresa al crear la oferta)
+- Su imagen (adjunta por quien crea la oferta en portal empresa: rol RECRUITER en web, ver Flujo Pantallas App Web / Contrato)
 - Su nombre
 - Nombre de empresa
 - Sueldo
@@ -107,12 +107,12 @@ Pantalla "Ofertas" --> Ahí ya ve las ofertas con (endpoint de carga feed: GET /
 - Años de experiencia requeridos (no usable para porcentaje de matching).
 - Descripción de la oferta pero si esta es muy larga, se cortará en cierto punto.
 Abajo botón "Ver detalles" para ir a Pantalla "Oferta Detalles" (endpoint detalle: GET /api/v1/candidate/jobs/{job_id}).
-- Abajo de ese botón, las skills que puso la empresa que busca en su oferta (solo aparecen 4 skills en esa pantalla, si se va a Pantalla "Oferta Detalles" saldrán todas, así como también la descripción completa.
-- Porcentaje de matching y una barra con el porcentaje, que es calculado entre el CV y el texto de la oferta laboral (No todo lo de la oferta cuenta para establecer porcentaje de matching entre la oferta y el CV, solo cuenta: Nombre de oferta, Descripción de la oferta (menos palabras/conceptos/ideas que ya se mencionaron más arriba que no se usarían para porcentaje de matching), Modalidad (Remoto/Presencial/Híbrido), y otras cosas que aparecerán en "Oferta Detalles" después de uno clickear el botón "Ver detalles". El sueldo ofrecido no se usa para porcentaje de matching).
+- Abajo de ese botón, las skills que quien publica la oferta configuró en web (rol RECRUITER; ver Flujo Pantallas App Web); solo aparecen 4 skills en esa pantalla, si se va a Pantalla "Oferta Detalles" saldrán todas, así como también la descripción completa.
+- Porcentaje de matching y una barra con el porcentaje, derivado según Contrato Unificado API: score semántico base a partir de CV limpio frente a job_text de la oferta, más bonus fijo por modalidad y carga horaria preferidas del candidato. En backend el job_text arma solo title, description, modality y workload; no incluye job_skills, salary_offered, years_experience_required ni company_commercial_name. La modalidad se ve en el card; la carga horaria aparece con más detalle en "Oferta Detalles" y el workload ya forma parte del job_text y del bonus de preferencias si calza con lo elegido por el postulante.
 En esta pantalla, si postulante desliza hacia la izquierda, eso significa "Pasar", es decir, pasar a la siguiente oferta (endpoint swipe: POST /api/v1/candidate/swipes con action PASS), y si postulante desliza hacia la derecha será para Postular, aparecerá un recuadro que diga "¿Seguro de postular?" y si se presiona "Postular" en ese recuadro, se postulará oficialmente a esa oferta (endpoint confirmar postulación: POST /api/v1/candidate/applications; opcionalmente registrar swipe APPLY en POST /api/v1/candidate/swipes).
 
 
-Pantalla "Oferta Detalles" --> Aquí aparece más info de la oferta que la que le aparecía al usuario en Pantalla Ofertas, esta vez incluyendo también carga horaria de la oferta (usable para porcentaje de matching), y 8 skills que es el máximo que se puede añadir a una oferta laboral. A demás ahí también saldrá la descripción completa de la oferta. También aquí, saldrá una explicación sencilla del porcentaje de matching obtenido con esa oferta (endpoint: GET /api/v1/candidate/jobs/{job_id}).
+Pantalla "Oferta Detalles" --> Aquí aparece más info de la oferta que la que le aparecía al usuario en Pantalla Ofertas, esta vez incluyendo también carga horaria de la oferta (workload FULL_TIME / PART_TIME / OTHER: entra en job_text y en bonus de preferencias del candidato según contrato), y hasta 8 skills (máximo en oferta laboral alineado al Contrato Unificado API y al modelo de datos). Además ahí también saldrá la descripción completa de la oferta (único texto largo; no hay campo separado de requisitos en persistencia). También aquí, saldrá una explicación sencilla del porcentaje de matching obtenido con esa oferta (endpoint: GET /api/v1/candidate/jobs/{job_id}).
 
 
 Pantalla "Mis Postulaciones" (endpoint: GET /api/v1/candidate/applications?page=1&size=20&sort=applied_at,desc).

@@ -1,3 +1,4 @@
+
 CREATE TABLE regions (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   code VARCHAR(10) NOT NULL,
@@ -71,7 +72,7 @@ CREATE TABLE sector_skills (
 
 CREATE TABLE users (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  role ENUM('CANDIDATE','COMPANY') NOT NULL,
+  role ENUM('CANDIDATE','ADMIN','RECRUITER') NOT NULL,
   email VARCHAR(190) NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
@@ -170,38 +171,35 @@ CREATE TABLE candidate_preferred_workloads (
     ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
-CREATE TABLE company_profiles (
-  user_id BIGINT UNSIGNED NOT NULL,
-  phone VARCHAR(25) NULL,
-  commercial_name VARCHAR(180) NULL,
-  legal_name VARCHAR(220) NULL,
+CREATE TABLE companies (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  phone VARCHAR(25) NOT NULL,
+  commercial_name VARCHAR(180) NOT NULL,
+  legal_name VARCHAR(220) NOT NULL,
   rut VARCHAR(15) NOT NULL,
   region_id BIGINT UNSIGNED NOT NULL,
   commune_id BIGINT UNSIGNED NOT NULL,
+  address VARCHAR(280) NOT NULL,
   sector_id BIGINT UNSIGNED NOT NULL,
   worker_count_approx INT UNSIGNED NOT NULL,
   image_url VARCHAR(500) NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (user_id),
-  UNIQUE KEY uk_company_profiles_rut (rut),
-  KEY idx_company_profiles_region (region_id),
-  KEY idx_company_profiles_commune (commune_id),
-  KEY idx_company_profiles_commune_region (commune_id, region_id),
-  KEY idx_company_profiles_sector (sector_id),
-  CONSTRAINT fk_company_profiles_user
-    FOREIGN KEY (user_id) REFERENCES users(id)
-    ON UPDATE CASCADE
-    ON DELETE CASCADE,
-  CONSTRAINT fk_company_profiles_region
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_companies_rut (rut),
+  KEY idx_companies_region (region_id),
+  KEY idx_companies_commune (commune_id),
+  KEY idx_companies_commune_region (commune_id, region_id),
+  KEY idx_companies_sector (sector_id),
+  CONSTRAINT fk_companies_region
     FOREIGN KEY (region_id) REFERENCES regions(id)
     ON UPDATE CASCADE
     ON DELETE RESTRICT,
-  CONSTRAINT fk_company_profiles_commune_region
+  CONSTRAINT fk_companies_commune_region
     FOREIGN KEY (commune_id, region_id) REFERENCES communes(id, region_id)
     ON UPDATE CASCADE
     ON DELETE RESTRICT,
-  CONSTRAINT fk_company_profiles_sector
+  CONSTRAINT fk_companies_sector
     FOREIGN KEY (sector_id) REFERENCES sectors(id)
     ON UPDATE CASCADE
     ON DELETE RESTRICT
@@ -253,15 +251,15 @@ CREATE TABLE candidate_cvs (
 
 CREATE TABLE jobs (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  company_user_id BIGINT UNSIGNED NOT NULL,
+  company_id BIGINT UNSIGNED NOT NULL,
+  company_commercial_name VARCHAR(180) NOT NULL,
   title VARCHAR(180) NOT NULL,
   description TEXT NOT NULL,
-  requirements TEXT NOT NULL,
   city VARCHAR(120) NOT NULL,
   region_id BIGINT UNSIGNED NOT NULL,
   commune_id BIGINT UNSIGNED NOT NULL,
-  salary_offered INT UNSIGNED NULL,
-  years_experience_required TINYINT UNSIGNED NULL,
+  salary_offered INT UNSIGNED NOT NULL,
+  years_experience_required TINYINT UNSIGNED NOT NULL,
   modality ENUM('REMOTE','HYBRID','ONSITE') NOT NULL,
   workload ENUM('FULL_TIME','PART_TIME','OTHER') NOT NULL,
   image_url VARCHAR(500) NULL,
@@ -270,7 +268,7 @@ CREATE TABLE jobs (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  KEY idx_jobs_company (company_user_id),
+  KEY idx_jobs_company (company_id),
   KEY idx_jobs_status (status),
   KEY idx_jobs_region (region_id),
   KEY idx_jobs_commune (commune_id),
@@ -279,7 +277,7 @@ CREATE TABLE jobs (
   KEY idx_jobs_workload (workload),
   KEY idx_jobs_created_at (created_at),
   CONSTRAINT fk_jobs_company
-    FOREIGN KEY (company_user_id) REFERENCES company_profiles(user_id)
+    FOREIGN KEY (company_id) REFERENCES companies(id)
     ON UPDATE CASCADE
     ON DELETE RESTRICT,
   CONSTRAINT fk_jobs_region
@@ -382,4 +380,3 @@ CREATE TABLE saved_jobs (
         ON UPDATE CASCADE
         ON DELETE CASCADE
 ) ENGINE=InnoDB;
-

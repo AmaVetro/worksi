@@ -57,8 +57,10 @@ Swipe puede ser básico (no necesitas animaciones perfectas)
 MySQL 8
 
 ✅ Recomendaciones clave
-Usar relaciones claras:
+Usar relaciones claras según Flyway/contrato (ejemplo mínimo):
 users
+companies
+recruiter_profiles
 jobs
 applications
 Para el CV: en base de datos solo metadatos y URL/ruta al archivo; el archivo vive en filesystem (coherente con Docker volumen de subidas).
@@ -79,7 +81,7 @@ Orden real de datos:
 En el backend Java: PDF → texto (Tika) → limpieza básica de texto.
 En Python: texto ya limpio → limpieza de fairness (spaCy + regex, datos sensibles) → embeddings → similitud → score (y explicación breve si el contrato lo incluye).
 El input hacia embeddings no es el PDF; es texto ya extraído y tratado.
-Para el matching del producto, la base del request hacia IA incluye texto del CV (post-Tika y post-limpieza inicial en backend, fairness en Python) y texto de la oferta. Además, el porcentaje final del producto considera modalidades preferidas y cargas horarias preferidas del postulante. Las skills que el candidato guarda en el perfil no se envían a /match ni influyen en el porcentaje.
+Para el matching del producto, la base del request hacia IA incluye texto del CV (post-Tika y post-limpieza inicial en backend, fairness en Python) y job_text construido en Spring como define Contrato Unificado API (solo title, description, modality, workload de la oferta). Además, el porcentaje final del producto considera modalidades preferidas y cargas horarias preferidas del postulante. Las skills que el candidato guarda en el perfil no se incluyen en el request de POST /match ni influyen en el porcentaje.
 Tampoco deben influir en el porcentaje: presentación personal del perfil, rango de sueldo esperado, sueldo ofrecido en la oferta, años de experiencia requeridos por la oferta, años de experiencia declarados dentro del CV y nacionalidad del postulante.
 
 🔹 1. Comunicación entre servicios (MUY IMPORTANTE) ***************************
@@ -167,12 +169,12 @@ Comparas el contenido profesional del CV frente al texto de la oferta
 
 
 
-🌐 Web (empresa) ***************************
+🌐 Web (administración + portal reclutadores) ***************************
 React
 Vite
 React Router
 UI por componentes
-Consumo de API REST (misma API que la app; vistas y flujos de empresa en navegador)
+Consumo de API REST (misma API base /api/v1 que la app móvil): login único ADMIN/RECRUTADOR sin registro público en landing MVP; alta empresa y alta reclutadores vía ADMIN; pantallas de empresa bajo rutas prefijadas /api/v1/company/* para RECRUITER (detalle oficial en Flujo Pantallas App Web y Contrato Unificado API).
 
 
 

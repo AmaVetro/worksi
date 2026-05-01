@@ -15,7 +15,7 @@ Validación real de RUT chileno (dígito verificador/lógica completa).
 
 Mensajes funcionales por campo como “Completa este campo”.
 
-Orden/secuencia del registro móvil (alineado a Flujo App Móvil y Contrato 1.2): crear cuenta y capturas [estado en cliente] -> subir CV [en cliente, PDF <= 1 MB] -> skills y últimas preferencias [en cliente] -> pantalla "Uso de datos" [última antes del backend] -> un solo POST /api/v1/auth/register/candidate (multipart, consent_given=true, parte "data" + "file" PDF) que crea usuario y perfil en BD -> Perfil con JWT; sin borrador de candidato en servidor.
+Orden/secuencia del registro móvil (alineado a Flujo App Móvil y Contrato Unificado API oficial): crear cuenta y capturas [estado en cliente] -> subir CV [en cliente, PDF <= 1 MB] -> skills y últimas preferencias [en cliente] -> pantalla "Uso de datos" [última antes del backend] -> un solo POST /api/v1/auth/register/candidate (multipart, consent_given=true, parte "data" + "file" PDF) que crea usuario y perfil en BD -> Perfil con JWT; sin borrador de candidato en servidor.
 
 
 Reglas de negocio de skills por momento:
@@ -26,7 +26,7 @@ oferta mínimo 3 / máximo 8 al crear/publicar.
 Reglas de matching:
 qué campos sí/no entran al score,
 que skills de perfil/oferta no alteren score,
-construcción de cv_text y job_text.
+construcción de cv_text y job_text (según Contrato Unificado API: job_text solo title + description + modality + workload).
 
 
 Fairness (regex + spaCy) antes de embeddings.
@@ -35,13 +35,13 @@ Explicación de match simple y sin datos sensibles.
 
 Reglas de publicación de oferta (solo ACTIVE, cuándo se publica y cómo se llena published_at).
 
-Regla “VIEWED solo por acción manual de empresa” (la BD valida fechas, pero no quién/cómo cambió el estado).
+Regla “VIEWED solo por acción manual desde portal empresa (usuario RECRUITER)” (la BD valida fechas, pero no automatismo de cambio).
 
 Regla de “cancelar postulación” como opcional (solo si se implementa).
 
 No repetir ofertas vistas en swipe (feed personalizado por candidato).
 
-Permisos/autorización (empresa A no puede ver/editar recursos de empresa B).
+Permisos/autorización (reclutador de company_id=A no puede ver/editar jobs/applications de otra company; ADMIN solo rutas /api/v1/admin/* según Contrato).
 
 Manejo de sesión JWT (solo access token, persistencia cliente, logout).
 
@@ -49,6 +49,6 @@ Validación de “CV con texto útil” (la BD valida formato/tamaño, no calida
 
 Manejo de archivos CV en filesystem (subida, reemplazo, marcar actual de forma consistente transaccional).
 
-Ordenar postulantes por compatibilidad en vistas empresa.
+Ordenar postulantes por compatibilidad en vistas portal empresa (/api/v1/company/jobs/{job_id}/applications).
 
 Invariante funcional del score: mismo CV + misma oferta => mismo score aunque cambien skills de perfil/oferta.
