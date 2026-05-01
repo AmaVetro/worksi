@@ -26,7 +26,8 @@ Objetivo: centralizar reglas esenciales para que cualquier integrante encuentre 
   - contenido relevante de la oferta
   - modalidades preferidas del postulante vs modalidad de la oferta
   - cargas horarias preferidas del postulante vs carga horaria de la oferta
-- El contrato base hacia IA (POST /match) usa cv_text y job_text; las skills del perfil del candidato no se envían a /match ni influyen en el porcentaje.
+- El contrato base hacia IA (POST /match, URI /match del servicio FastAPI) usa cv_text y job_text; las skills del perfil del candidato no se incluyen en el request de POST /match ni influyen en el porcentaje.
+- job_text debe armarse solo con title, description, modality y workload de la oferta (Contrato Unificado API); no concatenar lista de skills, sueldos ni años de experiencia requeridos como parte de ese texto semántico.
 - La explicación del match debe basarse en la comparación CV vs oferta, no en skills de perfil.
 - En app móvil de postulantes no se usan para el porcentaje:
   - skills del perfil
@@ -84,7 +85,7 @@ Objetivo: centralizar reglas esenciales para que cualquier integrante encuentre 
   - POST /match con cv_text y job_text
   - Respuesta con score y explanation
 - No se usa tabla matches; el matching se calcula dinámicamente.
-- Tabla de dominio base: users, jobs, applications.
+- Tablas de dominio base incluyen como mínimo users, companies, recruiter_profiles donde aplique, jobs, applications (detalle exacto por migraciones Flyway y Contrato Unificado API).
 
 ============================================================
 6) REGLAS DE SEGURIDAD Y AUTENTICACIÓN
@@ -95,7 +96,7 @@ Objetivo: centralizar reglas esenciales para que cualquier integrante encuentre 
 - Un filtro JWT en Spring Security.
 - Persistencia de contraseña en BD: siempre como hash BCrypt (o algoritmo estándar equivalente) y nunca en texto plano.
 - En app móvil de postulantes, login con email y contraseña.
-- En ambos frontends (app móvil de postulantes y app web de empresas), tras 4 intentos fallidos se bloquea el acceso y se deriva a recuperación de contraseña.
+- En app móvil de postulantes y en web de administrador/reclutadores (ADMIN y RECRUITER), tras 4 intentos fallidos se bloquea el acceso y se deriva a recuperación de contraseña (alineado a Contrato Unificado API).
 - En app móvil de postulantes (MVP), recuperación de contraseña por correo en modo mockup: no hay envío real de emails.
 
 ============================================================
@@ -103,7 +104,7 @@ Objetivo: centralizar reglas esenciales para que cualquier integrante encuentre 
 ============================================================
 - Estados del dominio de postulaciones: APPLIED, VIEWED, CANCELLED.
 - En app móvil de postulantes (MVP), los estados visibles son APPLIED y VIEWED; CANCELLED queda como funcionalidad solo si sobra tiempo.
-- VIEWED se marca de forma manual por la empresa.
+- VIEWED se marca de forma manual por quien opera el portal empresa (sesión RECRUITER), sin automatismo.
 - No implementar marcado automático de VIEWED.
 
 ============================================================
@@ -114,7 +115,7 @@ Objetivo: centralizar reglas esenciales para que cualquier integrante encuentre 
 - IA: Python 3.11, FastAPI, sentence-transformers, spaCy, scikit-learn.
 - Modelo de embeddings acordado: all-MiniLM-L6-v2.
 - Mobile candidato: Kotlin (Android Studio, Jetpack Compose con ViewModel + State, enfoque funcional).
-- Web empresa: React + Vite.
+- Web (portal ADMIN + portal reclutadores RECRUITER): React + Vite.
 - Infraestructura: Docker + Docker Compose.
 - Convención obligatoria de nombres API/código:
   - JSON de API pública en snake_case.
@@ -143,7 +144,7 @@ Objetivo: centralizar reglas esenciales para que cualquier integrante encuentre 
 ============================================================
 - No implementar testing en frontends: no añadir carpetas ni entornos de testing en el proyecto web (React) ni en el móvil (Android). Queda excluido Jest, Vitest, Testing Library en web, y suites o carpetas de test instrumentado en móvil salvo lo que el stack imponga por defecto y deba dejarse sin uso.
 - Las personas que trabajan en frontends validan el comportamiento de forma visual y funcional mientras integran, sin obligación de tests automatizados de UI.
-- La fase de pruebas estructurada o acotada no se reparte en cada sprint: al final del MVP, cuando el proyecto entero esté listo, se ejecuta solo un conjunto reducido de pruebas, las más críticas, sobre el sistema completo, para comprobar que las partes esenciales encajan (por ejemplo integración Spring Boot y FastAPI, flujo funcional core, E2E candidato-empresa, y comprobación puntual con Postman sobre endpoints críticos si aplica). Comprobaciones puntuales durante el desarrollo (por un caso feliz vía API) no sustituyen esa pasada final ni justifican suites en frontend.
+- La fase de pruebas estructurada o acotada no se reparte en cada sprint: al final del MVP, cuando el proyecto entero esté listo, se ejecuta solo un conjunto reducido de pruebas, las más críticas, sobre el sistema completo, para comprobar que las partes esenciales encajan (por ejemplo integración Spring Boot y FastAPI, flujo funcional core, E2E candidato más vista empresa vía reclutador, y comprobación puntual con Postman sobre endpoints críticos si aplica). Comprobaciones puntuales durante el desarrollo (por un caso feliz vía API) no sustituyen esa pasada final ni justifican suites en frontend.
 - Regla transversal: dentro de lo anterior, la prioridad de esas pruebas finales es integración y flujo core; evitar testing opcional o de baja prioridad.
 - No se exige: testing de performance avanzado ni suites automatizadas complejas en ningún corte.
 - Si sobra tiempo en un sprint, usarlo en ajustes o bugs críticos, no en montar testing de frontend ni ampliar cobertura más allá de la política anterior.
@@ -157,7 +158,7 @@ Objetivo: centralizar reglas esenciales para que cualquier integrante encuentre 
 - Calendario (Sprint oficiales): primera semana 20–26 abril 2026; última semana obligatoria 29 junio – 5 julio 2026 (semana que comienza el 29 de junio de 2026).
 - Criterio de ordenación: lógica de desarrollo (dependencias, pipeline de IA) y entregas de valor continuas; cada sprint puede atravesar BD, frontend y backend a la vez.
 - La inicialización del proyecto no es HU numerada; va en Sprint 1.
-- Cierre obligatorio del plan en Sprint 11: integración end-to-end candidato-empresa, corrección de bugs críticos, pruebas de integración finales, checklist de calidad, preparación demo/entrega; incluye verificación explícita de regla de matching (mismo CV y misma oferta → mismo score aunque solo cambien skills de perfil).
+- Cierre obligatorio del plan en Sprint 11: integración end-to-end candidato y flujo empresa (reclutador), corrección de bugs críticos, pruebas de integración finales, checklist de calidad, preparación demo/entrega; incluye verificación explícita de regla de matching (mismo CV y misma oferta → mismo score aunque solo cambien skills de perfil).
 - Sprints marcados como pesados (alineado a Sprint oficiales):
   - Sprint 1
   - Sprint 5
@@ -168,13 +169,13 @@ Objetivo: centralizar reglas esenciales para que cualquier integrante encuentre 
 ============================================================
 12) REGLAS DE IMPLEMENTACIÓN FUNCIONAL (ORDEN LÓGICO)
 ============================================================
-- Autenticación y tipos de cuenta antes del resto (registro, login, perfil base con skills; esas skills no son insumo del porcentaje).
+- Autenticación y roles antes del resto (candidato móvil con registro+login CANDIDATE; web con ADMIN y reclutadores RECRUITER y ficha empresa sin usuario empresa; mismo contrato oficial de API; skills de perfil no son insumo del porcentaje).
 - Consentimiento (HU-21, checkbox y timestamp) obligatorio en pantalla "Uso de datos", última pantalla antes de crear la cuenta oficialmente; al aceptar el consentimiento se crea la cuenta y se pasa a Perfil.
 - Subida y almacenamiento de CV (HU-06); luego extracción de texto con Tika y post-procesamiento mínimo en backend, y ofertas creadas y visibles (HU-15, HU-10) como insumos antes de fairness y score. El consumo de matching en producto requiere CV limpio, contenido de oferta, modalidades preferidas y cargas horarias preferidas; no skills de perfil del candidato.
 - Fairness (HU-09) antes de score (HU-07) y explicación breve (HU-08, plantilla mínima).
 - Swipe y postulación (HU-11, HU-12) cuando existan ofertas y contrato de matching operativo (cv_text + job_text).
 - Listado de postulaciones del candidato (HU-13) después de existir postulaciones; cancelación (HU-14) es opcional fuera del plan obligatorio.
-- Vista empresa (HU-19) y estado VIEWED por acción manual (HU-23) después del flujo de postulación; orden por compatibilidad (HU-20) en etapa de consolidación.
+- Vista empresa / postulantes (HU-19) y estado VIEWED por acción manual (HU-23) después del flujo de postulación; orden por compatibilidad (HU-20) en etapa de consolidación (actores RECRUITER según Contrato).
 - Editar perfil (HU-05) en etapa tardía sin bloquear el núcleo; edición de skills de perfil no redefine el score sin cambio de CV u oferta.
 - Cierre, E2E y demo concentrados en Sprint 11; HU opcionales (24, 16, 17, 14, 18, 22) no condicionan el flujo obligatorio del MVP.
 

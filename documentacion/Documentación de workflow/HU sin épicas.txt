@@ -17,13 +17,12 @@ Criterios de aceptación:
 * Se puede ingresar: nombre, apellido paterno, apellido materno, correo, contraseña, celular, rut, 
 nro. documento, región y comuna como obligatorios; segundo nombre y calle como opcionales.
 * Se valida formato de email.
-* En creación de contraseña aplica la política alineada a Flujo Pantallas App Móvil y 
-Flujo Pantallas App Web: mínimo 12 caracteres, al menos un símbolo, al menos un número, 
+* En creación de contraseña aplica la política alineada a Flujo Pantallas App Móvil y Contrato Unificado API: mínimo 12 caracteres, al menos un símbolo, al menos un número, 
 y letras en mayúscula y minúscula; misma política al definir o cambiar contraseña en 
-el flujo de recuperación, según esos flujos.
+el flujo de recuperación, según esos documentos.
 * Se valida lógica numérica de RUT de Chile.
 * No permite emails duplicados.
-* En la pantalla "Crear cuenta" no se crea aún la cuenta oficial; los datos, el PDF del CV, skills, rubro y preferencias se mantienen en estado local en el cliente hasta "Uso de datos", sin persistir candidato en el backend (salvo consumo de catálogos públicos GET /api/v1/catalogs/*), según Flujo Pantallas App Móvil y Contrato Unificado API v1.2.
+* En la pantalla "Crear cuenta" no se crea aún la cuenta oficial; los datos, el PDF del CV, skills, rubro y preferencias se mantienen en estado local en el cliente hasta "Uso de datos", sin persistir candidato en el backend (salvo consumo de catálogos públicos GET /api/v1/catalogs/*), según Flujo Pantallas App Móvil y Contrato Unificado API (versión oficial del repositorio).
 * La cuenta tipo "candidato" y la persistencia en BD (usuario, CV, perfil) se crean en un solo request al aceptar el consentimiento en "Uso de datos": POST /api/v1/auth/register/candidate (multipart: parte "data" JSON con consent_given=true y demás campos, parte "file" con el PDF del CV).
 * Se muestra error si falla el registro
 * Si falta un campo obligatorio no permite avanzar y muestra "Completa este campo"
@@ -32,46 +31,35 @@ el flujo de recuperación, según esos flujos.
 
 
 
-HU-02 — Registro de empresa
-Como empresa
-* Quiero registrarme en la plataforma
-* Para poder publicar ofertas laborales
-Criterios de aceptación (alineados a Flujo Pantallas App Web, pantalla “Crear cuenta” versión web):
-* Campos obligatorios: nombre y apellidos; teléfono; correo de acceso; contraseña; nombre comercial 
-de la empresa; razón social; RUT en formato sin puntos y con guión; región (desplegable desde datos 
-en BD); comuna (desplegable desde BD, solo comunas de la región seleccionada); sector o ámbito de 
-trabajo (desplegable desde sectores o ámbitos precargados en BD); N° de trabajadores 
-aproximado; N° de vacantes anuales aproximado
-* Se valida formato de email
-* En creación de contraseña aplica la política alineada a Flujo Pantallas App Web y 
-* Flujo Pantallas App Móvil: mínimo 12 caracteres, al menos un símbolo, al menos un número, y letras en 
-mayúscula y minúscula; misma política al definir o cambiar contraseña en el flujo de recuperación, según esos flujos
-*Se valida RUT según reglas acordadas para el formato exigido en web (sin puntos, con guión)
-* No permite emails duplicados
-* El registro crea una cuenta tipo "empresa"
-* Si falta un campo obligatorio no permite avanzar y se muestra el mensaje "Completa este campo" en los campos correspondientes
-* La imagen de empresa es opcional en el registro (campo image_url en POST /api/v1/auth/register/company)
-*Con la cuenta ya creada y el usuario empresa logueado, la imagen de empresa debe poder subirse,
- eliminarse o cambiarse mediante endpoint autenticado (PATCH /api/v1/company/profile/image)
-* Esta imagen de empresa no tiene relación con la imagen de oferta usada al crear ofertas laborales
-* Manejo de errores visible si falla el registro o validaciones de servidor
-
+HU-02 — Alta empresa y reclutadores (MVP web, panel administrador)
+Como administrador del sistema (rol ADMIN autenticado)
+* Quiero registrar la ficha de una empresa y luego crear cuentas de reclutadores vinculadas a esa empresa
+* Para que existan companies en BD sin usuario “empresa”, y personas con rol RECRUITER que publiquen ofertas
+Criterios de aceptación (alineados a Flujo Pantallas App Web y Contrato Unificado API):
+* No hay registro público de empresa en la landing web MVP; no existe cuenta con rol COMPANY.
+* Alta empresa: POST /api/v1/admin/companies (multipart; JSON en parte "data" con datos negocio: nombre comercial, razón social, teléfono, dirección, RUT, región, comuna, sector, N° trabajadores aprox.; sin email ni contraseña de empresa); imagen de organización opcional en parte "image".
+* Listado de empresas: GET /api/v1/admin/companies para desplegable al dar de alta reclutadores (items con company_id, commercial_name, etc.).
+* Alta reclutador: POST /api/v1/admin/recruiters con email, password (política del contrato), datos personales y company_id existente.
+* Si falta un obligatorio no avanza y muestra “Completa este campo” donde corresponda.
+* Con sesión RECRUITER activa en portal empresa: PATCH /api/v1/company/profile/image permite subir/cambiar/eliminar imagen en la ficha company (distincta de imagen por oferta).
+* Manejo de errores visible si falla validación o servidor.
+Nota: el endpoint público POST /api/v1/auth/register/company está fuera del contrato MVP web actual si no se rehabilita por acuerdo.
 
 
 
 
 HU-03 — Login
-Como usuario (candidato o empresa)
+Como usuario con cuenta de login (candidato CANDIDATE en app móvil; ADMIN o RECRUITER en web)
 * Quiero iniciar sesión
 * Para acceder a mis funcionalidades
 Criterios de aceptación:
-* Login con email y contraseña
-* Retorna token JWT válido
+* Login con email y contraseña mediante POST /api/v1/auth/login
+* Retorna token JWT válido con claim de rol según Contrato Unificado API (CANDIDATE | ADMIN | RECRUITER)
 * Manejo de credenciales incorrectas
 * Persistencia de sesión en cliente
 * Logout elimina sesión
-* En ambos frontends (app móvil de postulantes y app web de empresas), tras 4 intentos fallidos
- se bloquea el acceso y se deriva al flujo de recuperación de contraseña
+* En app móvil de postulantes y en web (admin/reclutador), tras 4 intentos fallidos
+ se bloquea el acceso y se deriva al flujo de recuperación de contraseña (mismo contrato)
 * En app móvil de postulantes (MVP), el flujo de recuperación por correo es mockup: no se 
 envían correos reales
 
@@ -242,32 +230,25 @@ Criterios de aceptación:
 
 
 HU-15 — Crear oferta laboral
-Como empresa
+Como reclutador (rol RECRUITER en portal empresa web)
 * Quiero crear una oferta laboral
 * Para atraer candidatos
-Criterios de aceptación:
-* Campos obligatorios:
-título
-descripción
-requisitos
-skills requeridas (mínimo 3; máximo 8 en el detalle de la oferta; en vistas resumidas del 
-producto pueden mostrarse hasta 4 skills según flujos de pantalla oficiales)
-ubicación (ciudad y comuna, coherentes con región/comuna o criterio equivalente documentado)
-modalidad de trabajo (remoto, presencial o híbrido)
-carga horaria de la oferta (por ejemplo full time, part time, otro; dato requerido para el
- ajuste de matching con las preferencias del postulante en producto)
-* Campos opcionales:
-salario ofrecido
-imagen de la oferta
-* Otros datos de ficha (por ejemplo años de experiencia requeridos por el puesto) pueden existir, 
-guardarse y mostrarse; no forman parte del insumo hacia POST /match ni del cálculo semántico 
-base del score: hacia el servicio de IA el texto de oferta (job_text) se construye en backend 
-concatenando únicamente título, descripción, requisitos, modalidad y carga horaria de la oferta;
- quedan excluidos del job_text de matching el bloque o listas de skills requeridas de la oferta,
-  el sueldo ofrecido y los años de experiencia requeridos, de acuerdo a las reglas oficiales del proyecto.
-* En el producto, el porcentaje final de compatibilidad considera además la comparación de modalidades 
-preferidas y cargas horarias preferidas del postulante frente a modalidad y carga horaria de la oferta, 
-además del score semántico derivado de los textos permitidos.
+Criterios de aceptación (Flujo Pantallas App Web + Contrato Unificado API):
+* Campos obligatorios en creación POST /api/v1/company/jobs:
+company_commercial_name (nombre comercial a mostrar; puede igualar datos de companies)
+title
+description (único texto largo del puesto; no existe campo persistence separado requirements; texto tipo requisitos del puesto va dentro de description)
+city
+region_id y commune_id coherentes con catálogo
+salary_offered (obligatorio en API y modelo)
+years_experience_required (obligatorio en API y modelo)
+modality y workload conforme enums del contrato
+skills_ids entre 3 y 8 asociadas a la oferta
+* Opcional: image_url por oferta (imagen propia del aviso).
+* Persistencia ACTIVE según MVP; estado único ACTIVE.
+* En vistas resumidas del producto pueden mostrarse hasta 4 skills en el card; hasta 8 en detalle candidato según contrato.
+* Para POST /match, job_text en backend se construye solo concatenando title, description, modality y workload; no incluye job_skills, salary_offered, years_experience_required ni company_commercial_name (solo marca en listados), según contrato.
+* El porcentaje final del producto aplica también bonus por modalidades y cargas horarias preferidas del candidato frente a modality y workload de la oferta, además del score semántico base.
 * Validación de campos
 * Se guarda correctamente
 
@@ -276,7 +257,7 @@ además del score semántico derivado de los textos permitidos.
 
 
 HU-16 — Editar oferta (SÓLO SI SOBRA TIEMPO)
-Como empresa
+Como reclutador (RECRUITER)
 * Quiero editar una oferta
 * Para actualizar información
 Criterios de aceptación:
@@ -289,7 +270,7 @@ Criterios de aceptación:
 
 
 HU-17 — Eliminar oferta (SÓLO SI SOBRA TIEMPO, descartada del diseño actual por estado único ACTIVE)
-Como empresa
+Como reclutador (RECRUITER)
 * Quiero eliminar una oferta
 * Para retirar publicaciones
 Criterios de aceptación:
@@ -302,7 +283,7 @@ Criterios de aceptación:
 
 
 HU-18 — Activar/desactivar oferta (SÓLO SI SOBRA TIEMPO, descartada del diseño actual por estado único ACTIVE)
-Como empresa
+Como reclutador (RECRUITER)
 * Quiero activar o desactivar una oferta
 * Para controlar su visibilidad
 Criterios de aceptación:
@@ -314,7 +295,7 @@ Criterios de aceptación:
 
 
 HU-19 — Ver postulantes
-Como empresa
+Como reclutador (RECRUITER)
 * Quiero ver los candidatos que postularon
 * Para evaluarlos
 Criterios de aceptación:
@@ -327,7 +308,7 @@ Criterios de aceptación:
 
 
 HU-20 — Ordenar por compatibilidad
-Como empresa
+Como reclutador (RECRUITER)
 * Quiero ver candidatos ordenados por compatibilidad
 * Para priorizar mejores perfiles
 Criterios de aceptación:
@@ -367,12 +348,12 @@ Criterios de aceptación:
 
 
 HU-23 — Marcar postulación como vista
-Como empresa
+Como reclutador (RECRUITER)
 * Quiero marcar una postulación como vista
 * Para llevar seguimiento del estado de los candidatos
 Criterios de aceptación:
 * Existe una acción manual para marcar como “VIEWED”
-* El estado cambia solo cuando la empresa ejecuta esa acción
+* El estado cambia solo cuando quien opera el portal empresa (sesión RECRUITER) ejecuta esa acción
 * El estado se refleja correctamente en la lista de postulantes
 * No afecta otras postulaciones fuera de la seleccionada
 

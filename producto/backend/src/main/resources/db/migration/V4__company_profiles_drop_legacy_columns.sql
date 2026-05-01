@@ -7,7 +7,3 @@ PREPARE p FROM @stmt; EXECUTE p; DEALLOCATE PREPARE p;
 SET @cnt := (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'company_profiles' AND COLUMN_NAME = 'annual_vacancies_approx');
 SET @stmt := IF(@cnt > 0, 'ALTER TABLE company_profiles DROP COLUMN annual_vacancies_approx', 'SELECT 1');
 PREPARE p FROM @stmt; EXECUTE p; DEALLOCATE PREPARE p;
-
-ALTER TABLE company_profiles MODIFY COLUMN phone VARCHAR(25) NULL;
-ALTER TABLE company_profiles MODIFY COLUMN commercial_name VARCHAR(180) NULL;
-ALTER TABLE company_profiles MODIFY COLUMN legal_name VARCHAR(220) NULL;

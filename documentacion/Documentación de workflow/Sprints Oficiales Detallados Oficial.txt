@@ -5,10 +5,11 @@ Propósito de este archivo:
 Guiar a todo el equipo, incluso con poca experiencia, sprint por sprint, sin
 dejar tareas “a criterio” sin definir. Cada bloque dice QUÉ hacer, POR QUÉ,
 en QUÉ orden aproximado, QUÉ se considera “terminado” y QUÉ está prohibido
-según la documentación oficial del proyecto (Sprint oficiales, Reglas del
-Proyecto, HU sin épicas, Stack Oficial, Documento técnico, Flujo Pantallas).
+según la documentación oficial del proyecto (Sprint oficiales, Contrato
+Unificado API, Reglas del Proyecto, HU sin épicas, Stack Oficial, Documento
+técnico, Flujo Pantallas App Web y Móvil).
 
-Fuente de verdad del calendario y de las horas por sprint: Sprint Oficiales
+Fuente de verdad del calendario y de las horas por sprint: Sprint oficiales.txt del mismo folder
 Cuando algo no esté aquí explícito, se aplica documento Reglas del Proyecto
 
 Convenciones en este documento:
@@ -21,16 +22,15 @@ Convenciones en este documento:
 
 Regla global de matching (válida en todo el proyecto; no negociar en código):
 - El candidato declara y persiste skills en perfil (HU-04, HU-05).
-- El porcentaje de compatibilidad en producto considera: CV limpio (texto
-  extraído y pasado por fairness cuando corresponda) + contenido relevante de
-  la oferta + modalidades preferidas del postulante vs modalidad de la oferta
-  + cargas horarias preferidas del postulante vs carga horaria de la oferta.
+- El porcentaje de compatibilidad en producto considera: CV limpio (texto extraído
+  y fairness cuando corresponda) frente texto semántico oferta donde job_text se arma
+  en backend sólo con title + description + modality + workload según Contrato; más política combinada en producto cuando preferencias modality/workload del candidato aplican contra la oferta (Sprint oficiales + Contrato).
 - El contrato mínimo hacia IA es POST /match con cv_text y job_text. En este
   documento, la palabra “skills” en reglas de porcentaje designa las listas
   estructuradas guardadas en BD: skills de perfil del postulante y skills
   requeridas declaradas en la ficha de la oferta. Esas skills de perfil y de
   oferta NO se concatenan a cv_text ni a job_text para influir en el score, NO
-  se envían como insumo aparte a /match y NO modifican el porcentaje de matching.
+  se envían como campos adicionales en el request de POST /match y NO modifican el porcentaje de matching.
 - Lo anterior no confunde con el texto libre del CV: si dentro del PDF el
   postulante describe habilidades, herramientas, tecnologías o competencias en
   prosa (por ejemplo una sección de competencias o el detalle de experiencias),
@@ -82,8 +82,8 @@ ANTES DEL SPRINT 1 — ACUERDOS QUE TODO EL EQUIPO DEBE ENTENDER
 6) Estados de postulación
 - APPLIED, VIEWED, CANCELLED existen como dominio; en MVP móvil lo visible es
   APPLIED y VIEWED. CANCELLED solo si sobra tiempo (HU-14).
-- VIEWED solo por acción manual de la empresa (HU-23). Prohibido marcado
-  automático de VIEWED.
+- VIEWED solo por acción manual del reclutador en sesión RECRUITER (HU-23).
+  Prohibido marcado automático de VIEWED.
 
 7) Lista oficial “solo si sobra tiempo” (no planificar como bloqueante)
 - HU-24 Guardar oferta
@@ -105,10 +105,13 @@ Esfuerzo total estimado del equipo: 10 horas (suma de las 3 personas en la
 semana).
 
 Objetivo del sprint en una frase:
-Dejar el proyecto “arrancable” por todos con Docker + MySQL + esqueletos de
-servicios y cumplir HU-01 en su tramo inicial (validaciones de datos de Crear cuenta
-y catálogos o reglas compartidas alineadas al registro en un paso; sin persistencia
-de candidato hasta "Uso de datos" según Contrato 1.2) con validaciones esenciales.
+Dejar el proyecto arrancable con Docker Compose, MySQL y cadena Flyway ejecutable
+hasta los scripts vigentes del repositorio (dominio oficial: users CANDIDATE/ADMIN/RECRUITER,
+companies sin credencial, recruiter_profiles.company_id, jobs según Contrato); Spring Boot
+operativo con GET /health (Spring donde exista en el sprint) y catálogos públicos GET /api/v1/catalogs/* donde apliquen; esqueleto FastAPI cuando exista en compose.
+HU-01 (registro multipart candidato cerrado) es Sprint 4; en Sprint 1 solo stubs opcionales
+tras BD estable si alcanza tiempo. Política de contraseña conocida equipo (12 caracteres,
+símbolo, número, mayúsculas y minúsculas) para implementaciones posteriores.
 
 ------------------------------------------------------------
 A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 1 (Definition of Done)
@@ -132,34 +135,22 @@ Al cerrar el sprint, debe cumplirse TODO lo siguiente:
 - Manejo básico de errores: respuestas HTTP coherentes cuando falla validación
   o reglas de negocio (no silenciar errores).
 
-3) HU-01 Registro de candidato (SÓLO tramo inicial, antes del alta oficial)
-Debe poder ingresarse en el registro de candidato:
-- Obligatorios: nombre, apellido paterno, apellido materno, correo, contraseña,
-  celular, rut, nro. documento, región, comuna.
-- Opcionales: segundo nombre, calle.
+3) Migraciones Flyway y esquema (prioridad Sprint 1)
+- Cadena ejecutable limpia: migraciones hasta el nivel definido en el repositorio
+  (referencia Sprint oficiales: V1 dominio principal, V2 catálogo, rol ADMIN en users,
+  recruiter_profiles, jobs con company_id, ajustes comerciales y salary/experience donde
+  apliquen).
+- Flyway ejecuta al levantar Spring; JPA ddl-auto coherent con validate donde esté configurado.
 
-Validaciones obligatorias según HU y reglas:
-- Formato de email válido.
-- Contraseña (creación) según HU sin épicas y Flujo Pantallas App Móvil y
-  Flujo Pantallas App Web: mínimo 12 caracteres, al menos un símbolo, al menos
-  un número, y letras en mayúscula y minúscula. La misma política aplica al
-  fijar nueva contraseña en el flujo de recuperación (mock) cuando se implemente.
-- Lógica numérica/formato de RUT chileno (definir regla implementable y
-  documentar el formato aceptado en entrada, por ejemplo con o sin puntos y
-  con guion/k verificador).
-- No permitir emails duplicados: si el correo ya existe, error visible y
-  claro para el cliente.
-- Este paso NO crea aún la cuenta tipo “candidato”; en producto el cliente
-  mantiene CV/skills/preferencias en estado local hasta pantalla "Uso de datos"
-  (sin borrador de candidato en servidor; ver Flujo App Móvil y Contrato 1.2).
-- Si falta un campo obligatorio, no avanza y se muestra el texto exacto:
-  “Completa este campo” (en API puede traducirse a errores por campo; si aún
-  no hay pantalla móvil, debe quedar demostrable vía API con herramienta tipo
-  Postman).
+4) HU-01 y validaciones multipart (solo si sobra después de infra y BD)
+Opcional tras DoD infra: stubs alineados a Contrato Unificado API (auth/candidate) o endpoint
+ligero de validación de campos multipart según equipo; alta oficial multipart con consentimiento
+queda Sprint 4. Flujo cliente sin persistencia candidato antes de HU-21: según Flujo Pantallas App Móvil.
+Si existe servicio que valide formato email, política contraseña, RUT antes del alta oficial,
+mantener resultado controlado ante error (mensaje estable, no stacktrace crudo).
 
 Criterio de aceptación transversal:
-- Si el registro falla por causa de servidor o BD, hay manejo de error visible
-  en la respuesta (mensaje controlado, no stacktrace crudo al cliente).
+- Criterio de equipo: ejecutar migrate en base limpia reproducible desde compose según Sprint oficiales.
 
 
 
@@ -167,23 +158,12 @@ Criterio de aceptación transversal:
 B) DESGLOSE ULTRA DETALLADO (orden sugerido para minimizar bloqueos)
 ------------------------------------------------------------
 
-B1) Tarea 1 — Acuerdo de datos mínimos del candidato (30 a 60 minutos equipo)
-(Estado: lista)
-- Listar columnas mínimas de users o tabla equivalente acordada para MVP.
-- Definir esquema de candidato sin tablas de borrador (alta única por POST
-  /auth/register/candidate multipart en Sprint 4).
-- Decidir cómo se guarda contraseña: hash con algoritmo estándar (por ejemplo
-  BCrypt) vía Spring Security o componente equivalente; nunca texto plano.
-- Asegurar regla de complejidad de contraseña en API alineada a HU sin épicas y
-  flujos de pantalla: mínimo 12 caracteres, al menos un símbolo, al menos un
-  número, mayúsculas y minúsculas (misma regla para nueva contraseña en
-  recuperación mock cuando se implemente).
-- Decidir cómo se modela región y comuna: tablas separadas vs catálogo mínimo.
-  Debe permitir validar “comuna pertenece a región”.
-
-Entregable: esquema escrito (aunque sea en wiki interna o README corto) con
-campos y tipos.
-
+B1) Tarea 1 — Flyway y dominio físico oficial (prioridad; 3 a 4 horas equipo)
+- Escribir o verificar carpeta migraciones hasta scripts vigentes repo: users con
+  ENUM CANDIDATE/ADMIN/RECRUITER, password_hash solo login, companies sin credencial,
+  recruiter_profiles.company_id, jobs alineadas Contrato (sin campo requirements separado),
+  aplicaciones swipe/guardados según modelo, seed ADMIN con hash, catálogo V2, etc.
+- DoD: Subir aplicación contra MySQL vacío y confirmar historia Flyway hasta última versión.
 
 B2) Tarea 2 — Docker Compose “feliz path” (2 a 3 horas equipo)
 (Estado: lista)
@@ -199,34 +179,21 @@ DoD compose:
   llamar a otro integrante.
 
 
-B3) Tarea 3 — Modelo de usuario + repositorio + migraciones (2 a 3 horas)
-(Estado: en proceso)
-- Crear entidad User base alineada a HU-01; sin tablas onboarding_* (alta en un
-  paso en Sprint 4 según contrato).
-- Crear repositorio JPA.
-- Implementar restricción única a nivel BD para email si es posible, y validar
-  también en servicio para mensaje amigable.
+B3) Tarea 3 — Entidades JPA alineadas a migraciones (2 a 3 horas)
+- Reconciliar entidades y repositorios con esquema Flyway aplicado (User, CandidateProfile,
+  Company, Job, recruiter_profiles, etc.; sin tablas onboarding).
+- Restricción única email en users donde exista en BD.
 
-
-B4) Tarea 4 — Catálogos y validaciones compartidas (2 a 3 horas)
-- GET /api/v1/catalogs/regions y GET /api/v1/catalogs/regions/{region_id}/communes
-  (o equivalente mínimo al contrato) para soportar flujo móvil.
-- Servicio o utilidades de validación reutilizables: email, RUT, política de
-  contraseña (misma que en registro final), alineadas a HU-01.
-- No implementar POST /api/v1/auth/register/candidate completo en Sprint 1 si
-  el equipo prioriza infraestructura; en ese caso dejar documentado el contrato
-  multipart (data + file) para Sprint 4.
-- No persistir fila de candidato hasta el alta con consentimiento (Contrato 1.2).
-
+B4) Tarea 4 — Health y catálogos mínimos (1 a 2 horas)
+- GET /health o equivalente del backend (operación salud sin prefijo /api/v1 en implementación actual); GET /api/v1/catalogs/regions y GET /api/v1/catalogs/regions/{region_id}/communes (y otros catálogos públicos mínimos del Contrato)
+  para desbloquear Sprint 3 movil cuando consuma servidor.
+- No implementar alta multipart candidato aquí si el equipo prioriza esquema; documentar POST
+  multipart Sprint 4 en Contrato.
+- Sin persistencia de fila candidato hasta consentimiento y multipart oficial (HU-21 / HU-01 cierre Sprint 4).
 
 B5) Tarea 5 — Verificación cruzada (1 a 2 horas)
-- Caso feliz Postman: catálogos region/comuna y health; validación de campo
-  inválico en servicio compartido si aplica.
-- Caso email duplicado.
-- Caso contraseña que no cumple política (por ejemplo longitud o falta de tipo
-  de carácter): rechazo con error controlado.
-- Caso campo obligatorio vacío: debe disparar validación y el mensaje exigido
-  por HU donde aplique (API: estructura de error por campo recomendada).
+- docker compose up: MySQL healthy, backend arranca Flyway OK, opcional ai /health curl.
+- Postman opcional: catálogos, health y un caso feliz donde exista validación provisional.
 
 
 ------------------------------------------------------------
@@ -244,9 +211,8 @@ C) QUÉ NO HACER EN EL SPRINT 1 (para no romper el plan)
 D) Reparto sugerido de roles (flexible; ajustar a habilidades reales)
 ------------------------------------------------------------
 - Integrante A: Compose + MySQL + variables + documentación de arranque.
-- Integrante B: modelo User + migraciones + repositorio.
-- Integrante C: controller + service + validaciones + pruebas Postman
-  documentadas.
+- Integrante B: migraciones Flyway + entidades alineadas + repositorios.
+- Integrante C: controllers GET /health + catálogos GET /api/v1/catalogs/* donde existan en el sprint + verificación compose + Postman mínimo.
 
 
 
@@ -255,97 +221,64 @@ D) Reparto sugerido de roles (flexible; ajustar a habilidades reales)
 ================================================================================
 SPRINT 2 — SEMANA 27 DE ABRIL AL 3 DE MAYO DE 2026
 ================================================================================
-Esfuerzo total estimado del equipo: 9 horas.
-Contenido oficial: HU-02 Registro de empresa + HU-03 Login (incluye logout en
-cliente según HU-03).
+Esfuerzo total estimado del equipo: 10 horas.
+Contenido oficial: HU-03 Login unificado + HU-02 Alta ficha empresa y reclutadores
+por ADMIN según modelo oficial (Contrato Unificado API, HU sin épicas, Flujo Pantallas App Web).
 
 Objetivo del sprint en una frase:
-Cerrar identidad completa: dos tipos de cuenta (candidato ya existente + empresa
-nuevo) y autenticación JWT operativa con logout del lado cliente donde aplique.
+JWT operativo para CANDIDATE, ADMIN y RECRUITER; ADMIN puede dar de alta companies
+solo datos negocio (sin usuario empresa ni credencial empresa) y usuarios RECRUITER
+con company_id; bloqueo por intentos fallidos y recuperación mock alineados web/móvil.
 
 ------------------------------------------------------------
 A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 2
 ------------------------------------------------------------
-1) HU-02 Registro de empresa
-- Criterios alineados a HU sin épicas y a Flujo Pantallas App Web (crear cuenta
-  empresa): nombre y apellidos; teléfono; correo de acceso; contraseña; nombre
-  comercial; razón social; RUT sin puntos con guión; región y comuna (comuna
-  válida para la región); sector o ámbito de trabajo (catálogo en BD); N° de
-  trabajadores aproximado; N° de vacantes anuales aproximado; todos obligatorios
-  en el paso de registro con mensaje “Completa este campo” si falta alguno.
-- Validación de email y de RUT según reglas acordadas con el formato web.
-- Validación de contraseña: misma política que HU-01 y flujos de pantalla
-  (mínimo 12 caracteres, al menos un símbolo, al menos un número, mayúsculas y
-  minúsculas); al fijar nueva contraseña en recuperación (mock) aplica la misma
-  política cuando se implemente.
-- No emails duplicados.
-- Cuenta tipo “empresa” persistida de forma inequívoca.
-- La imagen de empresa es opcional en el registro (image_url en
-  POST /api/v1/auth/register/company) y, con cuenta creada y sesión iniciada,
-  se puede subir/eliminar/cambiar por endpoint autenticado
-  PATCH /api/v1/company/profile/image.
-- Esta imagen de empresa es independiente de la imagen de cada oferta laboral.
-- Errores visibles/entendibles en respuestas API.
+1) HU-03 Login
+- POST /api/v1/auth/login único para web (ADMIN y RECRUITER) y candidato donde aplique Contrato.
+- Respuesta JWT solo access token con claims rol CANDIDATE | ADMIN | RECRUITER.
+- Tras 4 intentos fallidos bloqueo y derivación a flujo recuperación mock (alineación Flujo web/móvil).
+- Credenciales incorrectas 401 mensaje seguro sin filtrar existencia correo más allá práctica común Contrato.
+- Logout lado cliente donde exista cliente (elimina token, estado no autenticado).
+- Persistencia token en cliente: documentar opción equipo (web/mobile mínimo).
 
-2) HU-03 Login
-- Login con email y contraseña para candidato y empresa (puede ser el mismo
-  endpoint con discriminación por tipo o endpoints separados, pero debe ser
-  coherente y documentado).
-- Respuesta incluye JWT válido (access token) según reglas: solo access token.
-- Credenciales incorrectas: manejo explícito (401) sin filtrar si el email
-  existe o no de forma que rompa seguridad; mensaje genérico tipo credenciales
-  inválidas es aceptable.
-- Persistencia de sesión en cliente:
-  - Web empresa: definir dónde se guarda token (memoria + localStorage es
-    decisión del equipo; documentar riesgo mínimo MVP).
-  - Móvil: definir almacenamiento seguro mínimo MVP (aunque pantallas vengan
-    después, el cliente debe poder demostrar login/logout si ya existe shell
-    de app; si aún no hay app, documentar contrato y probar con Postman).
-- Logout elimina sesión del cliente (borra token almacenado) y deja estado no
-  autenticado.
+2) HU-02 Alta empresa y reclutadores (no registro público empresa)
+- No existe POST público empresa en MVP web obligatorio ni rol COMPANY para login empresa.
+- Con ADMIN Bearer: POST /api/v1/admin/companies multipart (parte datos negocio según HU; sin correo/clave empresa).
+- GET /api/v1/admin/companies para listado/desplegable al registrar reclutadores.
+- POST /api/v1/admin/recruiters con company_id existente, email reclutador, password bajo política (12 caracteres,
+  símbolo, número, mayúsculas y minúsculas), unicidad email y campos HU.
+- Persistencia unicamente password_hash para usuarios con login.
 
 3) Seguridad Spring
-- Filtro JWT configurado para proteger rutas acordadas.
-- Endpoints públicos explícitos: registro, login, health.
-- Endpoints privados: ejemplo mínimo “/me” o “/profile stub” que requiera token.
+- Rutas públicas POST /api/v1/auth/login, registros públicos pactados en Contrato (p. ej. POST /api/v1/auth/register/candidate cuando aplique); GET /health sin prefijo /api/v1 donde exista en Spring; catálogos públicos GET /api/v1/catalogs/*.
+- Rutas /api/v1/admin/* protegidas rol ADMIN.
+- Opcional mismo sprint: skeleton POST verify/reset recuperación si sobra tiempo (Sprint oficiales).
 
 ------------------------------------------------------------
 B) DESGLOSE ULTRA DETALLADO
 ------------------------------------------------------------
-B1) Modelo empresa (1 a 2 horas)
-- Decidir si empresa es users con rol COMPANY o tabla companies + user.
-- Modelar y persistir todos los campos obligatorios HU-02 (lista en sección A
-  arriba), más metadatos necesarios para imagen opcional posterior si aplica.
+B1) Servicio seguridad JWT + filtros Spring (3 a 4 horas)
+- PasswordEncoder bcrypt; Jwt generation con sub, role, email, exp.
+- Carga usuario por email; roles desde users.role.
 
-B2) Registro empresa endpoint (1 a 2 horas)
-- POST registro empresa con validaciones completas HU-02 (incluida política
-  de contraseña: mínimo 12 caracteres, al menos un símbolo, al menos un número,
-  mayúsculas y minúsculas) y unicidad email.
+B2) Admin companies + recruiters multipart (3 a 4 horas)
+- Validaciones HU-02; persistencia row companies sin credencial usuario empresa.
+- recruiter_profiles enlazadas a users RECRUITER y company_id elegida.
 
-B3) Autenticación (3 a 4 horas)
-- UserDetailsService o equivalente cargando por email y tipo.
-- Password encoder compatible con registro.
-- Generación JWT con claims mínimos recomendados: sub (user id), email, role,
-  exp. Sin refresh.
+B3) Lockout recuperación stub (2 horas si prioridad)
+- Incremento failed_login_attempts, lock_until; mock verify/reset mínimo alineado flujos.
 
-B4) Logout cliente (1 a 2 horas)
-- Web: función logout limpia storage y redirige a login.
-- Mobile: equivalente si hay app; si no, checklist para Sprint 7.
+B4) Logout cliente (1 hora)
+- Web cuando exista; móvil si ya hay pantalla login; si no existe UI web aún checklist Sprint 7.
 
-B5) Verificación crítica (1 hora)
-- Postman: registrar empresa, login, acceder ruta privada, logout manual
-  borrando token y comprobar 401.
+B5) Postman feliz path (1 hora)
+- login ADMIN seed + crear company + recruiter + login RECRUITER + 401 recurso ADMIN sin rol.
 
 ------------------------------------------------------------
 C) QUÉ NO HACER EN EL SPRINT 2
 ------------------------------------------------------------
-- No implementar recuperación de contraseña completa si consume el sprint;
-  el flujo móvil mockup se alinea con Flujo Pantallas pero el Sprint oficiales
-  no la separa: si aparece, no debe retrasar HU-02 y HU-03. Prioridad: login
-  base y registro empresa. Si se implementa mock de “nueva contraseña”, la
-  contraseña fijada debe cumplir la misma política de complejidad que en
-  registro (mínimo 12 caracteres, al menos un símbolo, al menos un número,
-  mayúsculas y minúsculas).
+- No construir modelo “usuario empresa” con mismo login que reclutador: companies es fila negocio.
+- No usar vacantes anuales ni workflow antiguo register/company público salvo backlog explícito fuera Contrato MVP.
 
 
 
@@ -358,13 +291,14 @@ SPRINT 3 — SEMANA 4 AL 10 DE MAYO DE 2026
 Esfuerzo total estimado del equipo: 9 horas (puede rozar un poco más).
 Contenido oficial: HU-06 (CV en flujo móvil antes de "Uso de datos") + HU-04
 (captura de skills, rubro, presentación y preferencias en flujo) + catálogos
-necesarios; sin persistir candidato en backend hasta el alta (Contrato 1.2).
+necesarios; sin persistir candidato en backend hasta el alta oficial multipart
+(según Contrato Unificado API y Flujo Pantallas App Móvil).
 
 Objetivo del sprint en una frase:
 Alinear app móvil (y apoyo de API) al flujo: datos y CV en cliente,
 skills/rubro/preferencias en cliente, catálogos en servidor; preparar criterios
 y límites (PDF 1 MB) documentados; persistencia de CV y perfil en BD se realiza
-en Sprint 4 con un solo POST /auth/register/candidate (multipart).
+en Sprint 4 con un solo POST /api/v1/auth/register/candidate (multipart).
 
 ------------------------------------------------------------
 A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 3
@@ -389,7 +323,7 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 3
 - GET /api/v1/catalogs/sectors y GET /api/v1/catalogs/sectors/{sector_id}/skills
   (si aún faltan), públicos, alineados al contrato.
 
-Reglas: sin cuenta CANDIDATE en BD hasta POST /auth/register/candidate; sin
+Reglas: sin cuenta CANDIDATE en BD hasta POST /api/v1/auth/register/candidate; sin
 onboarding_id ni fusión: un solo request de alta.
 
 ------------------------------------------------------------
@@ -413,7 +347,8 @@ C) QUÉ NO HACER EN EL SPRINT 3
 ------------------------------------------------------------
 - No calcular matching aún.
 - No crear ofertas aún (Sprint 5).
-- No implementar tablas o endpoints de borrador (obsoleto bajo contrato 1.2).
+- No implementar tablas o endpoints de borrador servidor (contrato oficial: alta
+  candidato en un paso multipart con consentimiento en Sprint 4).
 
 
 
@@ -443,7 +378,7 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 4
 - Si acepta, se crea cuenta CANDIDATE y se emite access_token.
 - Persistencia en BD de consentimiento: flag + timestamp.
 
-2) Alta oficial en un paso (Contrato 1.2)
+2) Alta oficial en un paso (Contrato Unificado API vigente)
 - POST /api/v1/auth/register/candidate con Content-Type multipart/form-data:
   parte "data" (JSON con consent_given=true, identidad, sector_id, skills_ids,
   sueldos, preferred_modalities, preferred_workloads, etc.) y parte "file"
@@ -497,63 +432,50 @@ Contenido oficial:
 - HU-10 Ver ofertas.
 
 Objetivo del sprint en una frase:
-Tener texto de CV disponible en backend y tener ofertas creadas por empresa y
-visibles para consumo, preparando insumos para fairness y score en Sprint 6.
+Extraer texto de CV en backend para el pipeline posterior; tener ofertas ACTIVE
+publicadas por RECRUITER según Contrato con job_text bien definido; feed/listado
+candidato HU-10 listo antes de fairness y swipe.
 
 ------------------------------------------------------------
 A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 5
 ------------------------------------------------------------
 1) Extracción Tika
-- Tras subida (o bajo demanda), el sistema obtiene texto del PDF.
-- Post-procesamiento mínimo obligatorio: normalizar saltos, remover ruido
-  básico repetitivo, consistencia.
-- Si el PDF no entrega texto útil: error claro al usuario/API.
+- Tras alta candidato con archivo o bajo demanda acordada, el backend obtiene texto del PDF almacenado.
+- Post-procesamiento mínimo obligatorio: normalizar saltos, remover ruido básico, consistencia.
+- Si el PDF no entrega texto útil: error controlado por API donde aplique.
 
-2) HU-15 Crear oferta laboral (empresa autenticada)
-Campos según HU:
-- título
-- descripción
-- requisitos
-- skills (en Documento técnico: máximo 8 skills en detalle; en lista/swipe
-  pueden mostrarse 4; el equipo debe modelar cantidad máxima en BD y validar)
-- ubicación (coherente con comuna/región o texto; definir y documentar)
-- tipo de trabajo (modalidad: remoto/presencial/híbrido según reglas)
-- salario opcional
-- carga horaria de la oferta (requerida para matching en producto según
-  Documento técnico y Flujo Pantallas: debe existir en datos)
-- imagen opcional si el flujo lo menciona: si se implementa, guardar como
-  archivo + referencia; si no alcanza tiempo, documentar como mejora, pero no
-  puede eliminar campos mínimos de matching de modalidad y carga horaria.
+2) HU-15 Crear oferta (portal empresa, sesión RECRUITER según Contrato)
+- POST /api/v1/company/jobs con Bearer RECRUITER; la oferta se asocia a company_id del reclutador
+  y debe persistirse quien es el reclutador publicador para listados/detalle sólo sobre ofertas propias
+  según Contrato Oficial del repositorio.
+- Campos obligatorios Contrato HU-15 Flujo Pantallas: company_commercial_name; title;
+  description único texto largo (no hay tabla requirements persistida aparte ni segundo recuadro);
+  city; region_id y commune_id coherentes catálogo; salary_offered y years_experience_required obligatorios;
+  modality y workload enums; skills_ids entre 3 y 8 en job_skills.
+- Opcional por oferta image_url/imagen archivo según Flujo Contrato si el equipo ya modela esa parte en Sprint 8 UI.
+- job_text construido en backend para IA concatena únicamente title + description + modality + workload (no incluye skills,
+  salary_offered ni years_experience_required ni nombre comercial en texto semántico).
+- PATCH /api/v1/company/profile/image operativo donde corresponda (marca empleador sobre companies, fuera texto job_text).
 
-Validación y persistencia correcta.
-
-3) HU-10 Ver ofertas (candidato)
-- Lista ofertas disponibles.
-- Información básica: título, empresa, ubicación (mínimo).
-- Manejo de lista vacía sin error 500.
+3) HU-10 Feed / ver ofertas candidato
+- GET /api/v1/candidate/jobs/feed (y detalle donde aplique Contrato): solo ACTIVE, sin repetir swipeadas como reglas oficiales.
+- Respuesta suficiente para cards Flujo Pantallas incluyendo match score ya integrable si existe servicio llamada interna Sprint 6 o stub controlado hasta integrar.
 
 ------------------------------------------------------------
 B) DESGLOSE ULTRA DETALLADO
 ------------------------------------------------------------
 B1) Servicio TextExtractionService (3 a 4 horas)
-- Integrar Tika.
-- Guardar texto extraído:
-  - Opción A: columna TEXT en tabla cv_metadata
-  - Opción B: archivo .txt lado servidor
-  Elegir una y documentar. Lo crítico: Sprint 6 debe poder obtener texto
-  limpio base para fairness.
+- Integración Tika; persistir texto derivado donde el modelo lo defina fila/metadata cv.
+- Salida estable para llamada fairness Sprint 6.
 
-B2) Modelo Job + relación empresa (3 a 4 horas)
-- jobs con FK a empresa/user empresa.
-- skills de oferta: tabla job_skills.
+B2) Capa Jobs + vínculos (3 a 4 horas)
+- jobs.company_id FK; publicador RECRUITER (user id o recruiter_profile id según modelo tablas Sprint 1); job_skills; validaciones unicidad/coherencia comuna-región.
 
-B3) Endpoints empresa (2 a 3 horas)
-- POST crear oferta.
-- GET listar mis ofertas (opcional pero útil).
+B3) Endpoints reclutador /company/jobs POST + GET lista filtrando ofertas publicadas por el reclutador autenticado (2 horas).
 
-B4) Endpoints candidato (1 a 2 horas)
-- GET ofertas activas (en el diseño actual todas las ofertas se manejan como ACTIVE;
-  no existe toggle de activación/desactivación).
+B4) Endpoints candidato feed + campo match en ítem donde diseño aplique combinación Sprint 6 o placeholder documentado.
+
+B5) Verificación curl/Postman: crear empresa+reclutador precondición Sprint 2, publicar oferta RECRUITER, candidato lista feed.
 
 ------------------------------------------------------------
 C) QUÉ NO HACER EN EL SPRINT 5
@@ -613,10 +535,9 @@ Definición operativa obligatoria (sin ambigüedad para skills):
   porcentaje de matching: no se añaden a cv_text ni a job_text para el cálculo
   del score y no se envían como campos extra a POST /match.
 - job_text que se envía a FastAPI se construye en Spring concatenando únicamente
-  texto derivado de: título, descripción, requisitos, modalidad y carga horaria
-  de la oferta. Queda explícitamente excluido de job_text el bloque o campo de
-  skills requeridas de la oferta, el sueldo ofrecido y los años de experiencia
-  requeridos por la oferta.
+  título + descripción + modalidad + workload (carga horaria) de la oferta, según Contrato oficial.
+  Quedan explícitamente fuera del texto semántico de job_text: listas skills de oferta persistidas en BD,
+  sueldo ofrecido, años de experiencia requeridos, company_commercial_name (marca sólo fuera texto IA).
 - cv_text que se envía es el texto del CV post-Tika y post-fairness (idealmente
   fairness en Python; si el equipo decide fairness solo en Python, el Java
   envía texto Tika limpio básico y Python aplica fairness antes de embeddings).
@@ -663,7 +584,7 @@ B) DESGLOSE ULTRA DETALLADO
 ------------------------------------------------------------
 B1) FastAPI proyecto mínimo (2 horas)
 - Dockerfile o servicio compose estable.
-- Endpoint /health y /match.
+- GET /health del servicio FastAPI (o Spring según compose) y POST /match del servicio FastAPI (path HTTP /match, sin prefijo /api/v1 del monolito).
 
 B2) Pipeline IA (4 a 5 horas)
 - fairness module
@@ -681,15 +602,15 @@ B4) Prueba crítica exigida por Sprint 11 (adelantar si se puede)
 - Mismo CV y misma oferta debe dar mismo score aunque cambien solo las skills de
   perfil en BD: preparar caso Postman desde ya.
 - Mismo CV y misma oferta debe dar mismo score aunque cambien solo las skills
-  requeridas en la ficha de la oferta en BD, sin cambiar título, descripción,
-  requisitos, modalidad ni carga horaria: preparar caso equivalente.
+  en job_skills persistidas sin alterar los campos que componen job_text (title, description,
+  modality, workload): preparar caso equivalente.
 
 ------------------------------------------------------------
 C) QUÉ NO HACER EN EL SPRINT 6
 ------------------------------------------------------------
 - No crear tabla matches.
 - No usar Kafka/colas.
-- No enviar skills de perfil del candidato a /match ni anexarlas a cv_text.
+- No enviar skills de perfil del candidato en el request de POST /match ni anexarlas a cv_text.
 - No incluir en job_text el campo o lista de skills requeridas de la oferta.
 
 
@@ -703,14 +624,17 @@ SPRINT 7 — SEMANA 1 AL 7 DE JUNIO DE 2026 (SPRINT PESADO)
 ================================================================================
 Esfuerzo total estimado del equipo: 10 horas.
 Contenido oficial:
-- App móvil candidato y web React/Vite empresa según contrato donde aplique.
-- Prioridad: API operativa.
+- Frontend web MVP Stack Oficial React+Vite: login unificado ADMIN/RECRUTADOR según Contrato Flujo Pantallas Web;
+  Portal administrador registrar empresa (sin credencial empresa) y registrar reclutadores; navegación básica;
+  sesión reclutador con shell UI (cabeceras, placeholders de listados reproducibles desde API donde falten datos).
+- App móvil candidato en paralelo.
 - HU-11 Swipe de ofertas.
-- HU-12 Confirmar postulación.
+- HU-12 Confirmar postulación (POST applications tras APPLY).
+- Opcional menor completar mocks UI recuperación web/móvil si alcanza.
 
 Objetivo del sprint en una frase:
-Experiencia candidata core: ver ofertas con score, deslizar, confirmar
-postulación; empresa puede usar web mínima si aplica; APIs estables.
+Swipe y post con score ya integrado; primera web ADMIN/RECRUITER operativa para alta negocio y cuentas reclutadores
+según modelo oficial; APIs estables detrás.
 
 ------------------------------------------------------------
 A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 7
@@ -741,11 +665,10 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 7
   mismo usuario; error claro.
 - Estados: crear en APPLIED.
 
-5) Web empresa (mínimo)
-- Si no alcanza UI completa, al menos no bloquear: lo obligatorio del sprint es
-  API + móvil swipe; aun así Sprint oficiales menciona web en este sprint:
-  dejar pantalla mínima de login empresa y creación de oferta consumiendo la
-  API si HU-15 ya existe (debería).
+5) Web ADMIN + reclutadores (MVP tramo oficial)
+- Login único ADMIN/RECRUITER desde misma vista; rutas después según JWT.
+- Panel ADMIN funcional para alta multipart empresa y alta reclutador con POST /api/v1/admin/companies, GET /api/v1/admin/companies, POST /api/v1/admin/recruiters según Contrato.
+- Shell sesión reclutador: placeholders listados pueden consumir endpoints ya existentes bajo prefijo /api/v1/company/ (p. ej. GET /api/v1/company/jobs) incluso con datos vacíos tratados en UX.
 
 ------------------------------------------------------------
 B) DESGLOSE ULTRA DETALLADO
@@ -767,6 +690,11 @@ B4) Confirmación modal (1 hora)
 
 B5) Retrofit + interceptores JWT (1 a 2 horas)
 
+B6) Web React+Vite (4 a 5 horas en paralelo a móvil)
+- Proyecto Vite; vistas login ADMIN/RECUITER consumiendo mismo backend.
+- Rutas ADMIN companies/recruiters formularios HU-02 multipart.
+- Sesión reclutador shell placeholders según Sprint oficiales Flujo Pantallas Web.
+
 ------------------------------------------------------------
 C) QUÉ NO HACER EN EL SPRINT 7
 ------------------------------------------------------------
@@ -783,12 +711,14 @@ C) QUÉ NO HACER EN EL SPRINT 7
 SPRINT 8 — SEMANA 8 AL 14 DE JUNIO DE 2026
 ================================================================================
 Esfuerzo total estimado del equipo: 9 horas.
-Contenido oficial: HU-13 Ver postulaciones (candidato), estados al menos APPLIED
-y transiciones coherentes con lo que empresa marcará en Sprint 9.
+Contenido oficial:
+- HU-13 Ver postulaciones candidato estados APPLIED / VIEWED mínimos.
+- Completar web reclutador: listados GET /api/v1/company/jobs, formulario creación y visualización
+  HU-15 alineados Flujo Pantallas App Web (region_id coherence comunas, skills topes Contrato/UI).
+- PATCH imagen empresa vía cliente si backlog UI Sprint 7 dejó pendiente marca employer.
 
 Objetivo del sprint en una frase:
-Que el candidato vea su historial de postulaciones con estados correctos en MVP
-(APPLIED y preparado para VIEWED).
+Historial candidato coherente; reclutador gestiona ciclo medio ofertas vía pantallas Contrato antes de vistas postulantes finas Sprint 9.
 
 ------------------------------------------------------------
 A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 8
@@ -798,18 +728,24 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 8
 - Muestra nombre oferta, empresa, sueldo ofrecido, estado.
 - Estados visibles MVP: APPLIED y VIEWED (VIEWED puede aparecer solo después de
   Sprint 9, pero la UI debe soportarlo sin romper; mientras tanto, VIEWED se
-  verá cuando empresa lo marque).
+  verá cuando el reclutador publicador marca VIEWED HU-23).
 
 2) Pantalla “Vista Previa Oferta” según Flujo Pantallas
 - Desde lista, ver detalle resumido + estado + botón ir a oferta en feed.
+
+3) Web reclutador complemento HU-15
+- Listados mismos filtros sólo-ofertas-publicadas-por-el-reclutador autenticado según Contrato.
+- Forms publish flow campos opcionales requeridos región/coherencias skills 3–8.
 
 ------------------------------------------------------------
 B) DESGLOSE ULTRA DETALLADO
 ------------------------------------------------------------
 B1) GET /api/v1/candidate/applications?page=1&size=20&sort=applied_at,desc (1 a 2 horas)
-B2) UI lista (3 a 4 horas)
-B3) Navegación a detalle (2 a 3 horas)
-B4) Pruebas críticas: crear postulación y listar (1 hora)
+B2) UI móvil lista postulaciones (3 a 4 horas)
+B3) Navegación a detalle vista previa oferta (2 a 3 horas)
+B4) Web pantallas reclutador listado ofertas + crear oferta HU-15 (3 a 4 horas equipo)
+B5) PATCH /api/v1/company/profile/image UI si backlog (1 hora)
+B6) Pruebas: postulación creada y listada más roundtrip alta oferta desde web (1 hora)
 
 
 
@@ -820,35 +756,38 @@ B4) Pruebas críticas: crear postulación y listar (1 hora)
 SPRINT 9 — SEMANA 15 AL 21 DE JUNIO DE 2026
 ================================================================================
 Esfuerzo total estimado del equipo: 9 horas.
-Contenido oficial: HU-19 Ver postulantes + HU-23 Marcar postulación como vista
-(acción manual).
+Contenido oficial: HU-19 Ver postulantes sesión RECRUITER + HU-23 Marcar VIEWED sólo manual
+reclutador + pulimiento navegaciones web segunda mitad panel errores campo “Completa este campo”
+según Sprint oficiales Flujo Contrato.
 
 Objetivo del sprint en una frase:
-Que la empresa vea candidatos por oferta y pueda marcar manualmente VIEWED una
-postulación sin afectar otras.
+Reclutador ve postulantes por oferta propia administrada sólo sobre jobs que él publicó Contrato,
+marca vista manual HU-23; UI mensajes errores formulacion web mejorada Sprint oficiales.
 
 ------------------------------------------------------------
 A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 9
 ------------------------------------------------------------
 1) HU-19
 - Lista candidatos por oferta seleccionada.
-- Información básica visible (nombre puede ser aceptable en panel empresa; no
-  confundir con datos usados en fairness del matching).
+- Información básica visible para evaluador humano (panel reclutador; no confundir
+  con texto que fairness retira del lado matching automático Contrato IA).
 - Sin errores de carga.
 
 2) HU-23
-- Acción explícita UI + endpoint: marcar postulación como VIEWED.
-- Solo cambia la fila seleccionada.
-- El estado se refleja en lista empresa y debe reflejarse para candidato en
-  HU-13 cuando consulte (eventual consistencia; definir polling o refresh).
+- Acción explícita UI + PATCH /api/v1/company/applications/{application_id}/viewed; sólo el reclutador publicador autorizado Contrato puede ejecutar PATCH.
+- Solo cambia la fila seleccionada; servidor sin marcado automático VIEWED idempotencia según Contrato.
+- Estado reflejo hu-13 cuando candidato lista postulaciones (refresh navegador o pull).
+
+3) Pulimiento errores navegaciones web segunda mitad HU
+- Mensajes “Completa este campo” alineados formularios web portal según HU sin épicas Flujo donde aplique tiempo restante equipo.
 
 ------------------------------------------------------------
 B) DESGLOSE ULTRA DETALLADO
 ------------------------------------------------------------
-B1) GET postulantes por jobId con auth empresa dueña (2 a 3 horas)
-B2) PATCH application status VIEWED manual (2 a 3 horas)
-B3) Web UI empresa lista + botón “marcar visto” (3 a 4 horas)
-B4) Validaciones de permisos: empresa A no ve ofertas de empresa B (1 hora)
+B1) GET /api/v1/company/jobs/{job_id}/applications con auth sólo reclutador publicador + validación company job FK (3 horas).
+B2) PATCH VIEWED manual HU-23 (2 horas).
+B3) Web UI reclutador listas postulantes + botón marcar visto (3 horas).
+B4) Ensayo permisos cruzados: recruiter compañía A vs job empresa B debe 403; segundo reclutador misma company_id no lista job ajeno sólo Contrato reclutador publicador (1 hora).
 
 ------------------------------------------------------------
 C) QUÉ NO HACER EN EL SPRINT 9
@@ -863,12 +802,12 @@ C) QUÉ NO HACER EN EL SPRINT 9
 ================================================================================
 SPRINT 10 — SEMANA 22 AL 28 DE JUNIO DE 2026
 ================================================================================
-Esfuerzo total estimado del equipo: 8 horas.
-Contenido oficial: HU-20 Ordenar por compatibilidad + HU-05 Editar perfil.
+Esfuerzo total estimado del equipo: 7 horas.
+Contenido oficial: HU-20 Orden descendente compatibilidad listados API/UI reclutador + HU-05 Editar perfil candidato +
+afinar textos seguridad/consentimiento y revisiones menor copy web/móvil según Sprint oficiales.
 
 Objetivo del sprint en una frase:
-Empresa prioriza candidatos por score y candidato puede mantener perfil sin
-romper la regla de matching.
+Reclutador orden postulantes score final producto HU-20 robusto perfil PATCH candidato HU-05 sin romper invariantes matching texto legal copy menor.
 
 ------------------------------------------------------------
 A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 10
@@ -888,15 +827,16 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 10
 Regla crítica:
 - Editar skills de perfil NO debe cambiar score si CV y oferta no cambian:
   validar con prueba manual tipo Sprint 11.
-- Cambiar solo las skills requeridas en la ficha de la oferta tampoco debe
-  cambiar el score si no cambian título, descripción, requisitos, modalidad ni
-  carga horaria (alineado a regla global de skills de oferta vs job_text).
+- Cambiar solo las skills declaradas job_skills tampoco altera porcentaje final si job_text invariante title+description+modality+workload (skills fuera texto semántico Contrato).
+
+3) Pulimiento texto legal menor copy
+- Textos seguridad consentimiento HU-21 pantallas correlacionadas revisión menor copy equipo producto stakeholder donde alcance tiempo Sprint oficiales.
 
 ------------------------------------------------------------
 B) DESGLOSE ULTRA DETALLADO
 ------------------------------------------------------------
 B1) Ordenamiento query o sort service (2 a 3 horas)
-B2) UI empresa sorting visible (2 a 3 horas)
+B2) UI reclutador sorting visible HU-20 (2 a 3 horas)
 B3) Pantalla editar perfil móvil (3 horas)
 
 
@@ -913,12 +853,12 @@ Contenido oficial:
 - Integración end-to-end candidato-empresa en entorno común.
 - Corrección de bugs críticos.
 - Checklist de calidad previo al cierre.
-- Chequeo explícito de regla de matching: mismo CV y misma oferta → mismo score
-  aunque solo cambien skills de perfil o solo las skills requeridas en la ficha
-  de la oferta (sin cambiar título, descripción, requisitos, modalidad ni carga
-  horaria).
-- Pruebas de integración finales, preparación demo/entrega, ajustes finales.
-- HU-22 permanece fuera del plan obligatorio.
+- Chequeo explícito de regla de matching Sprint oficiales: mismo CV + misma oferta → mismo
+  resultado aunque solo cambien skills de perfil o skills enumeradas job_skills manteniendo
+  job_text intocable title+description+modality+workload.
+- Pasada integración Spring ↔ FastAPI acotada Postman rutas prioritarias Spring: POST /api/v1/auth/login (multicuenta), POST /api/v1/admin/companies, GET /api/v1/admin/companies, POST /api/v1/admin/recruiters, endpoints /api/v1/company/* del flujo reclutador según Contrato, GET /api/v1/candidate/jobs/feed; servicio IA: POST /match (FastAPI, path /match del contenedor IA).
+- Pruebas de integración finales, bugs críticos demo seca, preparación entrega stakeholder.
+- HU-22 permanece sólo tiempo extra backlog Sprint oficiales.
 
 Objetivo del sprint en una frase:
 Demostrable, estable en flujo core, con evidencia de pruebas críticas y sin
@@ -928,19 +868,17 @@ deuda bloqueante.
 A) CHECKLIST OBLIGATORIA DE CIERRE (sin atajos)
 ------------------------------------------------------------
 1) Flujo E2E mínimo demostrable
-- Registrar candidato y empresa (o usar seeds).
-- Completar flujo móvil: CV y datos en cliente, skills/preferencias en cliente, aceptar consentimiento en "Uso de datos" y un solo POST /auth/register/candidate (multipart); al éxito se crea la cuenta y se pasa a Perfil.
-- Extraer texto de CV, crear oferta empresa.
-- Ver ofertas candidato, ver score, swipe, confirmar postulación.
-- Empresa ve postulante, marca VIEWED, candidato ve estado.
-- Empresa ordena por compatibilidad.
+- Alta ficha empresa y reclutadores vía ADMIN (POST /api/v1/admin/companies multipart y POST /api/v1/admin/recruiters) o datos semilla coherentes demo.
+- Candidato: flujo móvil con CV/datos/skills cliente, HU-21 consentimiento, POST /api/v1/auth/register/candidate multipart; cuenta CANDIDATE operativa perfil Bearer.
+- Con CV procesado texto Tika, reclutador publica oferta vía sesión RECRUITER (portal web combinado Contrato demo).
+- Candidato consume feed swipe con score HU-11 y confirma postulación HU-12 (POST /api/v1/candidate/applications).
+- Mismo reclutador publicador lista applications job marca VIEWED HU-23 candidato ve estado HU-13.
+- Lista postulantes orden descendente HU-20 verificación visual.
 
 2) Chequeo explícito regla matching (obligatorio documentado)
 - Capturas o logs: dos consultas con misma oferta y mismo CV; en el medio se
   cambian skills de perfil; el porcentaje final no debe cambiar.
-- Caso análogo documentado: mismo CV y misma oferta; en el medio solo cambian
-  las skills requeridas en BD de la oferta; el porcentaje final no debe cambiar
-  si no cambian título, descripción, requisitos, modalidad ni carga horaria.
+- Caso análogo: mismo CV mismos textos IA; sólo mutan filas job_skills sin cambiar campos concatenados job_text Contrato anterior.
 
 3) Seguridad mínima
 - Rutas privadas protegidas.
@@ -976,17 +914,17 @@ B) ENTREGABLES DE DOCUMENTACIÓN PARA DEFENSA (mínimo)
 ================================================================================
 APÉNDICE A — MAPEO RÁPIDO HU → SPRINT (MVP OBLIGATORIO)
 ================================================================================
-Sprint 1: HU-01
-Sprint 2: HU-02, HU-03
-Sprint 3: HU-06, HU-04 (flujo en cliente + catálogos; sin borrador en servidor)
-Sprint 4: HU-21 (+ alta oficial en un paso: POST /auth/register/candidate multipart)
-Sprint 5: HU-15, HU-10 (+ Tika extracción)
-Sprint 6: HU-09, HU-07, HU-08
-Sprint 7: HU-11, HU-12
-Sprint 8: HU-13
-Sprint 9: HU-19, HU-23
-Sprint 10: HU-20, HU-05
-Sprint 11: Integración, pruebas, demo, verificación regla matching
+Sprint 1 — Infra (Compose, Spring, FastAPI scaffold), cadena Flyway oficial repo; stubs auth/candidate opcional; HU-01 cerrada Sprint 4.
+Sprint 2 — HU-03 login multicuenta; HU-02 empresa+reclutadores vía ADMIN; lockout recuperación mock opcional; password_hash sólo usuarios login.
+Sprint 3 — Registro cliente móvil sin persistir hasta multipart; HU-06 HU-04 cliente; GET /api/v1/catalogs/* públicos Contrato.
+Sprint 4 — HU-21 consentimiento; POST /api/v1/auth/register/candidate multipart; GET /api/v1/candidate/profile y PATCH /api/v1/candidate/profile con Bearer CANDIDATE.
+Sprint 5 — Tika; HU-15 crear oferta RECRUITER modelo Contrato actual; PATCH /api/v1/company/profile/image; HU-10 GET /api/v1/candidate/jobs/feed.
+Sprint 6 — HU-09 fairness; HU-07 score; HU-08 explicación; contrato técnico POST /match (FastAPI) con cv_text y job_text.
+Sprint 7 — Web MVP React+Vite login ADMIN/RECRUITER, panel empresa/reclutadores, shell reclutador; HU-11 HU-12 opcional mocks recuperación.
+Sprint 8 — HU-13 postulaciones candidato; completar portal reclutador HU-15 UI; PATCH imagen empresa si backlog.
+Sprint 9 — HU-19 HU-23 vistas postulantes solo publicador Contrato + pulimiento mensajes errores web panel segunda mitad.
+Sprint 10 — HU-20 orden descendente HU-05 perfil menor copy seguridad/consentimiento.
+Sprint 11 — E2E Docker; bugs críticos; invariante matching; Postman rutas Sprint oficiales; demo stakeholder; HU-22 backlog tiempo extra.
 
 ================================================================================
 APÉNDICE B — BACKLOG “SOLO SI SOBRA TIEMPO” (NO BLOQUEA MVP)

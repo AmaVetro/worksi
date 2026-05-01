@@ -2,6 +2,8 @@ PLAN DE SPRINTS — WorkSí
 
 (Reordenado por lógica de desarrollo · Product Backlog como insumo · 11 semanas · equipo de 3 · carga más equilibrada por esfuerzo real · total MVP estimado 102 h de equipo)
 
+Fuentes alineadas: Contrato Unificado API, Flujo Pantallas App Web / Móvil, HU sin épicas, Reglas del Proyecto, migraciones Flyway en producto/backend/src/main/resources/db/migration/
+
 
 ═══════════════════════════════════════════════════════════
 REGLA DE MATCHING (VÁLIDA EN TODO EL PLAN)
@@ -9,8 +11,8 @@ REGLA DE MATCHING (VÁLIDA EN TODO EL PLAN)
 
 ●    El candidato puede declarar y editar skills en su perfil; se persisten como parte del perfil (HU-04, HU-05).
 
-●    El porcentaje de compatibilidad en el producto considera CV limpio + contenido relevante de la oferta + modalidades preferidas + cargas horarias preferidas. El contrato base hacia IA (POST /match) usa cv_text y job_text; las skills del perfil del candidato no se envían a /match ni influyen en el porcentaje.
-●    Tampoco deben influir en el porcentaje: presentación personal del perfil, rango de sueldo esperado, sueldo ofrecido en la oferta, años de experiencia requeridos por la oferta, años de experiencia declarados dentro del CV y nacionalidad.
+●    El porcentaje de compatibilidad en el producto considera CV limpio + contenido relevante de la oferta según construcción de job_text oficial (Contrato): title + description + modality + workload exclusivamente concatenados para el lado oferta enviado a IA; más modalidades preferidas y cargas horarias preferidas del candidato. El POST /match usa cv_text y job_text; las skills del perfil del candidato no se incluyen en el request de POST /match ni influyen en el porcentaje. Las skills asociadas a la oferta (job_skills) tampoco forman parte de job_text.
+●    Tampoco deben influir en el porcentaje: presentación personal del perfil, rango de sueldo esperado, sueldo ofrecido de la oferta, años de experiencia requeridos por la oferta, años de experiencia declarados dentro del CV y nacionalidad.
 
 
 ═══════════════════════════════════════════════════════════
@@ -27,9 +29,13 @@ PARÁMETROS DEL PLAN (EXPLÍCITOS)
 
 ●    Criterio de ordenación: lógica de desarrollo (dependencias, pipeline de IA) y entregas de valor continuas. Cada sprint puede atravesar BD, frontend y backend a la vez.
 
-●    Setup inicial no es una HU numerada; va en el Sprint 1.
+●    Setup inicial y base de datos versionada Flyway Community no son HU numeradas; van concentrados en el Sprint 1 junto al arranque de HU-01 donde aplique.
 
-●    Regla esencial de testing: no implementar testing en frontends (sin carpetas de testing en web ni móvil); quienes trabajan en frontends validan de forma visual. La pasada de pruebas, reducida a lo más crítico y sobre el sistema completo, se concentra al final del MVP cuando el proyecto esté listo, no repartida como suite por sprint. Dentro de esa política, seguir evitando testing opcional o de baja prioridad; lo que sí puede incluirse al cierre es integración y flujo core, E2E, y comprobación puntual de API si aplica.
+●    Roles oficiales de aplicación en JWT / dominio (Contrato): CANDIDATE, ADMIN, RECRUITER. No existe usuario con rol empresa: la empresa es fila companies; quien opera el portal de ofertas es RECRUITER; el administrador inicial puede sembrarse con password_hash (sin contraseña en texto plano en documentación pública).
+
+●    Web MVP empresa: sin registro público de empresa en landing; alta de ficha empresa y alta reclutadores solo por ADMIN (panel + API); rutas /api/v1/company/* exclusivas RECRUITER.
+
+●    Regla esencial de testing: no implementar testing en frontends (sin carpetas de testing en web ni móvil); quienes trabajan en frontends validan de forma visual. La pasada de pruebas, reducida a lo más crítico y sobre el sistema completo, se concentra al final del MVP cuando el proyecto esté listo. Dentro de esa política, seguir evitando testing opcional o de baja prioridad; al cierre se incluye integración y flujo core, E2E candidato más flujo reclutador, y comprobación puntual de API si aplica.
 
 
 ═══════════════════════════════════════════════════════════
@@ -40,7 +46,7 @@ Estas HU no forman parte del compromiso del MVP ni consumen las semanas numerada
 
 ●    HU-24 — Guardar oferta (Favoritos del candidato).
 
-●    HU-16 — Editar oferta (Empresas).
+●    HU-16 — Editar oferta (Reclutador / portal empresa).
 
 ●    HU-17 — Eliminar oferta (descartada del diseño actual por estado único ACTIVE).
 
@@ -49,7 +55,6 @@ Estas HU no forman parte del compromiso del MVP ni consumen las semanas numerada
 ●    HU-18 — Activar/desactivar oferta (descartada del diseño actual por estado único ACTIVE).
 
 ●    HU-22 — Eliminación de cuenta (política de datos y archivos asociados).
-
 
 
 ═══════════════════════════════════════════════════════════
@@ -61,26 +66,23 @@ Sprint 1 (Sprint pesado):   20–26 abril 2026
 Estado: En proceso.
 Esfuerzo total estimado del equipo: 10 h.
 Contenido:
-●    Inicialización (repositorio, Docker Compose, MySQL, esqueleto backend/front).
-●    HU-01 — Registro de candidato.
-●    En creación de contraseña (registro), validar según HU sin épicas y Flujo Pantallas App Web y Flujo Pantallas App Móvil: mínimo 12 caracteres, al menos un símbolo, al menos un número, letras en mayúscula y minúscula; la misma política aplica al definir o cambiar contraseña en el flujo de recuperación (mock) cuando se implemente en el cliente o en API.
-Equilibrio: se mantiene el arranque técnico y se concentra un solo registro para no sobrecargar la primera semana.
-
-
+●    Inicialización: repositorio, Docker Compose, MySQL, esqueleto Spring Boot (+ Flyway), servicios previstos FastAPI cuando toque más adelante, acceso básico a catálogo o health según equipo.
+●    Migraciones Flyway (alcance esperado Sprint 1, a rasgos generales según estado actual carpeta migrations): cadena ejecutable hasta el nivel acordado de V1 dominio principal (usuarios ENUM CANDIDATE/ADMIN/RECRUITER, password_hash sólo usuarios login, tabla companies sin credencial, jobs.company_id campos MVP oferta coherentes Contrato incluido texto único descripción sin requirements separados en modelo verde y metadatos comerciales donde aplique); perfiles candidato y recruiter_profiles vinculando company_id; aplicaciones, swipe/guardados y tablas previstas modelo; restricciones PDF CV; índices. V2 semillas catálogo regiones/comunas/sectores/skills; V5 recruiter_profiles si va separado tras companies según orden scripts; semilla ADMIN (password_hash bcrypt + email definido Flyway); ajustes V7/V8/V9 (nombre comercial en jobs, borrados legacy, salary/years obligatorios) conforme repositorio. Ejecutar migrate limpio debe ser criterio aceptación fin de Sprint 1.
+●    HU-01 (registro multipart candidato con consentimiento) en su versión cerrada forma parte Sprint 4; en Sprint 1 bastan esqueletos proyecto alineados (paquete auth/candidate stubs, enums roles) sólo si el tiempo lo permite después de BD estable.
+●    Contraseña: política común HU + Flujos + Contrato (12 caracteres símbolo número mix mayúsculas minúsculas) conocida equipo para futuras implementaciones.
+Equilibrio: prioridad absoluta es esquema y Flyway ejecutable antes de historia web empresa antigua; sin confundir con login empresa inexistente.
 
 
 Sprint 2:   27 abril – 3 mayo 2026
 
 Estado: Pendiente.
-Esfuerzo total estimado del equipo: 9 h.
+Esfuerzo total estimado del equipo: 10 h.
 Contenido:
-●    HU-02 — Registro de empresa.
-●    Campos obligatorios registro empresa en web (crear cuenta, alineado a Flujo Pantallas App Web): nombre y apellidos; teléfono; correo de acceso; contraseña; nombre comercial; razón social; RUT sin puntos con guión; región; comuna (solo de la región elegida); sector o ámbito de trabajo (catálogo BD); N° de trabajadores aprox.; N° de vacantes anuales aprox. La imagen de empresa es opcional en el registro (image_url) y luego se puede subir/eliminar/cambiar con cuenta empresa logueada (PATCH /api/v1/company/profile/image), separada de la imagen de cada oferta.
-●    Misma validación de contraseña en registro empresa que en Sprint 1 (mínimo 12 caracteres, al menos un símbolo, al menos un número, mayúsculas y minúsculas, según HU sin épicas y flujos de pantalla; igual para nueva contraseña en recuperación mock si aplica en este sprint o después).
-●    HU-03 — Login (incluir logout en cliente según HU-03).
-Equilibrio: identidad completa (tipos de cuenta + autenticación) antes de capas funcionales posteriores.
-
-
+●    HU-03 — Login unificado POST /api/v1/auth/login, logout en cliente donde aplique; JWT solo access token; claims CANDIDATE | ADMIN | RECRUITER. Bloqueo tras 4 intentos fallidos y derivación recuperación mock (alineado web y móvil).
+●    HU-02 — Alta empresa y reclutadores (modelo oficial): sin registro público ni rol COMPANY en MVP web. Como ADMIN autenticado: POST /api/v1/admin/companies (multipart, datos negocio sin correo/clave empresa), GET /api/v1/admin/companies para desplegable, POST /api/v1/admin/recruiters con company_id existente + password reclutador bajo política. Referencia HU sin épicas y Contrato Oficial del repositorio.
+●    Persistencia sólo password_hash para usuarios con login (nunca plaintext en BD ni en alta empresa desde panel admin).
+●    Opcional tiempo restante en la semana: esqueleto de recuperación mock backend (request/verify/reset) si aún no iniciado.
+Equilibrio: antes de crear ofertas deben existir companies y usuarios RECRUITER; antes de HU-15 en backlog funcional debe existir autenticación multirol.
 
 
 Sprint 3:   4–10 mayo 2026
@@ -88,12 +90,10 @@ Sprint 3:   4–10 mayo 2026
 Estado: Pendiente.
 Esfuerzo total estimado del equipo: 9 h.
 Contenido:
-●    Registro candidato: pantallas previas a "Uso de datos" con estado en cliente (sin persistir candidato en backend, salvo GET /api/v1/catalogs/*) según Flujo App Móvil y Contrato 1.2.
-●    HU-06 — Subir CV antes de "Uso de datos": PDF <= 1 MB en cliente; el almacenamiento en filesystem + referencia en BD ocurre en el mismo alta (Sprint 4) vía POST /api/v1/auth/register/candidate multipart.
-●    HU-04 — Captura en UI de skills, rubro, presentación (si aplica) y preferencias, en estado local hasta "Uso de datos"; no usar skills de perfil para el porcentaje de matching.
-Equilibrio: se alinea a las pantallas móviles; la persistencia de CV y perfil en BD queda ligada al consentimiento (Sprint 4) y un solo POST multipart.
-
-
+●    Registro candidato según Contrato Oficial del repositorio: pantallas previas a "Uso de datos" con estado solo en cliente (sin persistencia candidato en backend hasta el multipart final salvo GET /api/v1/catalogs/*) según Flujo App Móvil.
+●    HU-06 — Subida de CV antes de consentimiento final: PDF máx. 1 MB en cliente con validaciones; filesystem + BD en alta tras Sprint 4 (multipart registración).
+●    HU-04 — Captura UI de skills (3–12), rubro, presentación donde aplique, preferencias; todo local antes de HU-21 / HU-01 final.
+Equilibrio: flujo móvil paralelo sin depender ya de modelo antiguo “empresa se registra sola desde web público”.
 
 
 Sprint 4:   11–17 mayo 2026
@@ -101,12 +101,10 @@ Sprint 4:   11–17 mayo 2026
 Estado: Pendiente.
 Esfuerzo total estimado del equipo: 10 h.
 Contenido:
-●    HU-21 — Consentimiento de uso de datos en pantalla "Uso de datos" (última antes del alta oficial), con evidencia en BD (flag + timestamp).
-●    Alta oficial del candidato: POST /api/v1/auth/register/candidate (multipart) con consent_given=true, datos, CV y preferencias; creación de cuenta, emisión de JWT CANDIDATE; uso de /api/v1/candidate/* con Bearer tras el alta.
-●    Consolidación de HU-04 en cuenta creada: GET/PATCH /api/v1/candidate/profile coherente con lo enviado en el registro.
-Equilibrio: se cierra la secuencia (flujo móvil con datos locales; consentimiento al final; un solo request de alta) y queda operativa la entrada a Perfil autenticado.
-
-
+●    HU-21 — Consentimiento en "Uso de datos" última barrera antes del alta oficial; evidencia BD timestamp/flag conforme modelo.
+●    Alta oficial multipart POST /api/v1/auth/register/candidate con consent_given=true, CV parte file, JWT CANDIDATE en respuesta; habilitación /api/v1/candidate/* con Bearer tras éxito.
+●    HU-04 persistida en cuenta activa GET/PATCH /api/v1/candidate/profile coherentes con alta.
+Equilibrio: candidato navegable dentro de perfil sólo después de ciclo contractual correcto.
 
 
 Sprint 5 (Sprint pesado):   18–24 mayo 2026
@@ -114,10 +112,10 @@ Sprint 5 (Sprint pesado):   18–24 mayo 2026
 Estado: Pendiente.
 Esfuerzo total estimado del equipo: 10 h.
 Contenido:
-●    Extracción de texto con Apache Tika en Spring Boot; post-procesamiento mínimo (saltos de línea, ruido básico, texto consistente).
-●    HU-15 — Crear oferta laboral.
-●    HU-10 — Ver ofertas.
-Equilibrio: se deja listo el texto de CV y también el texto de oferta, preparando ambos insumos antes de fairness y score.
+●    Apache Tika en Spring Boot sobre CV almacenado; post procesamiento texto mínimo (saltos, ruido básico) para camino hacia fairness posterior.
+●    HU-15 — Crear oferta por RECRUITER (Contrato): company_commercial_name obligatorio en payload, description único texto largo (sin tabla separada requirements), city + region_id + commune_id coherentes catálogo, salary_offered y years_experience_required obligatorios, modality + workload enums, skills 3–8; job_text backend sólo concatenando title/description/modality/workload hacia IA; PATCH /api/v1/company/profile/image para marca employer fuera texto semántico.
+●    HU-10 — Feed o listados candidatos (GET candidate jobs feed / vistas mínimas) consumiendo ACTIVE.
+Equilibrio: insumos listos para fairness + IA semana siguiente.
 
 
 
@@ -127,12 +125,11 @@ Sprint 6 (Sprint pesado):   25–31 mayo 2026
 Estado: Pendiente.
 Esfuerzo total estimado del equipo: 10 h.
 Contenido:
-●    HU-09 — Eliminación de datos sensibles (fairness: spaCy NER básico + regex; sin ampliar alcance más allá del diseño acordado). Reparto oficial: spaCy para texto libre (PERSON/ORG/GPE) y regex para patrones estructurados (email, RUT, edad, género, nacionalidad, institución y años de experiencia declarados dentro del CV en formatos detectables), con solapamiento selectivo en nombre/institución/nacionalidad. Orden operativo: regex inicial -> spaCy -> regex final de cierre. Servicio FastAPI acotado a lo necesario para este pipeline (puede compartir base del contenedor que expondrá /match en el sprint siguiente).
-●    HU-07 — Calcular compatibilidad.
-●    HU-08 — Explicación del match: alcance mínimo, sin NLP extra en ese punto — plantilla fija del tipo «Coincidencia en: X, Y» (términos o temas derivados del contraste texto del CV vs texto de la oferta y de las preferencias aplicables; texto breve y seguro; sin usar la lista de skills del perfil como fuente del score).
-●    Contrato de matching: input base al servicio de IA con texto del CV (post-Tika y pre-fairness donde corresponda en el pipeline) y texto de la oferta; en producto el porcentaje final además considera modalidades y cargas horarias preferidas.
-Equilibrio: se ejecuta de forma compacta el bloque IA core (fairness + score + explicación) luego de tener CV y oferta listos.
-
+●    HU-09 — Fairness (spaCy PERSON/ORG/GPE + regex estructura; orden regex → spaCy → regex; sin ampliaciones no acordadas; solapamiento selectivo nombre institución nacionalidad).
+●    HU-07 — Porcentaje compatibilidad (FastAPI embeddings + combinación política Contrato sobre preferencias modalidad/workload cuando Spring agregue lógica de producto).
+●    HU-08 — Explicación breve alineada a comparación texto permitido CV vs texto permitido oferta sin filtrar PII residual en copy.
+●    Contrato técnico POST /match (FastAPI, URI /match fuera del monolito Spring) entrada cv_text + job_text saneados donde corresponda.
+Equilibrio: núcleo IA cerrado después de tener ambos extremos contenido candidato/oferta válidos.
 
 
 
@@ -141,10 +138,12 @@ Sprint 7 (Sprint pesado):   1–7 junio 2026
 Estado: Pendiente.
 Esfuerzo total estimado del equipo: 10 h.
 Contenido:
-●    App móvil (candidato) y web React/Vite (empresa) según contrato donde aplique; prioridad API operativa en este sprint; vista empresa puede rematar en Sprint 9.
-●    HU-11 — Swipe de ofertas.
-●    HU-12 — Confirmar postulación.
-Equilibrio: se consolida la experiencia core de candidato sobre la base del score ya disponible.
+●    Frontend web MVP (React+Vite según Stack): pantalla login unificada ADMIN/RECRUITER; Portal administración registrar empresa (sin credencial empresa), registrar reclutadores, navegación básica; sesión reclutador shell (cabeceras, placeholders de listados donde falte data aún reproducible desde API). App móvil candidato continuación paralela.
+●    HU-11 — Swipe ofertas.
+●    HU-12 — Confirmación postulación (POST /api/v1/candidate/applications tras swipe APPLY).
+●    Opcional menor en la semana: completar mocks UI recuperación donde proceda cliente web/móvil.
+Equilibrio: experiencia swipe depende del score Sprint 6; web admin garantiza onboarding operativo negocio antes cierre proyecto.
+
 
 
 
@@ -154,8 +153,10 @@ Sprint 8:   8–14 junio 2026
 Estado: Pendiente.
 Esfuerzo total estimado del equipo: 9 h.
 Contenido:
-●    HU-13 — Ver postulaciones (candidato), estados al menos APPLIED y transiciones coherentes con lo que la empresa marcará como vista en Sprint 9.
-Equilibrio: seguimiento candidato posterior a la postulación, sin depender de HU opcionales.
+●    HU-13 — Listado postulaciones candidatos (APPLIED / VIEWED mínimos).
+●    Completar web reclutador: listados GET /api/v1/company/jobs, formulario creación/visualización HU-15 alineados Flujo Pantallas App Web donde faltaban detalles (incluye región/coherencia comunas / skills topes según Contrato UI).
+●    PATCH imagen empresa vía cliente si backlog UI pendiente.
+Equilibrio: candidato tiene seguimiento; empresa puede operar ciclo medio sin depender HU opcional.
 
 
 
@@ -165,9 +166,11 @@ Sprint 9:   15–21 junio 2026
 Estado: Pendiente.
 Esfuerzo total estimado del equipo: 9 h.
 Contenido:
-●    HU-19 — Ver postulantes.
-●    HU-23 — Marcar postulación como vista: existe una acción manual de la empresa para marcar como VIEWED.
-Equilibrio: se construye la base de gestión empresa y transición manual de estado antes de ordenar.
+●    HU-19 — Ver postulantes (sesión RECRUITER) por job.
+●    HU-23 — Marcar VIEWED sólo manual reclutador; sin automatismos servidor.
+●    Pulimiento navegaciones web segunda mitad HU panel (mensajes errores campo “Completa este campo”).
+Equilibrio: operación empresa coherente con manualidad estados vista.
+
 
 
 
@@ -175,12 +178,12 @@ Equilibrio: se construye la base de gestión empresa y transición manual de est
 Sprint 10:  22–28 junio 2026
 
 Estado: Pendiente.
-Esfuerzo total estimado del equipo: 8 h.
+Esfuerzo total estimado del equipo: 7 h.
 Contenido:
-●    HU-20 — Ordenar por compatibilidad.
-●    HU-05 — Editar perfil (datos y skills en perfil; el porcentaje de matching sigue basado en CV + oferta + modalidades preferidas + cargas horarias preferidas).
-Equilibrio: semana de cierre funcional con tareas de complejidad media sobre módulos ya existentes.
-
+●    HU-20 — Orden descendente compatibilidad en listados API/UI reclutador.
+●    HU-05 — Editar perfil candidato (skills/perfil siguen fuera ponderación IA).
+●    Afinar textos seguridad/consentimiento y revisiones menor copy web/móvil.
+Equilibrio: iteración sobre módulos existentes menor carga tras picos IA + web.
 
 
 
@@ -189,16 +192,19 @@ Sprint 11 (Sprint pesado):  29 junio – 5 julio 2026   (semana que comienza el 
 Estado: Pendiente.
 Esfuerzo total estimado del equipo: 8 h.
 Contenido:
-●    Integración end-to-end candidato–empresa (flujo completo en entorno común), corrección de bugs detectados, checklist de calidad previo al cierre.
-●    Ajustes menores de permisos o textos si aparecen en la demo interna.
-●    Chequeo explícito de regla de matching: mismo CV y misma oferta → mismo score aunque solo cambien skills de perfil.
-●    Cierre: pruebas de integración finales (acotadas a lo crítico, sobre el sistema entero, sin testing en frontends; ver regla de testing), preparación demo/entrega, ajustes finales.
-●    HU-22 permanece fuera del plan obligatorio (ver “Solo si sobra tiempo”).
-●    Demo alineada a la regla global: perfil con skills opcional; porcentaje explicado como CV + oferta + modalidades preferidas + cargas horarias preferidas.
-Equilibrio: semana final obligatoria en calendario; concentra buffer, cierre y demo; exige cerrar deuda crítica antes para no comprometer la entrega.
+●    Integración E2E: candidato móvil + flujo empresa con reclutadores creados por ADMIN entorno único Docker; revisión checklist calidad Contrato oficial.
+●    Bugs críticos recién detectados durante demo seca interna.
+●    Validación invariante scoring: mismo CV + misma oferta → mismo resultado aún si solo cambian skills de perfil o skills listados job (persistiendo job_text intocable).
+●    Pasada integración backend Spring ↔ FastAPI acotada, Postman rutas prioritarias Spring: POST /api/v1/auth/login (multicuenta), POST /api/v1/admin/companies, GET /api/v1/admin/companies, POST /api/v1/admin/recruiters, rutas HU portal reclutador bajo prefijo GET/POST/PATCH necesarios en /api/v1/company/* según Contrato, GET /api/v1/candidate/jobs/feed; servicio IA: POST /match (FastAPI, fuera de /api/v1 Spring).
+●    HU-22 queda opcional backlog (sección sólo tiempo extra).
+●    Demo muestra historia: admin alta empresa reclutadores, reclutador publica oferta, candidato registra tras consentimiento, swipe + post + vista empresa con score.
+●    Preparación entrega stakeholder.
+Equilibrio semana puerto cierre oficial plan.
 
 
-Nota: cada sprint con inicio en lunes; primera semana del plan: 20 de abril de 2026; última semana del plan: 29 de junio – 5 julio de 2026.
+
+
+Nota: cada sprint arranca lunes; primera semana 20–26 abril 2026; última obligatoria 29 junio–5 julio 2026.
 
 
 
@@ -206,27 +212,23 @@ Nota: cada sprint con inicio en lunes; primera semana del plan: 20 de abril de 2
 LÓGICA DE DESARROLLO (RESUMEN)
 ═══════════════════════════════════════════════════════════
 
-●    Autenticación y tipos de cuenta antes del resto (registro + login + perfil base con skills; esas skills no son insumo del porcentaje).
+●    Base Flyway Sprint 1: dominio oficial de datos (users 3 roles, companies, recruiter_profiles, jobs.company_id oferta modelo vigente candidate CV applications catálogo seed ADMIN hash) coincide con trabajo ya presente carpeta migrations; todo sprint posterior asume ese contrato físico BD.
 
-●    Consentimiento (HU-21, checkbox + timestamp) en pantalla "Uso de datos", última pantalla antes del alta oficial; al aceptar se crea la cuenta y se pasa a Perfil.
-●    El orden del registro móvil se implementa así: datos y CV en cliente -> skills/preferencias en cliente -> "Uso de datos" -> un solo POST /auth/register/candidate (multipart) -> Perfil autenticado (JWT CANDIDATE).
+●    Autenticación multirol antes de flujo empresa productivo Sprint 2: login + ADMIN crea empresa + reclutadores (sin empresa login).
 
-●    Ofertas creadas y visibles (HU-15, HU-10) antes de consumir matching en producto; el score usa CV limpio, contenido de oferta, modalidades preferidas y cargas horarias preferidas; no skills de perfil del candidato.
+●    HU-03 operativo garantiza RECRUITER pueda obtener JWT antes HU-15 publicación estable.
 
-●    Fairness (HU-09) antes de score y explicación breve (HU-07, HU-08 con plantilla).
+●    Secuencia móvil HU-06/HU-04 locales → HU-21 → alta multipart HU-01 parcial oficial Sprint 4.
 
-●    Swipe y postulación (HU-11, HU-12) cuando existan ofertas y contrato de matching operativo (cv_text + job_text).
+●    HU-15 y HU-10 Sprint 5 requieren Tika iniciado más schema jobs sin columnas contradictorias (salary/exp topes skills job_text exclusions).
 
-●    Listado de postulaciones candidato (HU-13) después de existir postulaciones; cancelación (HU-14) es opcional fuera de plan (sección “Sólo si sobra tiempo”).
+●    Fairness HU-09 antes score HU-07 HU-08 Sprint 6.
 
-●    Vista empresa y estado “vista” de las postulaciones mediante acción manual de la empresa (HU-19, HU-23) después del flujo de postulación; orden por compatibilidad (HU-20) a continuación en etapa de consolidación.
+●    Swipe/post Sprint 7 apoyados score; paralelo primera entrega navegable web ADMIN/RECRUITER.
 
-●    Editar perfil (HU-05) en etapa tardía sin bloquear el núcleo; edición de skills de perfil no redefine el score sin cambio de CV u oferta.
+●    HU-13 Sprint 8; refinamiento web Sprint 8–9; orden HU-20 Sprint 10; cierre Sprint 11 E2E + demo.
 
-●    Cierre, E2E y demo concentrados en el Sprint 11 (semana del 29 de junio).
-
-●    HU opcionales (24, 16, 17, 14, 18, 22) no condicionan el flujo obligatorio del MVP.
-
+●    HU opcionales backlog no bloquean ruta crítica.
 
 
 ═══════════════════════════════════════════════════════════
@@ -239,18 +241,17 @@ RESUMEN NUMÉRICO
 
 ●    Equipo: 3 integrantes; horas por sprint = esfuerzo total del equipo en esa semana
 
-●    Carga estimada por esfuerzo real: entre 8 h y 10 h por sprint (dentro del rango 83–110 h del MVP)
-
-●    Ajuste fino: redistribuir horas entre sprints en pasos de 1 h manteniendo el total del MVP entre 83 h y 110 h
+●    Ajuste fino: ±1 h redistribuible dentro rango MVP 83–110 h manteniendo calendario
 
 ●    Primera semana del plan: semana del 20 de abril de 2026
 
 ●    Última semana del plan (obligatoria): semana del 29 de junio de 2026 (29 junio – 5 julio 2026)
 
+
 Tabla de estimación (horas totales del equipo por sprint):
 
 Sprint 1  (20–26 abr):    10 h
-Sprint 2  (27 abr–3 may):  9 h
+Sprint 2  (27 abr–3 may):  10 h
 Sprint 3  (4–10 may):      9 h
 Sprint 4  (11–17 may):    10 h
 Sprint 5  (18–24 may):    10 h
@@ -258,13 +259,11 @@ Sprint 6  (25–31 may):    10 h
 Sprint 7  (1–7 jun):      10 h
 Sprint 8  (8–14 jun):      9 h
 Sprint 9  (15–21 jun):     9 h
-Sprint 10 (22–28 jun):     8 h
+Sprint 10 (22–28 jun):     7 h
 Sprint 11 (29 jun–5 jul):  8 h
                         ─────
 Total estimado:          102 h
 
-Total MVP según documentación técnica previa: mínimo ~83 h, más probable ~100–110 h; este plan usa 102 h como línea base equilibrada por complejidad y permite ajustes finos sin cambiar el calendario de 11 semanas.
-
-
+Total MVP según documentación técnica previa: mínimo ~83 h, más probable ~100–110 h; esta línea base 102 h se mantiene equilibrada y admite micro ajustes por sprint sin mover fechas.
 
 

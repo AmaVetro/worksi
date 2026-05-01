@@ -1,8 +1,11 @@
 CONTRATO UNIFICADO DE INTEGRACION - WORKSI
-Version: 1.2
+Version: 1.5
 Estado: Oficial para desarrollo paralelo (Backend + Web + Android)
 Fecha base: 2026-04-25
 Cambio 1.2 (2026-04-27): Registro candidato en un unico paso al aceptar consentimiento en pantalla "Uso de datos" (sin sesion de borrador ni rutas /onboarding/candidate/*).
+Cambio 1.3 (2026-04-30): Flujo web empresa segun Flujo Pantallas App Web: alta empresa y alta reclutador por administrador (POST /api/v1/admin/companies y POST /api/v1/admin/recruiters, GET /api/v1/admin/companies); registro publico empresa desalineado con MVP web; oferta sin campo requirements; company_commercial_name y salary_offered y years_experience_required obligatorios en creacion de oferta; rutas /api/v1/company/* operadas solo por RECRUITER. Ver detalle en secciones actualizadas.
+Cambio 1.4 (2026-04-30): Tres roles de aplicacion unicamente CANDIDATE, ADMIN, RECRUITER. No existe cuenta de usuario empresa (rol COMPANY ni SYSTEM_ADMIN eliminados de JWT): la empresa es fila en tabla companies sin login; ADMIN da de alta empresa (datos negocio) y reclutadores vinculados a company_id; RECRUITER reemplaza a COMPANY en sesion empresa web.
+Cambio 1.5 (2026-04-30): Documentacion solo: contraseña persistida unicamente como password_hash para usuarios candidato, admin y reclutador; sin contraseña en alta empresa por panel; ADMIN inicial por migracion Flyway (bcrypt) sin publicar texto claro aqui.
 
 
 
@@ -13,7 +16,7 @@ OBJETIVO
 
 
 ALCANCE
-- Incluye: endpoints, autenticacion, registro candidato (incluido un solo request de alta con consentimiento), perfiles, catalogos, CV, ofertas, matching, swipe, postulaciones, vistas empresa.
+- Incluye: endpoints, autenticacion, registro candidato (incluido un solo request de alta con consentimiento), perfiles, catalogos, CV, ofertas, matching, swipe, postulaciones, vistas empresa, alta empresa y reclutadores por administrador del sistema (web MVP).
 - Excluye del MVP obligatorio: HU-14, HU-16, HU-17 (descartada del diseño actual por estado único ACTIVE), HU-18 (descartada del diseño actual por estado único ACTIVE), HU-22, HU-24.
 
 
@@ -44,12 +47,16 @@ AUTENTICACION Y SESION
 - JWT solo access token (sin refresh).
 - Header en rutas protegidas:
   Authorization: Bearer <token>
-- Dos familias de credencial:
+- Familias de credencial:
   - Publicas: sin Authorization.
-  - CANDIDATE / COMPANY: Bearer <access_token> emitido por POST /api/v1/auth/register/candidate, POST /api/v1/auth/login o POST /api/v1/auth/register/company segun corresponda. Claim de rol CANDIDATE o COMPANY.
+  - Autenticadas: Bearer <access_token> emitido por POST /api/v1/auth/register/candidate, POST /api/v1/auth/login u operaciones de alta por administrador que creen usuarios ADMIN o RECRUITER. Claim de rol en token: CANDIDATE, ADMIN o RECRUITER.
+- Login unico web: POST /api/v1/auth/login. Segun rol en respuesta, el frontend redirige a portal administrador (ADMIN) o a sesion empresa (RECRUITER). Misma pantalla de login para ambos.
 - Roles en JWT de aplicacion:
   - CANDIDATE
-  - COMPANY
+  - ADMIN (portal de administracion y rutas /api/v1/admin/*)
+  - RECRUITER (vinculado a companies.id; todas las rutas /api/v1/company/*)
+- Contrasenas en persistencia solo en users.password_hash (bcrypt u algoritmo acordado) para usuarios que inician sesion CANDIDATE, ADMIN y RECRUITER. La empresa en companies no tiene credencial ni campo de contraseña en datos.
+- Cuenta ADMIN inicial en entorno de desarrollo o prueba puede sembrarse en migracion Flyway con INSERT en users que solo establece password_hash (por ejemplo bcrypt), sin publicar texto plano en el repositorio. Este contrato no incluye ninguna contrasena literal para ADMIN; la cadena que valida ese hash debe acordarse fuera de este archivo u operativa del equipo.
 - Logout: elimina sesion en cliente (backend no mantiene blacklist para MVP).
 
 
@@ -83,7 +90,7 @@ FORMATO DE ERRORES ESTANDAR (OBLIGATORIO EN TODA LA API)
 
 
 ENUMS OFICIALES
-- role: CANDIDATE | COMPANY
+- role: CANDIDATE | ADMIN | RECRUITER
 - modality: REMOTE | HYBRID | ONSITE
 - workload: FULL_TIME | PART_TIME | OTHER
 - job_status: ACTIVE
@@ -96,13 +103,14 @@ CONSTRUCCION OBLIGATORIA DE job_text (BACKEND)
 - job_text se construye concatenando solo:
   - title
   - description
-  - requirements
   - modality
   - workload
+- No existe campo separado requirements en persistencia de oferta; todo texto libre del puesto va en description (Flujo Pantallas App Web).
 - No incluir:
   - job_skills
   - salary_offered
   - years_experience_required
+  - company_commercial_name (solo referencia de marca en listados; no forma parte del texto semantico de matching salvo decision explicita futura de producto)
 
 
 
@@ -170,34 +178,71 @@ ENDPOINTS DE AUTENTICACION
 
 
 
-2) Registro empresa
+2) Registro empresa (no MVP)
 - POST /api/v1/auth/register/company
 - Auth: publica
-- Request:
+- Estado respecto del modelo actual (Cambio 1.4): no hay usuario con rol empresa; alta de empresa es solo POST /api/v1/admin/companies desde ADMIN con datos negocio (sin crear credencial de login para la empresa). El endpoint historico puede no estar implementado, devolver 404/410 o estar desactivado; no forma parte del contrato operativo paralelo hasta acordarlo explícitamente si se rehabilita.
+
+
+2.1) Alta empresa (administrador del sistema) — Flujo web MVP
+- POST /api/v1/admin/companies
+- Auth: Bearer ADMIN
+- Content-Type: multipart/form-data; charset=UTF-8
+- Partes (nombres oficiales):
+  - "data" (string JSON, application/json en la parte): obligatorio, perfil empresa (sin email ni contrasena para la empresa; la empresa no es cuenta de usuario).
+  - "image" (binario, opcional): imagen empresa (ej. PNG).
+- Cuerpo logico JSON en parte "data":
 {
-  "email": "empresa@dominio.cl",
-  "password": "Aa!123456789",
-  "contact_full_name": "Maria Perez Soto",
-  "phone": "+56912345678",
   "commercial_name": "Empresa X",
   "legal_name": "Empresa X SPA",
+  "phone": "+56912345678",
+  "address": "Av. Ejemplo 123, Oficina 4",
   "rut": "76123456-7",
   "region_id": 7,
   "commune_id": 77,
   "sector_id": 1,
-  "worker_count_approx": 50,
-  "annual_vacancies_approx": 20,
-  "image_url": null
+  "worker_count_approx": 50
 }
-- Validaciones:
-  - email unico.
-  - password politica obligatoria.
-  - RUT valido y formato exigido por UI web.
-  - comuna-region consistente.
+- Validaciones: RUT valido y formato UI, comuna-region consistente, commercial_name legal_name phone address obligatorios; image opcional.
 - Response 201:
 {
-  "user_id": 201,
-  "role": "COMPANY"
+  "company_id": 201
+}
+
+
+2.2) Listar empresas (administrador del sistema)
+- GET /api/v1/admin/companies?page=1&size=20&sort=created_at,desc
+- Auth: Bearer ADMIN
+- Response 200 (formato paginado estandar):
+- items minimos por fila para desplegable "Registrar reclutadores": company_id, commercial_name (y opcionalmente legal_name, rut).
+
+
+2.3) Alta reclutador (administrador del sistema) — Flujo web MVP
+- POST /api/v1/admin/recruiters
+- Auth: Bearer ADMIN
+- Content-Type: application/json
+- Request:
+{
+  "email": "reclutador@dominio.cl",
+  "password": "Aa!123456789",
+  "first_name": "Ana",
+  "last_name_paternal": "Rojas",
+  "last_name_maternal": "Soto",
+  "rut": "12345678-5",
+  "phone": "+56221234567",
+  "mobile": "+56912345678",
+  "birth_date": "1990-05-15",
+  "company_id": 201
+}
+- phone: opcional (null permitido).
+- company_id: id de empresa existente (companies.id) dada de alta por admin.
+- Validaciones: email unico, password politica, RUT valido, company_id existente, demas obligatorios segun formulario web.
+- Response 201:
+{
+  "user_id": 301,
+  "role": "RECRUITER",
+  "email": "reclutador@dominio.cl",
+  "company_id": 201
 }
 
 
@@ -226,6 +271,7 @@ ENDPOINTS DE AUTENTICACION
     "remaining_attempts": 4
   }
 }
+- El campo user.role puede ser CANDIDATE, ADMIN o RECRUITER. El cliente web usa este valor para redirigir a portal administrador o a dashboard reclutador.
 - Reglas:
   - al 4to intento fallido: bloqueo.
   - retornar BUSINESS_RULE_VIOLATION con code de bloqueo.
@@ -281,28 +327,29 @@ ENDPOINTS DE AUTENTICACION
 
 7) Perfil autenticado basico
 - GET /api/v1/auth/me
-- Auth: Bearer access_token con role CANDIDATE o COMPANY
-- Response 200:
+- Auth: Bearer access_token con role CANDIDATE, ADMIN o RECRUITER
+- Response 200 (minimo):
 {
   "id": 101,
   "role": "CANDIDATE",
   "email": "correo@dominio.cl"
 }
+- Implementacion puede ampliar payload para RECRUITER (ej. company_id, nombre comercial empresa) si el frontend lo requiere; no romper campos minimos anteriores.
 
-7.1) Imagen de empresa (edicion posterior al registro)
+7.1) Imagen de empresa (edicion con sesion reclutador)
 - PATCH /api/v1/company/profile/image
-- Auth: COMPANY
+- Auth: RECRUITER
 - Request:
 {
   "image_url": "https://.../logo.png"
 }
 - Reglas:
-  - Esta imagen es de la empresa (perfil empresa), no de las ofertas.
-  - Debe permitir subir/cambiar/eliminar imagen con cuenta ya creada y sesion iniciada.
+  - Esta imagen es de la empresa (perfil empresa en companies), no de las ofertas.
+  - Debe permitir subir/cambiar/eliminar imagen con sesion iniciada RECRUITER.
   - Para eliminar, enviar image_url en null.
 - Response 200:
 {
-  "user_id": 201,
+  "company_id": 201,
   "image_url": "https://.../logo.png"
 }
 
@@ -431,12 +478,13 @@ OFERTAS (EMPRESA)
 
 17) Crear oferta
 - POST /api/v1/company/jobs
-- Auth: COMPANY
+- Auth: RECRUITER
+- Recruiter: solo puede crear ofertas para su company_id asociado (derivada de recruiter_profiles o regla equivalente en backend).
 - Request:
 {
+  "company_commercial_name": "Empresa X",
   "title": "Desarrollador Backend Java",
-  "description": "Descripcion completa",
-  "requirements": "Requisitos del puesto",
+  "description": "Descripcion completa (unico texto largo; no hay campo requirements separado)",
   "city": "Santiago",
   "region_id": 7,
   "commune_id": 77,
@@ -448,8 +496,9 @@ OFERTAS (EMPRESA)
   "image_url": null
 }
 - Validaciones:
-  - skills_ids entre 3 y 8.
-  - campos obligatorios completos.
+  - company_commercial_name, title, description, city, region_id, commune_id, salary_offered, years_experience_required, modality, workload obligatorios; image_url opcional.
+  - skills_ids entre 3 y 8 (y minimo 3, alineado a Flujo Pantallas App Web).
+- No enviar ni persistir requirements.
 - Regla estado:
   - para MVP obligatorio, se crea ACTIVE por defecto.
 - Response 201:
@@ -459,15 +508,15 @@ OFERTAS (EMPRESA)
   "published_at": "2026-04-25T03:40:00Z"
 }
 
-18) Listar mis ofertas empresa
+18) Listar mis ofertas
 - GET /api/v1/company/jobs?page=1&size=20&sort=created_at,desc
-- Auth: COMPANY
+- Auth: RECRUITER
 
 19) Ver detalle oferta propia
 - GET /api/v1/company/jobs/{job_id}
-- Auth: COMPANY
+- Auth: RECRUITER
 - Regla autorizacion:
-  - empresa solo accede a sus propios job_id.
+  - solo accede al job_id si la oferta fue publicada por ese mismo reclutador (titular RECRUITER de la sesion).
 
 OFERTAS (CANDIDATO)
 
@@ -572,7 +621,7 @@ POSTULACIONES EMPRESA
 
 26) Listar postulaciones de una oferta
 - GET /api/v1/company/jobs/{job_id}/applications?page=1&size=20&sort=match_score,desc
-- Auth: COMPANY
+- Auth: RECRUITER
 - Reglas:
   - solo oferta propia.
   - orden por score descendente para HU-20.
@@ -581,10 +630,10 @@ POSTULACIONES EMPRESA
 
 27) Marcar postulacion como VIEWED
 - PATCH /api/v1/company/applications/{application_id}/viewed
-- Auth: COMPANY
+- Auth: RECRUITER
 - Request: {}
 - Reglas:
-  - solo empresa duena de la oferta asociada.
+  - solo el reclutador publicador de la oferta asociada.
   - idempotente: si ya VIEWED, mantener VIEWED.
 - Response 200:
 {
@@ -647,34 +696,52 @@ CODIGOS HTTP POR TIPO DE RESULTADO
 
 MATRIZ DE AUTORIZACION
 - Publico:
-  - auth/login
-  - auth/register/*
-  - auth/password-recovery/*
-  - catalogs/*
+  - POST /api/v1/auth/login
+  - POST /api/v1/auth/register/candidate
+  - POST /api/v1/auth/password-recovery/request
+  - POST /api/v1/auth/password-recovery/verify
+  - POST /api/v1/auth/password-recovery/reset
+  - GET /api/v1/catalogs/regions
+  - GET /api/v1/catalogs/regions/{region_id}/communes
+  - GET /api/v1/catalogs/sectors
+  - GET /api/v1/catalogs/sectors/{sector_id}/skills
+- ADMIN (Bearer access_token rol ADMIN):
+  - GET /api/v1/auth/me
+  - POST /api/v1/admin/companies
+  - GET /api/v1/admin/companies
+  - POST /api/v1/admin/recruiters
 - CANDIDATE (Bearer access_token rol CANDIDATE):
-  - auth/me
-  - candidate/profile
-  - candidate/cv
-  - candidate/cv/current
-  - candidate/cv/current/file
-  - candidate/jobs/*
-  - candidate/swipes
-  - candidate/applications/*
-- COMPANY (Bearer access_token rol COMPANY):
-  - auth/me
-  - company/profile/image
-  - company/jobs/*
-  - company/applications/*/viewed
+  - GET /api/v1/auth/me
+  - GET /api/v1/candidate/profile
+  - PATCH /api/v1/candidate/profile
+  - POST /api/v1/candidate/cv
+  - GET /api/v1/candidate/cv/current
+  - GET /api/v1/candidate/cv/current/file
+  - GET /api/v1/candidate/jobs/feed
+  - GET /api/v1/candidate/jobs/{job_id}
+  - POST /api/v1/candidate/swipes
+  - POST /api/v1/candidate/applications
+  - GET /api/v1/candidate/applications
+  - GET /api/v1/candidate/applications/{application_id}
+- RECRUITER (Bearer access_token rol RECRUITER):
+  - GET /api/v1/auth/me
+  - PATCH /api/v1/company/profile/image
+  - POST /api/v1/company/jobs
+  - GET /api/v1/company/jobs
+  - GET /api/v1/company/jobs/{job_id}
+  - GET /api/v1/company/jobs/{job_id}/applications
+  - PATCH /api/v1/company/applications/{application_id}/viewed
 
 
 
 
 CHECKLIST DE INTEGRACION FINAL
-- Login candidato y empresa operativos con JWT.
+- Login candidato, reclutador y administrador operativos con JWT y POST /api/v1/auth/login (roles CANDIDATE, RECRUITER, ADMIN; sin usuario empresa ni rol COMPANY).
 - Registro candidato: un solo POST /api/v1/auth/register/candidate (multipart: data JSON + file PDF) con consent_given=true y todos los datos de identidad, perfil, skills y preferencias; consentimiento en "Uso de datos"; JWT CANDIDATE en la respuesta.
-- Registro empresa completo con region/comuna/sector.
+- Web MVP empresa: alta empresa (solo datos negocio company_id, sin login empresa) POST /api/v1/admin/companies (multipart) con ADMIN; listado GET /api/v1/admin/companies; alta reclutador POST /api/v1/admin/recruiters con company_id; login reclutador con mismo POST /api/v1/auth/login que admin.
+- Endpoint historico POST /api/v1/auth/register/company fuera del contrato MVP (ver seccion registro empresa no MVP).
 - CV PDF <= 1MB validado y almacenado.
-- Oferta creada con 3..8 skills.
+- Oferta creada con company_commercial_name, sin requirements, salary_offered y years_experience_required obligatorios, skills 3..8.
 - Feed candidato sin repeticion de ofertas.
 - Swipe PASS/APPLY funcionando.
 - Postulacion APPLIED creada solo al confirmar.
