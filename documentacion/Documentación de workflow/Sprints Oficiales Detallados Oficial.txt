@@ -109,8 +109,8 @@ hasta los scripts vigentes del repositorio (dominio oficial: users CANDIDATE/ADM
 companies sin credencial, recruiter_profiles.company_id, jobs según Contrato); Spring Boot
 operativo con GET /health (Spring donde exista en el sprint) y catálogos públicos GET /api/v1/catalogs/* donde apliquen; esqueleto FastAPI cuando exista en compose.
 HU-01 (registro multipart candidato cerrado) es Sprint 4; en Sprint 1 solo stubs opcionales
-tras BD estable si alcanza tiempo. Política de contraseña conocida equipo (12 caracteres,
-símbolo, número, mayúsculas y minúsculas) para implementaciones posteriores.
+tras BD estable si alcanza tiempo. Política de contraseña conocida equipo (mínimo 10 caracteres;
+al menos una mayúscula, al menos una minúscula, al menos un símbolo y al menos un número) para implementaciones posteriores.
 
 ------------------------------------------------------------
 A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 1 (Definition of Done)
@@ -243,8 +243,8 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 2
 - No existe POST público empresa en MVP web obligatorio ni rol COMPANY para login empresa.
 - Con ADMIN Bearer: POST /api/v1/admin/companies multipart (parte datos negocio según HU; sin correo/clave empresa).
 - GET /api/v1/admin/companies para listado/desplegable al registrar reclutadores.
-- POST /api/v1/admin/recruiters con company_id existente, email reclutador, password bajo política (12 caracteres,
-  símbolo, número, mayúsculas y minúsculas), unicidad email y campos HU.
+- POST /api/v1/admin/recruiters con company_id existente, email reclutador, password bajo política (mínimo 10 caracteres;
+  al menos una mayúscula, al menos una minúscula, al menos un símbolo y al menos un número), unicidad email y campos HU.
 - Persistencia unicamente password_hash para usuarios con login.
 
 3) Seguridad Spring
@@ -642,8 +642,7 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 7
   implementación MVP acorde a HU-03 y Flujo Pantallas.
 - Recuperación mockup: sin correo real; flujo UI puede completarse; al fijar
   nueva contraseña en ese flujo, misma política de complejidad que en registro
-  (mínimo 12 caracteres, al menos un símbolo, al menos un número, mayúsculas y
-  minúsculas), alineada a HU sin épicas y Flujos de pantalla.
+  (mínimo 10 caracteres; al menos una mayúscula, al menos una minúscula, al menos un símbolo y al menos un número), alineada a HU sin épicas y Flujos de pantalla.
 - Registro de candidato y perfil puede estar parcial si ya existe por API, pero debe
   ser coherente: lo crítico de este sprint es swipe + confirmación + consumo
   de score.

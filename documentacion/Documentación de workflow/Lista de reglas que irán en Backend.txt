@@ -9,7 +9,7 @@ Bloqueo de login en ambos frontends (móvil y web) tras 4 intentos y derivación
 
 Flujo de recuperación mock completo (email existente, código simulado, reenvío simulado, cambio de contraseña sin correo real).
 
-Política de contraseña (12+ caracteres, mayúscula, minúscula, número, símbolo) en registro y reset.
+Política de contraseña (mínimo 10 caracteres; al menos una mayúscula, al menos una minúscula, al menos un símbolo y al menos un número) en registro y reset.
 
 Validación real de RUT chileno (dígito verificador/lógica completa).
 

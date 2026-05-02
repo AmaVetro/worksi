@@ -24,8 +24,13 @@ import com.worksi.app.ui.theme.OrangeAccent
 import com.worksi.app.ui.theme.White
 
 @Composable
-fun RecoveryCodeScreen(onCodeVerified: () -> Unit, onNewCode: () -> Unit, onBack: () -> Unit) {
+fun RecoveryCodeScreen(
+    viewModel: RecoveryViewModel,
+    onCodeVerified: () -> Unit,
+    onBack: () -> Unit
+) {
     var code by remember { mutableStateOf("") }
+    val uiState by viewModel.uiState.collectAsState()
 
     Box(
         modifier = Modifier
@@ -72,13 +77,25 @@ fun RecoveryCodeScreen(onCodeVerified: () -> Unit, onNewCode: () -> Unit, onBack
                 shape = RoundedCornerShape(12.dp)
             )
 
+            if (uiState.errorMessage != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    uiState.errorMessage!!,
+                    color = MaterialTheme.colorScheme.error,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Center
+                )
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = onCodeVerified,
+                onClick = { viewModel.verifyCode(code, onCodeVerified) },
                 modifier = Modifier.fillMaxWidth().height(52.dp).shadow(4.dp, RoundedCornerShape(12.dp)),
                 colors = ButtonDefaults.buttonColors(containerColor = OrangeAccent, contentColor = White),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                enabled = !uiState.isLoading
             ) {
                 Text("Ingresar código", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = White)
             }
@@ -90,16 +107,16 @@ fun RecoveryCodeScreen(onCodeVerified: () -> Unit, onNewCode: () -> Unit, onBack
             Spacer(modifier = Modifier.height(16.dp))
 
             Button(
-                onClick = onNewCode,
+                onClick = { viewModel.resendCode() },
                 modifier = Modifier.fillMaxWidth().height(52.dp).shadow(4.dp, RoundedCornerShape(12.dp)),
                 colors = ButtonDefaults.buttonColors(containerColor = OrangeAccent, contentColor = White),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                enabled = !uiState.isLoading
             ) {
                 Text("Enviar nuevo código", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = White)
             }
         }
 
-        // Flecha de volver (encima)
         IconButton(
             onClick = onBack,
             modifier = Modifier

@@ -1,8 +1,11 @@
 package cl.duoc.worksi.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import cl.duoc.worksi.entity.User;
+import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UserRepository extends JpaRepository<User, Long> {
   boolean existsByEmailIgnoreCase(String email);
+
+  Optional<User> findByEmailIgnoreCase(String email);
 }

@@ -24,8 +24,8 @@ Al escribir cualquier cosa en el campo para el código y luego botón "Ingresar 
 
 
 Pantalla "Nueva contraseña" --> Dice "Ingresa tu nueva contraseña:", abajo el campo para escribirla, y debajo del campo para escribirla dice:
-"Debe contener al menos 12 caracteres.
-Debe contener al menos 1 símbolo, 1 número, letras mínusculas y mayúsculas."
+"Debe contener al menos 10 caracteres.
+Debe contener al menos 1 símbolo, 1 número, letras minúsculas y mayúsculas."
 Debajo de ese texto el botón "Aceptar" (endpoint: POST /api/v1/auth/password-recovery/reset). Si se cumple con los requisitos y se pulsa aceptar, viene la pantalla "Confirmar en Bandeja".
 
 
@@ -39,7 +39,7 @@ Nombre
 Apellido Paterno
 Apellido Materno
 Correo
-Contraseña (creación de cuenta: mínimo 12 caracteres, al menos un símbolo, al menos un número, y letras en mayúscula y minúscula; misma política que en Pantalla "Nueva contraseña" y que exige el Contrato Unificado API para password al registrar; el cliente envía texto claro y el backend guarda password_hash)
+Contraseña (creación de cuenta: mínimo 10 caracteres; al menos una mayúscula, al menos una minúscula, al menos un símbolo y al menos un número; misma política que en Pantalla "Nueva contraseña" y que exige el Contrato Unificado API para password al registrar; el cliente envía texto claro y el backend guarda password_hash)
 Celular
 Rut (debe verificar lógica numérica de formato de ruts de chile).
 Nro. Documento (por ahora, se podrá poner cualquier número ahí).

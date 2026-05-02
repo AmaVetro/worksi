@@ -15,12 +15,14 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worksi.app.ui.theme.CyanPrimary
 import com.worksi.app.ui.theme.OrangeAccent
 import com.worksi.app.ui.theme.White
+import com.worksi.app.validation.PasswordPolicy
 
 @Composable
 fun RegisterScreen(onNavigateBack: () -> Unit) {
@@ -29,6 +31,7 @@ fun RegisterScreen(onNavigateBack: () -> Unit) {
     var apellidoPaterno by remember { mutableStateOf("") }
     var apellidoMaterno by remember { mutableStateOf("") }
     var correo by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var celular by remember { mutableStateOf("") }
     var rut by remember { mutableStateOf("") }
     var nroDocumento by remember { mutableStateOf("") }
@@ -208,6 +211,42 @@ fun RegisterScreen(onNavigateBack: () -> Unit) {
             Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Contraseña (*)", color = CyanPrimary) },
+                visualTransformation = PasswordVisualTransformation(),
+                isError = showErrors && (password.isBlank() || !PasswordPolicy.matches(password)),
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = CyanPrimary,
+                    unfocusedBorderColor = CyanPrimary.copy(alpha = 0.5f),
+                    focusedLabelColor = CyanPrimary,
+                    unfocusedLabelColor = CyanPrimary.copy(alpha = 0.7f),
+                    cursorColor = CyanPrimary,
+                    focusedTextColor = CyanPrimary,
+                    unfocusedTextColor = CyanPrimary
+                ),
+                shape = RoundedCornerShape(12.dp)
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                "*Debe contener mínimo 10 caracteres.",
+                color = CyanPrimary.copy(alpha = 0.85f),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                "*Debe contener al menos 1 símbolo, 1 número, letras minúsculas y mayúsculas.",
+                color = CyanPrimary.copy(alpha = 0.85f),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
                 value = celular,
                 onValueChange = { celular = it },
                 label = { Text("Celular (*)", color = CyanPrimary) },
@@ -300,9 +339,9 @@ fun RegisterScreen(onNavigateBack: () -> Unit) {
                 onClick = {
                     showErrors = true
                     if (nombre.isNotBlank() && apellidoPaterno.isNotBlank() && apellidoMaterno.isNotBlank()
-                        && correo.isNotBlank() && celular.isNotBlank() && rut.isNotBlank() && nroDocumento.isNotBlank()
+                        && correo.isNotBlank() && PasswordPolicy.matches(password)
+                        && celular.isNotBlank() && rut.isNotBlank() && nroDocumento.isNotBlank()
                     ) {
-                        // Más adelante guardamos ViewModel y vamos a Subir CV
                         onNavigateBack()
                     }
                 },

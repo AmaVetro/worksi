@@ -23,12 +23,17 @@ import androidx.compose.ui.unit.sp
 import com.worksi.app.ui.theme.CyanPrimary
 import com.worksi.app.ui.theme.OrangeAccent
 import com.worksi.app.ui.theme.White
+import com.worksi.app.validation.PasswordPolicy
 
 @Composable
-fun RecoveryNewPasswordScreen(onPasswordReset: () -> Unit, onBack: () -> Unit) {
+fun RecoveryNewPasswordScreen(
+    viewModel: RecoveryViewModel,
+    onPasswordReset: () -> Unit,
+    onBack: () -> Unit
+) {
     var password by remember { mutableStateOf("") }
-    val pattern = Regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#\$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]).{10,}\$")
-    val isValid = pattern.matches(password)
+    val uiState by viewModel.uiState.collectAsState()
+    val isValid = PasswordPolicy.matches(password)
 
     Box(
         modifier = Modifier
@@ -76,9 +81,19 @@ fun RecoveryNewPasswordScreen(onPasswordReset: () -> Unit, onBack: () -> Unit) {
                 shape = RoundedCornerShape(12.dp)
             )
 
+            if (uiState.errorMessage != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    uiState.errorMessage!!,
+                    color = MaterialTheme.colorScheme.error,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Center
+                )
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
 
-// Requisitos centrados
             Text(
                 "*Debe contener mínimo 10 caracteres.",
                 color = White.copy(alpha = 0.9f),
@@ -102,17 +117,16 @@ fun RecoveryNewPasswordScreen(onPasswordReset: () -> Unit, onBack: () -> Unit) {
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = onPasswordReset,
+                onClick = { viewModel.resetPassword(password, onPasswordReset) },
                 modifier = Modifier.fillMaxWidth().height(52.dp).shadow(4.dp, RoundedCornerShape(12.dp)),
                 colors = ButtonDefaults.buttonColors(containerColor = OrangeAccent, contentColor = White),
                 shape = RoundedCornerShape(12.dp),
-                enabled = isValid
+                enabled = isValid && !uiState.isLoading
             ) {
                 Text("Aceptar", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = White)
             }
         }
 
-        // Flecha de volver (encima)
         IconButton(
             onClick = onBack,
             modifier = Modifier

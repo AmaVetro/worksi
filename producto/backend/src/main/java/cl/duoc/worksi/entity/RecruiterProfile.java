@@ -44,7 +44,43 @@ public class RecruiterProfile {
   @Column(name = "updated_at", nullable = false, insertable = false, updatable = false)
   private LocalDateTime updatedAt;
 
-  protected RecruiterProfile() {}
+  public RecruiterProfile() {}
+
+  public void setUserId(Long userId) {
+    this.userId = userId;
+  }
+
+  public void setCompanyId(Long companyId) {
+    this.companyId = companyId;
+  }
+
+  public void setFirstName(String firstName) {
+    this.firstName = firstName;
+  }
+
+  public void setLastNamePaternal(String lastNamePaternal) {
+    this.lastNamePaternal = lastNamePaternal;
+  }
+
+  public void setLastNameMaternal(String lastNameMaternal) {
+    this.lastNameMaternal = lastNameMaternal;
+  }
+
+  public void setRut(String rut) {
+    this.rut = rut;
+  }
+
+  public void setPhone(String phone) {
+    this.phone = phone;
+  }
+
+  public void setMobile(String mobile) {
+    this.mobile = mobile;
+  }
+
+  public void setBirthDate(LocalDate birthDate) {
+    this.birthDate = birthDate;
+  }
 
   public Long getUserId() {
     return userId;
