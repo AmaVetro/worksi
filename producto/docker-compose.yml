@@ -29,6 +29,7 @@ services:
       SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-worksi}
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-worksi}
       WORKSI_CV_STORAGE_DIR: /data/cv
+      WORKSI_SECURITY_PASSWORD_RECOVERY_MVP_SKIP_CODE_CHECK: "true"
     ports:
       - "8080:8080"
     volumes:

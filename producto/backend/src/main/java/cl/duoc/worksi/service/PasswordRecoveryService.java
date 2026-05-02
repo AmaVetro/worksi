@@ -17,29 +17,28 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Service
 public class PasswordRecoveryService {
-  private static final Logger log = LoggerFactory.getLogger(PasswordRecoveryService.class);
-
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
-  private final SecureRandom random = new SecureRandom();
   private final int codeValidityMinutes;
+  private final boolean mvpSkipCodeCheck;
 
   public PasswordRecoveryService(
       UserRepository userRepository,
       PasswordEncoder passwordEncoder,
       JwtService jwtService,
       @Value("${worksi.security.password-recovery-code-validity-minutes}")
-          int codeValidityMinutes) {
+          int codeValidityMinutes,
+      @Value("${worksi.security.password-recovery-mvp-skip-code-check:true}")
+          boolean mvpSkipCodeCheck) {
     this.userRepository = userRepository;
     this.passwordEncoder = passwordEncoder;
     this.jwtService = jwtService;
     this.codeValidityMinutes = codeValidityMinutes;
+    this.mvpSkipCodeCheck = mvpSkipCodeCheck;
   }
 
   @Transactional
@@ -57,16 +56,19 @@ public class PasswordRecoveryService {
       return error(HttpStatus.NOT_FOUND, "NOT_FOUND", "No existe una cuenta con este correo");
     }
 
-    String plainCode = String.format("%06d", 100000 + random.nextInt(900000));
-    log.debug("Recuperacion mock codigo email={} codigo={}", email, plainCode);
     LocalDateTime now = LocalDateTime.now();
-    user.setPasswordResetCodeHash(passwordEncoder.encode(plainCode));
-    user.setPasswordResetCodeExpiresAt(now.plusMinutes(codeValidityMinutes));
     user.setPasswordResetRequestedAt(now);
+    user.setPasswordResetCodeExpiresAt(now.plusMinutes(codeValidityMinutes));
+    if (mvpSkipCodeCheck) {
+      user.setPasswordResetCodeHash(null);
+    } else {
+      SecureRandom random = new SecureRandom();
+      String plainCode = String.format("%06d", 100000 + random.nextInt(900000));
+      user.setPasswordResetCodeHash(passwordEncoder.encode(plainCode));
+    }
     userRepository.save(user);
 
-    return ResponseEntity.ok(
-        Map.of("message", "Codigo generado en modo mock", "mock_flow", true));
+    return ResponseEntity.ok(Map.of("message", "Codigo generado en modo mock", "mock_flow", true));
   }
 
   @Transactional
@@ -83,15 +85,17 @@ public class PasswordRecoveryService {
     if (user.getDeletedAt() != null || !user.isActive()) {
       return error(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "Codigo invalido o vencido");
     }
-    String hash = user.getPasswordResetCodeHash();
     LocalDateTime exp = user.getPasswordResetCodeExpiresAt();
-    if (hash == null
-        || exp == null
-        || LocalDateTime.now().isAfter(exp)
-        || !passwordEncoder.matches(codeRaw.trim(), hash)) {
+    LocalDateTime now = LocalDateTime.now();
+    if (user.getPasswordResetRequestedAt() == null || exp == null || now.isAfter(exp)) {
       return error(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "Codigo invalido o vencido");
     }
-
+    if (!mvpSkipCodeCheck) {
+      String hash = user.getPasswordResetCodeHash();
+      if (hash == null || !passwordEncoder.matches(codeRaw.trim(), hash)) {
+        return error(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "Codigo invalido o vencido");
+      }
+    }
     String recoveryJwt = jwtService.createPasswordRecoveryToken(user);
     return ResponseEntity.ok(Map.of("verified", true, "recovery_token", recoveryJwt));
   }
@@ -147,6 +151,7 @@ public class PasswordRecoveryService {
     user.setPasswordHash(passwordEncoder.encode(newPassword));
     user.setPasswordResetCodeHash(null);
     user.setPasswordResetCodeExpiresAt(null);
+    user.setPasswordResetRequestedAt(null);
     user.setPasswordChangedAt(now);
     user.setFailedLoginAttempts(0);
     user.setLockUntil(null);
