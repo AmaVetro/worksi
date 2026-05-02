@@ -8,17 +8,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "communes")
-public class Commune {
+@Table(name = "sectors")
+public class Sector {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "id")
   private Long id;
 
-  @Column(name = "region_id", nullable = false)
-  private Long regionId;
-
-  @Column(nullable = false, length = 10)
+  @Column(nullable = false, length = 30)
   private String code;
 
   @Column(nullable = false, length = 120)
@@ -27,12 +23,10 @@ public class Commune {
   @Column(name = "is_active", nullable = false)
   private boolean active;
 
+  protected Sector() {}
+
   public Long getId() {
     return id;
-  }
-
-  public Long getRegionId() {
-    return regionId;
   }
 
   public String getCode() {

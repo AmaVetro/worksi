@@ -63,7 +63,6 @@ CALENDARIO (11 SEMANAS)
 
 Sprint 1 (Sprint pesado):   20–26 abril 2026
 
-Estado: En proceso.
 Esfuerzo total estimado del equipo: 10 h.
 Contenido:
 ●    Inicialización: repositorio, Docker Compose, MySQL, esqueleto Spring Boot (+ Flyway), servicios previstos FastAPI cuando toque más adelante, acceso básico a catálogo o health según equipo.
@@ -75,7 +74,6 @@ Equilibrio: prioridad absoluta es esquema y Flyway ejecutable antes de historia 
 
 Sprint 2:   27 abril – 3 mayo 2026
 
-Estado: Pendiente.
 Esfuerzo total estimado del equipo: 10 h.
 Contenido:
 ●    HU-03 — Login unificado POST /api/v1/auth/login, logout en cliente donde aplique; JWT solo access token; claims CANDIDATE | ADMIN | RECRUITER. Bloqueo tras 4 intentos fallidos y derivación recuperación mock (alineado web y móvil).
@@ -87,7 +85,6 @@ Equilibrio: antes de crear ofertas deben existir companies y usuarios RECRUITER;
 
 Sprint 3:   4–10 mayo 2026
 
-Estado: Pendiente.
 Esfuerzo total estimado del equipo: 9 h.
 Contenido:
 ●    Registro candidato según Contrato Oficial del repositorio: pantallas previas a "Uso de datos" con estado solo en cliente (sin persistencia candidato en backend hasta el multipart final salvo GET /api/v1/catalogs/*) según Flujo App Móvil.
@@ -98,7 +95,6 @@ Equilibrio: flujo móvil paralelo sin depender ya de modelo antiguo “empresa s
 
 Sprint 4:   11–17 mayo 2026
 
-Estado: Pendiente.
 Esfuerzo total estimado del equipo: 10 h.
 Contenido:
 ●    HU-21 — Consentimiento en "Uso de datos" última barrera antes del alta oficial; evidencia BD timestamp/flag conforme modelo.
@@ -109,7 +105,6 @@ Equilibrio: candidato navegable dentro de perfil sólo después de ciclo contrac
 
 Sprint 5 (Sprint pesado):   18–24 mayo 2026
 
-Estado: Pendiente.
 Esfuerzo total estimado del equipo: 10 h.
 Contenido:
 ●    Apache Tika en Spring Boot sobre CV almacenado; post procesamiento texto mínimo (saltos, ruido básico) para camino hacia fairness posterior.
@@ -122,7 +117,6 @@ Equilibrio: insumos listos para fairness + IA semana siguiente.
 
 Sprint 6 (Sprint pesado):   25–31 mayo 2026
 
-Estado: Pendiente.
 Esfuerzo total estimado del equipo: 10 h.
 Contenido:
 ●    HU-09 — Fairness (spaCy PERSON/ORG/GPE + regex estructura; orden regex → spaCy → regex; sin ampliaciones no acordadas; solapamiento selectivo nombre institución nacionalidad).
@@ -135,7 +129,6 @@ Equilibrio: núcleo IA cerrado después de tener ambos extremos contenido candid
 
 Sprint 7 (Sprint pesado):   1–7 junio 2026
 
-Estado: Pendiente.
 Esfuerzo total estimado del equipo: 10 h.
 Contenido:
 ●    Frontend web MVP (React+Vite según Stack): pantalla login unificada ADMIN/RECRUITER; Portal administración registrar empresa (sin credencial empresa), registrar reclutadores, navegación básica; sesión reclutador shell (cabeceras, placeholders de listados donde falte data aún reproducible desde API). App móvil candidato continuación paralela.
@@ -150,7 +143,6 @@ Equilibrio: experiencia swipe depende del score Sprint 6; web admin garantiza on
 
 Sprint 8:   8–14 junio 2026
 
-Estado: Pendiente.
 Esfuerzo total estimado del equipo: 9 h.
 Contenido:
 ●    HU-13 — Listado postulaciones candidatos (APPLIED / VIEWED mínimos).
@@ -163,7 +155,6 @@ Equilibrio: candidato tiene seguimiento; empresa puede operar ciclo medio sin de
 
 Sprint 9:   15–21 junio 2026
 
-Estado: Pendiente.
 Esfuerzo total estimado del equipo: 9 h.
 Contenido:
 ●    HU-19 — Ver postulantes (sesión RECRUITER) por job.
@@ -177,7 +168,6 @@ Equilibrio: operación empresa coherente con manualidad estados vista.
 
 Sprint 10:  22–28 junio 2026
 
-Estado: Pendiente.
 Esfuerzo total estimado del equipo: 7 h.
 Contenido:
 ●    HU-20 — Orden descendente compatibilidad en listados API/UI reclutador.
@@ -189,7 +179,6 @@ Equilibrio: iteración sobre módulos existentes menor carga tras picos IA + web
 
 Sprint 11 (Sprint pesado):  29 junio – 5 julio 2026   (semana que comienza el 29 de junio de 2026)
 
-Estado: Pendiente.
 Esfuerzo total estimado del equipo: 8 h.
 Contenido:
 ●    Integración E2E: candidato móvil + flujo empresa con reclutadores creados por ADMIN entorno único Docker; revisión checklist calidad Contrato oficial.
