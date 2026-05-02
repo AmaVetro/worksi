@@ -16,21 +16,20 @@ Pantalla Iniciar Sesión --> Pide email y contraseña, con botón "iniciar sesi�
 Pantalla "Recuperar contraseña", muestra mensaje "Excediste el límite de intentos. Por nuestros lineamientos de seguridad, deberás recuperar tu contraseña" "Pulsa aquí:" y aparece el botón "Recuperar contraseña" que lleva a pantalla "Olvidé mi contraseña", es decir, se lleva a la misma pantalla que botón "Olvidé mi contraseña" que esta en Pantalla Iniciar Sesión.
 
 
-Pantalla "Olvidé mi contraseña" --> En ella, dice "¿Olvidaste tu contraseña?" "Ingresa el email asociado a tu cuenta y te enviaremos un código de recuperación", hay un campo para escribir el email y botón "Enviar código" (endpoint: POST /api/v1/auth/password-recovery/request) --> si el email escrito no se encuentra en la BD, lanza error ahí en esa misma pantalla "El email no está registrado en WorkSí" (mismo endpoint). Si si está registrado, no se envía código realmente al correo, la funcionalidad de enviar mensajes al correo registrado no irá por ahora, solo será si sobra tiempo alfinal del proyecto. Pero al presionar "Enviar código" se lleva a pantalla "Ingresa tu código".
+Pantalla "Olvidé mi contraseña" --> Texto orientado al usuario sobre olvido de contraseña y correo; campo email; botón "Enviar código". En MVP **no hay recuperación real** por este paso: el botón **no debe considerarse funcional** para generar ni enviar un código al usuario (no hay correo real). Es maqueta para continuar el flujo: al pulsar "Enviar código" se avanza a pantalla "Ingresa tu código" **sin** depender de un código verdadero. (Opcional de UX: si se desea comprobar que el email existe en BD, puede alinearse a validación local o endpoint; no forma parte del compromiso MVP de «código de recuperación».)
 
 
-Pantalla "Ingresa tu código" --> dice "Ingresa tu código" y un campo para escribir el código recibido por correo (en realidad, uno podrá poner cualquier cosa escrita ahí, ya que no habrá mensajes al correo enrealidad). Justo abajo el botón "Ingresar código" para procesar la solicitud y ver si el código calza (endpoint: POST /api/v1/auth/password-recovery/verify). Justo abajo el texto "¿No recibiste el código?" y abajo de él otro botón que dice "Enviar nuevo código" que debe enviar nuevo código (endpoint: POST /api/v1/auth/password-recovery/request, en modo mock).
-Al escribir cualquier cosa en el campo para el código y luego botón "Ingresar código", se pasa a Pantalla "Nueva contraseña".
+Pantalla "Ingresa tu código" --> Campo para escribir un «código» y botón "Ingresar código"; texto "¿No recibiste el código?" y botón "Enviar nuevo código". En MVP **todo esto es falso respecto del negocio**: **no** se genera para el usuario un código que deba acertarse; el usuario **debe poder** escribir **cualquier cosa** y al pulsar "Ingresar código" **avanzar** a pantalla "Nueva contraseña". Los botones de este bloque **no cumplen** recuperación real basada en código. (Referencia técnica Contrato: POST /api/v1/auth/password-recovery/verify y request; en producto MVP no se exige al usuario un OTP válido.)
 
 
-Pantalla "Nueva contraseña" --> Dice "Ingresa tu nueva contraseña:", abajo el campo para escribirla, y debajo del campo para escribirla dice:
+Pantalla "Nueva contraseña" --> **Única parte real del flujo de recuperación en MVP.** Dice "Ingresa tu nueva contraseña:", campo para la nueva clave, y textos de política:
 "Debe contener al menos 10 caracteres.
 Debe contener al menos 1 símbolo, 1 número, letras minúsculas y mayúsculas."
-Debajo de ese texto el botón "Aceptar" (endpoint: POST /api/v1/auth/password-recovery/reset). Si se cumple con los requisitos y se pulsa aceptar, viene la pantalla "Confirmar en Bandeja".
+Botón "Aceptar" → debe persistir en backend mediante POST /api/v1/auth/password-recovery/reset (Contrato): al cumplir política y éxito, la nueva contraseña queda lista de inmediato en `users.password_hash`. Si hay error de validación, mensaje acorde.
+Tras éxito → pantalla "Confirmar en Bandeja".
 
 
-Pantalla "Confirmar en bandeja" --> Dice "Tu nueva contraseña ha sido creada con éxito.
-Vé a la bandeja de entrada del correo asociado y confirma el cambio clickeando el link que te hemos enviado." y abajo el botón "Volver a Log In". Obviamente nunca se envía nada al correo, así que al llegar a Pantalla "Confirmar en bandeja" la nueva contraseña en texto claro ya fue enviada al backend y allí se persiste solo como password_hash en la tabla users (alineado a Contrato Unificado API y esquema Flyway). Al presionar "Volver a Log In" se va a Pantalla Iniciar Sesión.
+Pantalla "Confirmar en bandeja" --> Mensaje simulado (ficción) sobre revisar el correo / enlace; **no se envía nada**. La contraseña **ya quedó** aplicada en el paso anterior. Botón "Volver a Log In" → Pantalla Iniciar Sesión.
 
 
 Pantalla "Crear cuenta" --> Dice "Completa tus datos", y abajo solicita:

@@ -1,5 +1,5 @@
 CONTRATO UNIFICADO DE INTEGRACION - WORKSI
-Version: 1.6
+Version: 1.7
 Estado: Oficial para desarrollo paralelo (Backend + Web + Android)
 Fecha base: 2026-04-25
 Cambio 1.2 (2026-04-27): Registro candidato en un unico paso al aceptar consentimiento en pantalla "Uso de datos" (sin sesion de borrador ni rutas /onboarding/candidate/*).
@@ -7,6 +7,7 @@ Cambio 1.3 (2026-04-30): Flujo web empresa segun Flujo Pantallas App Web: alta e
 Cambio 1.4 (2026-04-30): Tres roles de aplicacion unicamente CANDIDATE, ADMIN, RECRUITER. No existe cuenta de usuario empresa (rol COMPANY ni SYSTEM_ADMIN eliminados de JWT): la empresa es fila en tabla companies sin login; ADMIN da de alta empresa (datos negocio) y reclutadores vinculados a company_id; RECRUITER reemplaza a COMPANY en sesion empresa web.
 Cambio 1.5 (2026-04-30): Documentacion solo: contraseña persistida unicamente como password_hash para usuarios candidato, admin y reclutador; sin contraseña en alta empresa por panel; ADMIN inicial por migracion Flyway (bcrypt) sin publicar texto claro aqui.
 Cambio 1.6 (2026-05-02): Politica de contraseña unificada en documentacion: minimo 10 caracteres; al menos una mayuscula, una minuscula, un numero y un simbolo. Ejemplos JSON actualizados a contraseña de muestra que cumple la politica.
+Cambio 1.7 (2026-05-02): Recuperacion de contraseña en MVP — regla de producto consolidada en seccion dedicada: bloqueo a 4 intentos real; sin codigo OTP entregado al usuario; pasos previos solo maqueta UI; solo el paso de nueva contraseña persiste en backend (alineado a Flujo Pantallas App Móvil, Flujo Pantallas App Web y demas workflow).
 
 
 
@@ -58,7 +59,7 @@ AUTENTICACION Y SESION
   - RECRUITER (vinculado a companies.id; todas las rutas /api/v1/company/*)
 - Contrasenas en persistencia solo en users.password_hash (bcrypt u algoritmo acordado) para usuarios que inician sesion CANDIDATE, ADMIN y RECRUITER. La empresa en companies no tiene credencial ni campo de contraseña en datos.
 - Cuenta ADMIN inicial en entorno de desarrollo o prueba puede sembrarse en migracion Flyway con INSERT en users que solo establece password_hash (por ejemplo bcrypt), sin publicar texto plano en el repositorio. Este contrato no incluye ninguna contrasena literal para ADMIN; la cadena que valida ese hash debe acordarse fuera de este archivo u operativa del equipo.
-- Politica de contraseña (registro candidato, alta reclutador por ADMIN, recuperacion mock reset / new_password): el texto claro debe cumplir como minimo: longitud minima 10 caracteres; al menos una letra mayuscula; al menos una letra minuscula; al menos un simbolo; al menos un digito numerico. El backend rechaza con error de validacion si no se cumple; en persistencia solo password_hash.
+- Politica de contraseña (registro candidato, alta reclutador por ADMIN, y paso definitivo de recuperacion donde se envia nueva contraseña — ver «Recuperacion de contraseña — regla de producto MVP»): el texto claro debe cumplir como minimo: longitud minima 10 caracteres; al menos una letra mayuscula; al menos una letra minuscula; al menos un simbolo; al menos un digito numerico. El backend rechaza con error de validacion si no se cumple; en persistencia solo password_hash.
 - Logout: elimina sesion en cliente (backend no mantiene blacklist para MVP).
 
 
@@ -279,15 +280,23 @@ ENDPOINTS DE AUTENTICACION
   - retornar BUSINESS_RULE_VIOLATION con code de bloqueo.
 
 
+Recuperacion de contraseña — regla de producto MVP (móvil CANDIDATE y web ADMIN/RECRUITER)
+- El bloqueo tras 4 intentos fallidos consecutivos de login es real (misma regla Contrato para login) y debe mostrar las pantallas de recuperación como derivación UX.
+- En el MVP por tiempo de equipo **no existe** recuperación efectiva basada en **código** enviado o generado para el usuario: **nunca se entrega ni se exige validar contra backend un OTP/código real** como condición para cambiar contraseña.
+- Las pantallas y botones de «solicitar código», «ingresar código» y «reenviar código» son **solo maqueta**: en la práctica **no cumplen función de recuperación real** ni obligan en UX MVP al usuario a un código válido; el cliente **debe permitir continuar** con **cualquier texto** escrito en el campo de código.
+- La **única parte obligatoria y real** del flujo es la pantalla de **nueva contraseña**: al confirmar ahí con política válida, el cambio debe **persistir de inmediato** en backend (`users.password_hash`) y el usuario debe poder iniciar sesión con la nueva clave sin depender del «código falso» anterior.
+- La pantalla de «confirmación en bandeja» (o mensaje equivalente) sigue siendo **ficción**: no hay envío de correo ni enlace real en MVP.
+- Los endpoints siguientes son referencia técnica; el **compromiso MVP** definido en estos documentos de workflow es el **cierre con persistencia** en el paso de nueva contraseña. Como el cliente no depende de un código real, la implementación (backend/cliente) debe alinearse para que ese cierre sea posible sin flujo OTP (p. ej. mecanismo interno/`recovery_token` u ajuste de contrato operativo decidido por el equipo sin contradecir la regla de producto anterior).
 
-4) Recuperacion mock - solicitar codigo
+
+4) Recuperacion — solicitar codigo (referencia API; sin OTP real para usuario en MVP UI)
 - POST /api/v1/auth/password-recovery/request
 - Auth: publica
 - Request:
 {
   "email": "correo@dominio.cl"
 }
-- Response 200:
+- Response 200 (ejemplo; el MVP no usa esto como paso efectivo obligatorio ni entrega código al usuario por este medio):
 {
   "message": "Codigo generado en modo mock",
   "mock_flow": true
@@ -295,29 +304,29 @@ ENDPOINTS DE AUTENTICACION
 
 
 
-5) Recuperacion mock - validar codigo
+5) Recuperacion — validar codigo (referencia API; sin validacion de OTP real contra UX MVP)
 - POST /api/v1/auth/password-recovery/verify
 - Auth: publica
-- Request:
+- Request (en MVP UI el contenido del campo código es irrelevante para poder avanzar a nueva contraseña):
 {
   "email": "correo@dominio.cl",
-  "code": "cualquier-texto"
+  "code": "cualquier-texto-placeholder-ui"
 }
-- Response 200:
+- Response 200 (ejemplo cuando aplica llamada técnica con token de recuperación):
 {
   "verified": true,
-  "recovery_token": "token-corto-mock"
+  "recovery_token": "jwt-recuperacion"
 }
 
 
 
-6) Recuperacion mock - nueva contrasena
+6) Recuperacion — nueva contrasena (paso MVP con efecto real obligatorio)
 - POST /api/v1/auth/password-recovery/reset
 - Auth: publica
 - Request:
 {
   "email": "correo@dominio.cl",
-  "recovery_token": "token-corto-mock",
+  "recovery_token": "jwt-recuperacion-u-emitido-compat-mvp",
   "new_password": "Aa!1234567890"
 }
 - Response 200:
@@ -750,6 +759,7 @@ CHECKLIST DE INTEGRACION FINAL
 - Empresa marca VIEWED manualmente.
 - Orden por score descendente en vistas empresa.
 - Invariante de score verificada (skills no alteran score).
+- Recuperacion MVP: bloqueo a 4 intentos real con derivacion a pantallas; sin codigo OTP real para usuario; maqueta en solicitud/ingreso de codigo; solo persistencia real al confirmar nueva contraseña (`password_hash`).
 
 
 

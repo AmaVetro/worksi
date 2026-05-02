@@ -5,9 +5,9 @@ poner triggers):
 
 
 
-Bloqueo de login en ambos frontends (móvil y web) tras 4 intentos y derivación a recuperación.
+Bloqueo de login en ambos frontends (móvil y web) tras 4 intentos y derivación a pantallas de recuperación (MVP Contrato v1.7+).
 
-Flujo de recuperación mock completo (email existente, código simulado, reenvío simulado, cambio de contraseña sin correo real).
+Recuperación MVP (móvil y web): bloqueo a 4 intentos real; pantallas de solicitud/ingreso/reenvío de «código» son maqueta — sin código OTP real para el usuario; avance con cualquier texto en el campo; único paso con persistencia obligatoria: nueva contraseña (`password_hash`); sin envío de correo real.
 
 Política de contraseña (mínimo 10 caracteres; al menos una mayúscula, al menos una minúscula, al menos un símbolo y al menos un número) en registro y reset.
 

@@ -17,21 +17,18 @@ Pantalla "al abrir sitio web":
 
 
 
-Recuperación de contraseña (pensada para el reclutador de empresa; el administrador puede usar el mismo enlace si aplica en su cuenta):
-- Debe comportarse como en Flujo Pantallas App Móvil, con estos endpoints: POST /api/v1/auth/password-recovery/request, POST /api/v1/auth/password-recovery/verify, de nuevo POST /api/v1/auth/password-recovery/request para reenviar código, POST /api/v1/auth/password-recovery/reset, y al final volver al inicio de sesión.
+Recuperación de contraseña (reclutador de empresa; el administrador puede usar el mismo flujo si aplica):
+- Regla MVP alineada a Flujo Pantallas App Móvil y Contrato Unificado API — versión 1.7+: el **bloqueo a 4 intentos fallidos es real**. Lo demás hasta la nueva contraseña es **maqueta**: **no se genera ni se entrega** al usuario un **código** real para recuperar la cuenta; pantallas «Enviar código», «Ingresar código» y «Reenviar» son **solo UI** — los botones **no implementan recuperación efectiva por código**. El usuario **avanza** escribiendo **cualquier valor** en el campo de código. La **única parte obligatoria y real** es la pantalla de **nueva contraseña** (POST /api/v1/auth/password-recovery/reset): ahí la clave debe persistirse al instante en backend. Referencia técnica de request/verify en Contrato no define OTP real para el usuario en MVP.
 
 Pantalla "Recuperar contraseña" (tras 4 intentos fallidos) → Mensaje "Excediste el límite de intentos. Por nuestros lineamientos de seguridad, deberás recuperar tu contraseña", botón "Recuperar contraseña" → pantalla "Olvidé mi contraseña".
 
-Pantalla "Olvidé mi contraseña" → Textos "¿Olvidaste tu contraseña?" e indicación de ingresar el correo; campo correo; botón "Enviar código" → POST /api/v1/auth/password-recovery/request. Si el correo no está registrado, mensaje en la misma pantalla: "El email no está registrado en WorkSí". Si está registrado, se continúa el flujo simulado de código (sin envío real de correo por ahora) → pantalla "Ingresa tu código".
+Pantalla "Olvidé mi contraseña" → Textos y campo correo; botón "Enviar código" (MVP: **no funcional** como generación/envío de código). Avance a pantalla "Ingresa tu código" sin código real.
 
-Pantalla "Ingresa tu código" → Campo código; botón "Ingresar código" → POST /api/v1/auth/password-recovery/verify. Texto "¿No recibiste el código?" y botón "Enviar nuevo código" → POST /api/v1/auth/password-recovery/request. Tras ingresar código (por ahora acepta cualquier valor escrito) → pantalla "Nueva contraseña".
+Pantalla "Ingresa tu código" → Campo y botones como en móvil; **cualquier entrada** permite continuar a "Nueva contraseña"; **sin** validación de OTP real en producto MVP.
 
-Pantalla "Nueva contraseña" → Campo nueva contraseña; textos de requisitos de contraseña:
-"Debe contener al menos 10 caracteres.
-Debe contener al menos 1 símbolo, 1 número, letras minúsculas y mayúsculas."
-Botón "Aceptar" → POST /api/v1/auth/password-recovery/reset. Si cumple requisitos → pantalla "Confirmar en Bandeja".
+Pantalla "Nueva contraseña" → Campo nueva contraseña; textos de política (misma que Contrato). Botón "Aceptar" → POST /api/v1/auth/password-recovery/reset; éxito → "Confirmar en Bandeja".
 
-Pantalla "Confirmar en bandeja" → Mensaje de éxito simulado sobre revisar el correo; la nueva contraseña queda registrada. Botón "Volver a Log In" → pantalla "al abrir sitio web".
+Pantalla "Confirmar en bandeja" → Mensaje **simulado** sobre correo; contraseña **ya aplicada**. Botón "Volver a Log In" → pantalla "al abrir sitio web".
 
 
 

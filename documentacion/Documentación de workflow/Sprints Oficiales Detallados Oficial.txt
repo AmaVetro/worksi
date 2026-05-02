@@ -226,7 +226,7 @@ por ADMIN según modelo oficial (Contrato Unificado API, HU sin épicas, Flujo P
 Objetivo del sprint en una frase:
 JWT operativo para CANDIDATE, ADMIN y RECRUITER; ADMIN puede dar de alta companies
 solo datos negocio (sin usuario empresa ni credencial empresa) y usuarios RECRUITER
-con company_id; bloqueo por intentos fallidos y recuperación mock alineados web/móvil.
+con company_id; bloqueo por intentos fallidos y pantallas de recuperación MVP (sin OTP usuario) alineados web/móvil.
 
 ------------------------------------------------------------
 A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 2
@@ -234,7 +234,7 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 2
 1) HU-03 Login
 - POST /api/v1/auth/login único para web (ADMIN y RECRUITER) y candidato donde aplique Contrato.
 - Respuesta JWT solo access token con claims rol CANDIDATE | ADMIN | RECRUITER.
-- Tras 4 intentos fallidos bloqueo y derivación a flujo recuperación mock (alineación Flujo web/móvil).
+- Tras 4 intentos fallidos bloqueo y derivación a pantallas de recuperación MVP (sin código real; Contrato v1.7+).
 - Credenciales incorrectas 401 mensaje seguro sin filtrar existencia correo más allá práctica común Contrato.
 - Logout lado cliente donde exista cliente (elimina token, estado no autenticado).
 - Persistencia token en cliente: documentar opción equipo (web/mobile mínimo).
@@ -250,7 +250,7 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 2
 3) Seguridad Spring
 - Rutas públicas POST /api/v1/auth/login, registros públicos pactados en Contrato (p. ej. POST /api/v1/auth/register/candidate cuando aplique); GET /health sin prefijo /api/v1 donde exista en Spring; catálogos públicos GET /api/v1/catalogs/*.
 - Rutas /api/v1/admin/* protegidas rol ADMIN.
-- Opcional mismo sprint: skeleton POST verify/reset recuperación si sobra tiempo (Sprint oficiales).
+- Opcional mismo sprint: cierre backend de nueva contraseña (reset) MVP si sobra tiempo (Sprint oficiales); request/verify no definen OTP usuario en MVP.
 
 ------------------------------------------------------------
 B) DESGLOSE ULTRA DETALLADO
@@ -264,7 +264,7 @@ B2) Admin companies + recruiters multipart (3 a 4 horas)
 - recruiter_profiles enlazadas a users RECRUITER y company_id elegida.
 
 B3) Lockout recuperación stub (2 horas si prioridad)
-- Incremento failed_login_attempts, lock_until; mock verify/reset mínimo alineado flujos.
+- Incremento failed_login_attempts, lock_until; persistencia nueva contraseña (reset) MVP alineada Contrato; pasos de «código» maqueta en producto.
 
 B4) Logout cliente (1 hora)
 - Web cuando exista; móvil si ya hay pantalla login; si no existe UI web aún checklist Sprint 7.
@@ -628,7 +628,7 @@ Contenido oficial:
 - App móvil candidato en paralelo.
 - HU-11 Swipe de ofertas.
 - HU-12 Confirmar postulación (POST applications tras APPLY).
-- Opcional menor completar mocks UI recuperación web/móvil si alcanza.
+- Opcional menor maqueta UI pasos previos + nueva contraseña real web/móvil si alcanza (MVP).
 
 Objetivo del sprint en una frase:
 Swipe y post con score ya integrado; primera web ADMIN/RECRUITER operativa para alta negocio y cuentas reclutadores
@@ -640,9 +640,8 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 7
 1) App móvil (Kotlin) mínimo viable alineado a Flujo Pantallas
 - Login con bloqueo tras 4 intentos fallidos y derivación a recuperación en ambos frontends (móvil y web):
   implementación MVP acorde a HU-03 y Flujo Pantallas.
-- Recuperación mockup: sin correo real; flujo UI puede completarse; al fijar
-  nueva contraseña en ese flujo, misma política de complejidad que en registro
-  (mínimo 10 caracteres; al menos una mayúscula, al menos una minúscula, al menos un símbolo y al menos un número), alineada a HU sin épicas y Flujos de pantalla.
+- Recuperación MVP: sin correo real; sin OTP entregado al usuario; pasos de código son maqueta (cualquier texto avanza); única parte real al fijar nueva contraseña — misma política que en registro
+  (mínimo 10 caracteres; al menos una mayúscula, al menos una minúscula, al menos un símbolo y al menos un número), alineada a HU sin épicas, Flujos y Contrato v1.7+.
 - Registro de candidato y perfil puede estar parcial si ya existe por API, pero debe
   ser coherente: lo crítico de este sprint es swipe + confirmación + consumo
   de score.
@@ -912,12 +911,12 @@ B) ENTREGABLES DE DOCUMENTACIÓN PARA DEFENSA (mínimo)
 APÉNDICE A — MAPEO RÁPIDO HU → SPRINT (MVP OBLIGATORIO)
 ================================================================================
 Sprint 1 — Infra (Compose, Spring, FastAPI scaffold), cadena Flyway oficial repo; stubs auth/candidate opcional; HU-01 cerrada Sprint 4.
-Sprint 2 — HU-03 login multicuenta; HU-02 empresa+reclutadores vía ADMIN; lockout recuperación mock opcional; password_hash sólo usuarios login.
+Sprint 2 — HU-03 login multicuenta; HU-02 empresa+reclutadores vía ADMIN; lockout + pantallas recuperación MVP opcional; password_hash sólo usuarios login.
 Sprint 3 — Registro cliente móvil sin persistir hasta multipart; HU-06 HU-04 cliente; GET /api/v1/catalogs/* públicos Contrato.
 Sprint 4 — HU-21 consentimiento; POST /api/v1/auth/register/candidate multipart; GET /api/v1/candidate/profile y PATCH /api/v1/candidate/profile con Bearer CANDIDATE.
 Sprint 5 — Tika; HU-15 crear oferta RECRUITER modelo Contrato actual; PATCH /api/v1/company/profile/image; HU-10 GET /api/v1/candidate/jobs/feed.
 Sprint 6 — HU-09 fairness; HU-07 score; HU-08 explicación; contrato técnico POST /match (FastAPI) con cv_text y job_text.
-Sprint 7 — Web MVP React+Vite login ADMIN/RECRUITER, panel empresa/reclutadores, shell reclutador; HU-11 HU-12 opcional mocks recuperación.
+Sprint 7 — Web MVP React+Vite login ADMIN/RECRUITER, panel empresa/reclutadores, shell reclutador; HU-11 HU-12 opcional UI recuperación MVP (maqueta + nueva contraseña real).
 Sprint 8 — HU-13 postulaciones candidato; completar portal reclutador HU-15 UI; PATCH imagen empresa si backlog.
 Sprint 9 — HU-19 HU-23 vistas postulantes solo publicador Contrato + pulimiento mensajes errores web panel segunda mitad.
 Sprint 10 — HU-20 orden descendente HU-05 perfil menor copy seguridad/consentimiento.

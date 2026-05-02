@@ -97,8 +97,8 @@ Objetivo: centralizar reglas esenciales para que cualquier integrante encuentre 
 - Persistencia de contraseña en BD: siempre como hash BCrypt (o algoritmo estándar equivalente) y nunca en texto plano.
 - Política de contraseña en texto claro (alta de cuenta, alta de reclutador, cambio o restablecimiento): mínimo 10 caracteres; al menos una mayúscula, al menos una minúscula, al menos un símbolo y al menos un número (alineado a HU, Flujos y Contrato Unificado API).
 - En app móvil de postulantes, login con email y contraseña.
-- En app móvil de postulantes y en web de administrador/reclutadores (ADMIN y RECRUITER), tras 4 intentos fallidos se bloquea el acceso y se deriva a recuperación de contraseña (alineado a Contrato Unificado API).
-- En app móvil de postulantes (MVP), recuperación de contraseña por correo en modo mockup: no hay envío real de emails.
+- En app móvil de postulantes y en web de administrador/reclutadores (ADMIN y RECRUITER), tras 4 intentos fallidos se bloquea el acceso y se deriva al flujo de pantallas de recuperación (Contrato MVP v1.7+).
+- Recuperación MVP: sin código OTP real para el usuario; pasos previos solo maqueta; única parte real la nueva contraseña persistida en backend; sin correo real.
 
 ============================================================
 7) REGLAS DE ESTADOS Y POSTULACIONES
