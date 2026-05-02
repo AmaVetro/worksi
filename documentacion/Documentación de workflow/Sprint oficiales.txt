@@ -76,10 +76,10 @@ Sprint 2:   27 abril – 3 mayo 2026
 
 Esfuerzo total estimado del equipo: 10 h.
 Contenido:
-●    HU-03 — Login unificado POST /api/v1/auth/login, logout en cliente donde aplique; JWT solo access token; claims CANDIDATE | ADMIN | RECRUITER. Bloqueo tras 4 intentos fallidos y derivación recuperación mock (alineado web y móvil).
+●    HU-03 — Login unificado POST /api/v1/auth/login, logout en cliente donde aplique; JWT solo access token; claims CANDIDATE | ADMIN | RECRUITER. Bloqueo tras 4 intentos fallidos y derivación a pantallas de recuperación (MVP: sin código OTP real para usuario; Contrato v1.7+ y Flujos).
 ●    HU-02 — Alta empresa y reclutadores (modelo oficial): sin registro público ni rol COMPANY en MVP web. Como ADMIN autenticado: POST /api/v1/admin/companies (multipart, datos negocio sin correo/clave empresa), GET /api/v1/admin/companies para desplegable, POST /api/v1/admin/recruiters con company_id existente + password reclutador bajo política. Referencia HU sin épicas y Contrato Oficial del repositorio.
 ●    Persistencia sólo password_hash para usuarios con login (nunca plaintext en BD ni en alta empresa desde panel admin).
-●    Opcional tiempo restante en la semana: esqueleto de recuperación mock backend (request/verify/reset) si aún no iniciado.
+●    Opcional tiempo restante en la semana: soporte backend mínimo para cierre de recuperación (persistir nueva contraseña) alineado Contrato MVP si aún falta; endpoints request/verify son referencia/evolución, no OTP real para usuario en MVP.
 Equilibrio: antes de crear ofertas deben existir companies y usuarios RECRUITER; antes de HU-15 en backlog funcional debe existir autenticación multirol.
 
 
@@ -134,7 +134,7 @@ Contenido:
 ●    Frontend web MVP (React+Vite según Stack): pantalla login unificada ADMIN/RECRUITER; Portal administración registrar empresa (sin credencial empresa), registrar reclutadores, navegación básica; sesión reclutador shell (cabeceras, placeholders de listados donde falte data aún reproducible desde API). App móvil candidato continuación paralela.
 ●    HU-11 — Swipe ofertas.
 ●    HU-12 — Confirmación postulación (POST /api/v1/candidate/applications tras swipe APPLY).
-●    Opcional menor en la semana: completar mocks UI recuperación donde proceda cliente web/móvil.
+●    Opcional menor en la semana: UI maqueta de pasos previos a nueva contraseña y pantalla real de nueva contraseña (MVP) donde proceda cliente web/móvil.
 Equilibrio: experiencia swipe depende del score Sprint 6; web admin garantiza onboarding operativo negocio antes cierre proyecto.
 
 

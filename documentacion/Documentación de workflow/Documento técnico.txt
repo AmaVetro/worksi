@@ -201,8 +201,8 @@ El puente entre ambos se implementa con mapeo explícito (anotaciones/configurac
 12.1 Autenticación
 Registro candidato en app móvil vía POST /api/v1/auth/register/candidate (multipart) tras consentimiento; en web MVP no hay registro público de empresa: alta empresa y reclutadores solo por ADMIN (Contrato Unificado API).
 Login unificado web (ADMIN y RECRUITER) y login candidato (móvil): POST /api/v1/auth/login; JWT solo access token; roles oficiales CANDIDATE, ADMIN, RECRUITER (sin usuario empresa ni rol COMPANY).
-En app móvil de postulantes y en web (admin/reclutador): bloqueo tras 4 intentos fallidos de login y derivación a recuperación de contraseña.
-En app móvil de postulantes (MVP): recuperación de contraseña en modo mockup; no se envían mensajes reales al correo electrónico.
+En app móvil de postulantes y en web (admin/reclutador): bloqueo tras 4 intentos fallidos de login y derivación a pantallas de recuperación (regla Contrato MVP v1.7+).
+En MVP la recuperación no usa código OTP real para el usuario: pantallas intermedias maqueta; solo la nueva contraseña persiste en backend; sin mensajes reales al correo.
 12.2 Módulo Candidatos
 CRUD perfil
 Subida de CV (PDF en filesystem; referencia en BD; extracción con Tika; MVP: solo PDF con texto seleccionable, sin OCR)
@@ -236,8 +236,8 @@ Perfil
 Swipe de ofertas
 Visualización de match
 Postulaciones
-Flujo móvil oficial de postulantes incluye además: recuperación de contraseña, formulario de creación de cuenta con validaciones, carga y visualización de CV en el dispositivo (hasta 1 MB, PDF) antes de "Uso de datos", selección de rubro y skills y últimas preferencias en estado local, pantalla de consentimiento de uso de datos (última antes de llamar al backend), y un solo POST /api/v1/auth/register/candidate (multipart) al aceptar que crea la cuenta, persiste CV y perfil, emite JWT y pasa a Perfil; luego desde Perfil se continúa con edición de perfil ya autenticado, consumo de ofertas (incluida vista detalle) y vista previa desde postulaciones
-En flujo móvil de recuperación (MVP): los pasos de envío/reenvío y confirmación por correo se muestran en UI como mockup, sin despacho real de emails
+Flujo móvil oficial de postulantes incluye además: flujo de pantallas de recuperación de contraseña (regla MVP: solo nueva contraseña real; ver Contrato), formulario de creación de cuenta con validaciones, carga y visualización de CV en el dispositivo (hasta 1 MB, PDF) antes de "Uso de datos", selección de rubro y skills y últimas preferencias en estado local, pantalla de consentimiento de uso de datos (última antes de llamar al backend), y un solo POST /api/v1/auth/register/candidate (multipart) al aceptar que crea la cuenta, persiste CV y perfil, emite JWT y pasa a Perfil; luego desde Perfil se continúa con edición de perfil ya autenticado, consumo de ofertas (incluida vista detalle) y vista previa desde postulaciones
+Recuperación MVP (móvil y web empresa): pasos previos de «código» son maqueta; confirmación por bandeja es ficción; sin despacho de emails
 En pantalla de ofertas: swipe izquierda = pasar, swipe derecha = postular con confirmación
 En postulaciones móviles (MVP): estados visibles APPLIED y VIEWED; CANCELLED queda para backlog opcional
 Web (ADMIN + RECRUITER)

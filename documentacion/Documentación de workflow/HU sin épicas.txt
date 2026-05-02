@@ -58,9 +58,8 @@ Criterios de aceptación:
 * Persistencia de sesión en cliente
 * Logout elimina sesión
 * En app móvil de postulantes y en web (admin/reclutador), tras 4 intentos fallidos
- se bloquea el acceso y se deriva al flujo de recuperación de contraseña (mismo contrato)
-* En app móvil de postulantes (MVP), el flujo de recuperación por correo es mockup: no se 
-envían correos reales
+ se bloquea el acceso y se deriva al flujo de pantallas de recuperación de contraseña (Contrato — regla MVP v1.7+).
+* En MVP, la recuperación no es real salvo la pantalla de nueva contraseña: no se genera ni se exige validar un código OTP contra el usuario; las pantallas y botones de solicitar/ingresar/reenviar código son solo maqueta (el usuario debe poder avanzar con cualquier texto en el campo código); la única parte funcional obligatoria es confirmar nueva contraseña en backend (`password_hash`); no hay envío real de correo.
 
 
 
