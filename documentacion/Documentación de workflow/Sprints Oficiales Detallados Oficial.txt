@@ -100,7 +100,6 @@ ANTES DEL SPRINT 1 — ACUERDOS QUE TODO EL EQUIPO DEBE ENTENDER
 ================================================================================
 SPRINT 1 — SEMANA 20 AL 26 DE ABRIL DE 2026 (SPRINT PESADO)
 ================================================================================
-Estado oficial del plan: En proceso.
 Esfuerzo total estimado del equipo: 10 horas (suma de las 3 personas en la
 semana).
 
@@ -166,7 +165,6 @@ B1) Tarea 1 — Flyway y dominio físico oficial (prioridad; 3 a 4 horas equipo)
 - DoD: Subir aplicación contra MySQL vacío y confirmar historia Flyway hasta última versión.
 
 B2) Tarea 2 — Docker Compose “feliz path” (2 a 3 horas equipo)
-(Estado: lista)
 - Levantar MySQL con usuario, password, base de datos y puerto fijos acordados.
 - Definir volumen para datos de MySQL.
 - Definir volumen o carpeta persistente futura para CV (aunque CV se implemente

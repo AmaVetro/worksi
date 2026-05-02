@@ -15,46 +15,6 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 public class GlobalExceptionHandler {
   private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-  @ExceptionHandler(EmailAlreadyExistsException.class)
-  public ResponseEntity<Map<String, Object>> handleEmailAlreadyExists(EmailAlreadyExistsException ex) {
-    return ResponseEntity.status(HttpStatus.CONFLICT).body(error("CONFLICT", ex.getMessage(), List.of()));
-  }
-
-  @ExceptionHandler(MissingRequiredFieldException.class)
-  public ResponseEntity<Map<String, Object>> handleMissingField(MissingRequiredFieldException ex) {
-    Map<String, String> detail = Map.of("field", ex.getField(), "message", ex.getMessage());
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-        .body(error("VALIDATION_ERROR", "Hay campos invalidos", List.of(detail)));
-  }
-
-  @ExceptionHandler(InvalidPasswordPolicyException.class)
-  public ResponseEntity<Map<String, Object>> handleInvalidPassword(InvalidPasswordPolicyException ex) {
-    Map<String, String> detail = Map.of("field", "password", "message", ex.getMessage());
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-        .body(error("VALIDATION_ERROR", "Hay campos invalidos", List.of(detail)));
-  }
-
-  @ExceptionHandler(InvalidRutException.class)
-  public ResponseEntity<Map<String, Object>> handleInvalidRut(InvalidRutException ex) {
-    Map<String, String> detail = Map.of("field", "rut", "message", ex.getMessage());
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-        .body(error("VALIDATION_ERROR", "Hay campos invalidos", List.of(detail)));
-  }
-
-  @ExceptionHandler(InvalidEmailFormatException.class)
-  public ResponseEntity<Map<String, Object>> handleInvalidEmail(InvalidEmailFormatException ex) {
-    Map<String, String> detail = Map.of("field", "email", "message", ex.getMessage());
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-        .body(error("VALIDATION_ERROR", "Hay campos invalidos", List.of(detail)));
-  }
-
-  @ExceptionHandler(InvalidCommuneRegionException.class)
-  public ResponseEntity<Map<String, Object>> handleInvalidCommuneRegion(InvalidCommuneRegionException ex) {
-    Map<String, String> detail = Map.of("field", "commune_id", "message", ex.getMessage());
-    return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
-        .body(error("BUSINESS_RULE_VIOLATION", "Regla de negocio incumplida", List.of(detail)));
-  }
-
   @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
   public ResponseEntity<Map<String, Object>> handleMethodNotSupported(
       HttpRequestMethodNotSupportedException ex) {
