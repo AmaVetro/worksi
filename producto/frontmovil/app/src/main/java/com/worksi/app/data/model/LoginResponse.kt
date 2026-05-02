@@ -8,7 +8,8 @@ data class LoginResponse(
     @Json(name = "access_token") val accessToken: String,
     @Json(name = "token_type") val tokenType: String,
     @Json(name = "expires_in") val expiresIn: Int,
-    @Json(name = "user") val user: UserInfo
+    @Json(name = "user") val user: UserInfo,
+    @Json(name = "lock_info") val lockInfo: LockInfo
 )
 
 @JsonClass(generateAdapter = true)

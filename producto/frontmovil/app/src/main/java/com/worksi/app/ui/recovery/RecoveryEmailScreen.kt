@@ -24,9 +24,12 @@ import com.worksi.app.ui.theme.OrangeAccent
 import com.worksi.app.ui.theme.White
 
 @Composable
-fun RecoveryEmailScreen(onCodeSent: () -> Unit, onBack: () -> Unit) {
-    var email by remember { mutableStateOf("") }
-    var showError by remember { mutableStateOf(false) }
+fun RecoveryEmailScreen(
+    viewModel: RecoveryViewModel,
+    onCodeSent: () -> Unit,
+    onBack: () -> Unit
+) {
+    val uiState by viewModel.uiState.collectAsState()
 
     Box(
         modifier = Modifier
@@ -63,8 +66,8 @@ fun RecoveryEmailScreen(onCodeSent: () -> Unit, onBack: () -> Unit) {
             Spacer(modifier = Modifier.height(24.dp))
 
             OutlinedTextField(
-                value = email,
-                onValueChange = { email = it; showError = false },
+                value = uiState.email,
+                onValueChange = { viewModel.onEmailChange(it) },
                 label = { Text("Email", color = White.copy(alpha = 0.8f)) },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = White,
@@ -80,10 +83,10 @@ fun RecoveryEmailScreen(onCodeSent: () -> Unit, onBack: () -> Unit) {
                 shape = RoundedCornerShape(12.dp)
             )
 
-            if (showError) {
+            if (uiState.errorMessage != null) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    "El email no está registrado en WorkSí",
+                    uiState.errorMessage!!,
                     color = MaterialTheme.colorScheme.error,
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.bodySmall
@@ -93,16 +96,16 @@ fun RecoveryEmailScreen(onCodeSent: () -> Unit, onBack: () -> Unit) {
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = { if (email.contains("@")) onCodeSent() else showError = true },
+                onClick = { viewModel.requestCode(onCodeSent) },
                 modifier = Modifier.fillMaxWidth().height(52.dp).shadow(4.dp, RoundedCornerShape(12.dp)),
                 colors = ButtonDefaults.buttonColors(containerColor = OrangeAccent, contentColor = White),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                enabled = !uiState.isLoading
             ) {
                 Text("Enviar código", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = White)
             }
         }
 
-        // Flecha de volver (ahora después del Column, encima de todo)
         IconButton(
             onClick = onBack,
             modifier = Modifier

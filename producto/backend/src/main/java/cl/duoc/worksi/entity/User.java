@@ -67,10 +67,14 @@ public class User {
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
 
-  protected User() {}
+  public User() {}
 
   public Long getId() {
     return id;
+  }
+
+  public void setRole(UserRole role) {
+    this.role = role;
   }
 
   public UserRole getRole() {
@@ -89,40 +93,80 @@ public class User {
     return passwordHash;
   }
 
+  public void setPasswordHash(String passwordHash) {
+    this.passwordHash = passwordHash;
+  }
+
   public boolean isActive() {
     return active;
+  }
+
+  public void setActive(boolean active) {
+    this.active = active;
   }
 
   public int getFailedLoginAttempts() {
     return failedLoginAttempts;
   }
 
+  public void setFailedLoginAttempts(int failedLoginAttempts) {
+    this.failedLoginAttempts = failedLoginAttempts;
+  }
+
   public LocalDateTime getLockUntil() {
     return lockUntil;
+  }
+
+  public void setLockUntil(LocalDateTime lockUntil) {
+    this.lockUntil = lockUntil;
   }
 
   public LocalDateTime getLastLoginAt() {
     return lastLoginAt;
   }
 
+  public void setLastLoginAt(LocalDateTime lastLoginAt) {
+    this.lastLoginAt = lastLoginAt;
+  }
+
   public boolean isPasswordResetRequired() {
     return passwordResetRequired;
+  }
+
+  public void setPasswordResetRequired(boolean passwordResetRequired) {
+    this.passwordResetRequired = passwordResetRequired;
   }
 
   public LocalDateTime getPasswordResetRequestedAt() {
     return passwordResetRequestedAt;
   }
 
+  public void setPasswordResetRequestedAt(LocalDateTime passwordResetRequestedAt) {
+    this.passwordResetRequestedAt = passwordResetRequestedAt;
+  }
+
   public String getPasswordResetCodeHash() {
     return passwordResetCodeHash;
+  }
+
+  public void setPasswordResetCodeHash(String passwordResetCodeHash) {
+    this.passwordResetCodeHash = passwordResetCodeHash;
   }
 
   public LocalDateTime getPasswordResetCodeExpiresAt() {
     return passwordResetCodeExpiresAt;
   }
 
+  public void setPasswordResetCodeExpiresAt(LocalDateTime passwordResetCodeExpiresAt) {
+    this.passwordResetCodeExpiresAt = passwordResetCodeExpiresAt;
+  }
+
   public LocalDateTime getPasswordChangedAt() {
     return passwordChangedAt;
+  }
+
+  public void setPasswordChangedAt(LocalDateTime passwordChangedAt) {
+    this.passwordChangedAt = passwordChangedAt;
   }
 
   public LocalDateTime getCreatedAt() {

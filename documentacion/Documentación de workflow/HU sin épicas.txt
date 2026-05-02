@@ -17,8 +17,7 @@ Criterios de aceptación:
 * Se puede ingresar: nombre, apellido paterno, apellido materno, correo, contraseña, celular, rut, 
 nro. documento, región y comuna como obligatorios; segundo nombre y calle como opcionales.
 * Se valida formato de email.
-* En creación de contraseña aplica la política alineada a Flujo Pantallas App Móvil y Contrato Unificado API: mínimo 12 caracteres, al menos un símbolo, al menos un número, 
-y letras en mayúscula y minúscula; misma política al definir o cambiar contraseña en 
+* En creación de contraseña aplica la política alineada a Flujo Pantallas App Móvil y Contrato Unificado API: mínimo 10 caracteres; al menos una mayúscula, al menos una minúscula, al menos un símbolo y al menos un número; misma política al definir o cambiar contraseña en 
 el flujo de recuperación, según esos documentos.
 * Se valida lógica numérica de RUT de Chile.
 * No permite emails duplicados.

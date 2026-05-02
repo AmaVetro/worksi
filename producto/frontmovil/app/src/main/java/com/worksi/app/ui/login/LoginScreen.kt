@@ -37,11 +37,17 @@ fun LoginScreen(
     var localError by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(uiState.loginSuccess) {
-        if (uiState.loginSuccess) onLoginSuccess()
+        if (uiState.loginSuccess) {
+            onLoginSuccess()
+            viewModel.consumeLoginSuccess()
+        }
     }
 
-    LaunchedEffect(uiState.isLocked) {
-        if (uiState.isLocked) onNavigateToLocked()
+    LaunchedEffect(uiState.pendingNavigateToLocked) {
+        if (uiState.pendingNavigateToLocked) {
+            onNavigateToLocked()
+            viewModel.consumeLockedNavigation()
+        }
     }
 
     Box(
@@ -82,7 +88,7 @@ fun LoginScreen(
             OutlinedTextField(
                 value = uiState.email,
                 onValueChange = { viewModel.onEmailChanged(it); localError = null },
-                label = { Text("Email o nombre de usuario", color = White.copy(alpha = 0.8f)) },
+                label = { Text("Email", color = White.copy(alpha = 0.8f)) },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = White,
                     unfocusedBorderColor = White.copy(alpha = 0.5f),
@@ -120,7 +126,7 @@ fun LoginScreen(
                 shape = RoundedCornerShape(12.dp)
             )
 
-            val errorMsg = localError ?: if (!uiState.isLocked) uiState.errorMessage else null
+            val errorMsg = localError ?: uiState.errorMessage
             if (errorMsg != null) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(errorMsg, color = OrangeAccent, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
@@ -136,7 +142,7 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth().height(52.dp).shadow(4.dp, RoundedCornerShape(12.dp)),
                 colors = ButtonDefaults.buttonColors(containerColor = White, contentColor = DarkGreen),
                 shape = RoundedCornerShape(12.dp),
-                enabled = !uiState.isLoading && !uiState.isLocked
+                enabled = !uiState.isLoading
             ) {
                 if (uiState.isLoading) CircularProgressIndicator(modifier = Modifier.size(24.dp), color = DarkGreen)
                 else Text("Iniciar Sesión", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = DarkGreen)

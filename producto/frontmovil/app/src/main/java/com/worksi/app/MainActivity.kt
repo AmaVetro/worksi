@@ -8,12 +8,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import com.worksi.app.data.local.SecureTokenStore
 import com.worksi.app.ui.navigation.AppNavigation
 import com.worksi.app.ui.theme.WorkSyTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        SecureTokenStore.init(this)
         enableEdgeToEdge()
         setContent {
             WorkSyTheme {

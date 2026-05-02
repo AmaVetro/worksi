@@ -27,7 +27,7 @@ Pantalla "Olvidé mi contraseña" → Textos "¿Olvidaste tu contraseña?" e ind
 Pantalla "Ingresa tu código" → Campo código; botón "Ingresar código" → POST /api/v1/auth/password-recovery/verify. Texto "¿No recibiste el código?" y botón "Enviar nuevo código" → POST /api/v1/auth/password-recovery/request. Tras ingresar código (por ahora acepta cualquier valor escrito) → pantalla "Nueva contraseña".
 
 Pantalla "Nueva contraseña" → Campo nueva contraseña; textos de requisitos de contraseña:
-"Debe contener al menos 12 caracteres.
+"Debe contener al menos 10 caracteres.
 Debe contener al menos 1 símbolo, 1 número, letras minúsculas y mayúsculas."
 Botón "Aceptar" → POST /api/v1/auth/password-recovery/reset. Si cumple requisitos → pantalla "Confirmar en Bandeja".
 

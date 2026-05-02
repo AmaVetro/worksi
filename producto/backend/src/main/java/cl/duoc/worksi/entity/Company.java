@@ -51,10 +51,50 @@ public class Company {
   @Column(name = "updated_at", nullable = false, insertable = false, updatable = false)
   private LocalDateTime updatedAt;
 
-  protected Company() {}
+  public Company() {}
 
   public Long getId() {
     return id;
+  }
+
+  public void setPhone(String phone) {
+    this.phone = phone;
+  }
+
+  public void setCommercialName(String commercialName) {
+    this.commercialName = commercialName;
+  }
+
+  public void setLegalName(String legalName) {
+    this.legalName = legalName;
+  }
+
+  public void setRut(String rut) {
+    this.rut = rut;
+  }
+
+  public void setRegionId(Long regionId) {
+    this.regionId = regionId;
+  }
+
+  public void setCommuneId(Long communeId) {
+    this.communeId = communeId;
+  }
+
+  public void setAddress(String address) {
+    this.address = address;
+  }
+
+  public void setSectorId(Long sectorId) {
+    this.sectorId = sectorId;
+  }
+
+  public void setWorkerCountApprox(int workerCountApprox) {
+    this.workerCountApprox = workerCountApprox;
+  }
+
+  public void setImageUrl(String imageUrl) {
+    this.imageUrl = imageUrl;
   }
 
   public String getPhone() {

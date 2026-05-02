@@ -51,8 +51,7 @@ fun RecoverySuccessScreen(onBackToLogin: () -> Unit) {
             Spacer(modifier = Modifier.height(32.dp))
 
             Text(
-                "Tu nueva contraseña ha sido creada con éxito.\nVe a la bandeja de entrada del correo asociado y " +
-                        "confirma el cambio clickeando el link que te hemos enviado.",
+                "Tu contraseña fue actualizada (flujo mock: no se envió correo real).\nYa puedes iniciar sesión con la nueva clave.",
                 color = White,
                 fontSize = 16.sp,
                 textAlign = TextAlign.Center,
