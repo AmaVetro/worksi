@@ -1,0 +1,119 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600&display=swap');
+
+* {
+    box-sizing: border-box;
+    }
+
+    body {
+    margin: 0;
+    font-family: 'Open Sans', sans-serif;
+    }
+
+    /* CONTENEDOR GENERAL */
+    .login-container {
+    display: flex;
+    height: 100vh;
+    }
+
+    /* PANEL IZQUIERDO */
+    .login-left {
+    width: 30%;
+    background-color: #128f8b;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    }
+
+    /* CAJA INTERNA */
+    .login-box {
+    width: 80%;
+    color: white;
+    }
+
+    /* TEXTOS */
+    .welcome-text {
+    margin: 0;
+    font-weight: 300;
+    }
+
+    .logo {
+    font-size: 40px;
+    margin: 10px 0;
+    }
+
+    .logo span {
+    color: #f4a261;
+    }
+
+    .subtitle {
+    margin-bottom: 30px;
+    }
+
+    /* FORM */
+    .form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    }
+
+    /* INPUTS */
+    .input {
+    padding: 10px;
+    border-radius: 20px;
+    border: none;
+    outline: none;
+    }
+
+    /* FORGOT */
+    .forgot {
+    font-size: 12px;
+    text-align: right;
+    cursor: pointer;
+    }
+
+    /* BOTÓN */
+    .button {
+    padding: 10px;
+    border-radius: 20px;
+    border: none;
+    background-color: #a8dadc;
+    color: #000;
+    font-weight: 600;
+    cursor: pointer;
+    }
+
+    .button:hover {
+    background-color: #8ecae6;
+    }
+
+    /* ERROR */
+    .error {
+    color: #ffdddd;
+    font-size: 13px;
+    }
+
+    /* REGISTRO */
+    .register-text {
+    margin-top: 40px;
+    font-size: 13px;
+    }
+
+    .register-text span {
+    background: #a8dadc;
+    padding: 5px 10px;
+    border-radius: 15px;
+    cursor: pointer;
+    color: black;
+    }
+
+    /* PANEL DERECHO */
+    .login-right {
+    width: 70%;
+    height: 100%;
+    }
+
+    .login-right img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    }
