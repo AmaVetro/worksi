@@ -1,0 +1,112 @@
+/* CONTENEDOR PRINCIPAL */
+.home-container {
+    display: flex;
+    justify-content: center; /* centra horizontal */
+    padding: 30px;
+    background-color: #eef1f4;
+    min-height: 100vh;
+    }
+
+    /* CONTENIDO CENTRAL */
+    .home-content {
+    width: 100%;
+    max-width: 1200px; /* controla ancho máximo */
+    }
+
+    /* 🔹 TARJETA USUARIO */
+    .user-card {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: white;
+    padding: 20px;
+    width: 100%;
+    max-width: 500px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    margin-bottom: 30px;
+    }
+
+    .user-logo {
+    background: #ccc;
+    padding: 20px;
+    font-weight: bold;
+    }
+
+    /* 🔹 GRID PRINCIPAL */
+    .home-grid {
+    display: flex;
+    gap: 30px;
+    width: 100%;
+    align-items: stretch;
+    }
+
+    /* 🔹 CARD RECLUTAMIENTO */
+    .recruitment-card {
+    background: white;
+    padding: 25px;
+    flex: 2; /* ocupa más espacio */
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    /* HEADER CARD */
+    .card-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    }
+
+    .card-header span {
+    color: #128f8b;
+    cursor: pointer;
+    }
+
+    /* CONTENIDO CON LÍNEA */
+    .card-content p {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    }
+
+    .dots {
+    flex: 1;
+    border-bottom: 2px dotted #999;
+    }
+
+    /* 🔹 BOTÓN PRINCIPAL */
+    .primary-btn {
+    background: #f97316;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 20px;
+    }
+
+    /* 🔹 CONTENEDOR ACCIONES */
+    .actions-container {
+    display: flex;
+    flex: 1;
+    gap: 20px;
+    justify-content: center;
+    }
+
+    /* TARJETAS PEQUEÑAS */
+    .action-card {
+    background: white;
+    padding: 30px;
+    width: 180px;
+    text-align: center;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    /* BOTÓN SECUNDARIO */
+    .secondary-btn {
+    background: #f97316;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 15px;
+}
