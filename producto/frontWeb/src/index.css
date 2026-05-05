@@ -1,0 +1,34 @@
+/* 🔹 RESET GLOBAL */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* 🔹 ALTURA COMPLETA */
+html, body, #root {
+  height: 100%;
+}
+
+/* 🔹 ESTILOS BASE */
+body {
+  font-family: 'Open Sans', sans-serif;
+  background-color: #128f8b;
+}
+
+/* 🔹 IMÁGENES RESPONSIVAS */
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* 🔹 BOTONES */
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* 🔹 INPUTS */
+input {
+  font-family: inherit;
+}

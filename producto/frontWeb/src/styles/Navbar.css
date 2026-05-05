@@ -1,0 +1,72 @@
+/* CONTENEDOR GENERAL */
+.navbar-container {
+    width: 100%;
+    font-family: "Open Sans", sans-serif;
+    }
+
+    /* 🔹 TOP BAR */
+    .navbar-top {
+    background-color: #128f8b;
+    color: white;
+    padding: 8px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    }
+
+    /* LOGO */
+    .logo {
+    font-weight: bold;
+    font-size: 20px;
+    }
+
+    .logo span {
+    color: #f4a261;
+    }
+
+    /* USUARIO */
+    .user-section {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    }
+
+    .user-section button {
+    background: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    }
+
+    /* 🔥 MENÚ BLANCO SOLIDO */
+    .navbar-menu {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #ffffff; /* 🔥 blanco sólido */
+    border-bottom: 1px solid #ddd;
+    }
+
+    /* ITEMS */
+    .nav-item {
+    padding: 20px 40px;
+    cursor: pointer;
+    color: #555;
+    font-weight: 500;
+    font-size: 16px;
+    transition: all 0.2s ease;
+    }
+
+    /* HOVER */
+    .nav-item:hover {
+    background-color: #f2f2f2;
+    }
+
+    /* 🔥 ACTIVO (SIN CURVAS) */
+    .nav-item.active {
+    background-color: #128f8b;
+    color: white;
+    border-radius: 0; /* 🔥 quitamos curvas */
+}
