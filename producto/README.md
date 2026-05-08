@@ -109,9 +109,9 @@ docker compose down -v
 
 Esto elimina los volumenes creados por Compose (incluido MySQL y volumen de CV).
 
-## 9) Autenticacion en cliente (app movil) y referencia futura web
+## 9) Autenticacion en cliente (app movil y web)
 
-Esta seccion documenta donde vive la sesion en el cliente actual y el cierre de sesion, para alinear al equipo sin depender del frontend web (aun no existe en el repo).
+Esta seccion documenta donde vive la sesion y el cierre de sesion en **Android** (`producto/frontmovil`) y en **React+Vite** (`producto/frontWeb`), para alinear al equipo con el Contrato (solo access JWT, sin refresh) y el flujo MVP de recuperacion donde aplique.
 
 **App Android (`producto/frontmovil`)**
 
@@ -120,9 +120,11 @@ Esta seccion documenta donde vive la sesion en el cliente actual y el cierre de 
 - **Recuperacion de contrasena MVP (workflow oficial)**: no hay envio de codigo por correo; `request` y `verify` son pasos compatibles UI sin OTP real cuando `worksi.security.password-recovery-mvp-skip-code-check` vale `true` (por defecto en `application.properties`: cualquier texto no vacio en `verify` tras un `request` valido permite obtener `recovery_token`). El unico efecto persistente obligatorio es `POST /api/v1/auth/password-recovery/reset`, que guarda nuevo `password_hash` y sustituye la contrasena anterior. Para un flujo estricto con codigo OTP (no MVP), establecer esa propiedad / variable de entorno a `false` y desplegar con politica operativa correspondiente (`PasswordRecoveryService`).
 - **Politica de contrasena** (registro candidato en app, alta reclutador, recuperacion): minimo 10 caracteres; al menos una mayuscula, una minuscula, un numero y un simbolo. Backend: `cl.duoc.worksi.validation.PasswordRules`; app Android: `com.worksi.app.validation.PasswordPolicy` (misma regla que el backend).
 
-**Web (futuro Sprint 7 / cuando exista el proyecto web)**
+**Web (`producto/frontWeb`, React+Vite)**
 
-- Checklist: persistir el access JWT segun el mismo contrato (solo access); logout debe invalidar en cliente borrando el token almacenado y redirigiendo al login unificado; conectar recuperacion cuando la UI este en alcance.
+- **Access JWT**: en la vista de login y sesion actual se guarda solo el access token en `localStorage` bajo la clave `token`; datos minimos de usuario en `user` (JSON). Sin refresh token.
+- **Logout**: en la barra de navegacion posterior al login, borrar `token` y `user` y volver al flujo de login.
+- **Recuperacion MVP (ADMIN/RECRUITER, alineado Contrato 1.7 y Flujo Pantallas App Web)**: rutas internas `/recovery/locked`, `/recovery/forgot`, `/recovery/code`, `/recovery/new-password`, `/recovery/confirm`. La derivacion desde login ocurre solo cuando `POST /api/v1/auth/login` responde **422** con `error.code === "BUSINESS_RULE_VIOLATION"` (bloqueo por intentos o cuenta ya bloqueada), segun Contrato; el cliente distingue mensaje en pantalla «Recuperar contraseña». Pasos request/verify son maqueta; efecto real solo en `POST /api/v1/auth/password-recovery/reset`. El enlace «¿Olvidaste tu contraseña?» abre `/recovery/forgot` sin depender del login.
 
 ## 10) Verificacion Sprint 2 (HU-02 admin) — Postman / curl
 

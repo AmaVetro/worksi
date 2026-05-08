@@ -96,6 +96,9 @@ fun AppNavigation() {
                 onNavigateToRecovery = {
                     recoveryVm.resetFlow()
                     navController.navigate(Screen.RecoveryEmail.route)
+                },
+                onNavigateToLogin = {
+                    navController.popBackStack(Screen.Login.route, inclusive = false)
                 }
             )
         }
