@@ -20,7 +20,10 @@ import com.worksi.app.ui.theme.OrangeAccent
 import com.worksi.app.ui.theme.White
 
 @Composable
-fun RecoveryLockedScreen(onNavigateToRecovery: () -> Unit) {
+fun RecoveryLockedScreen(
+    onNavigateToRecovery: () -> Unit,
+    onNavigateToLogin: () -> Unit
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -100,6 +103,17 @@ fun RecoveryLockedScreen(onNavigateToRecovery: () -> Unit) {
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = White
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            TextButton(onClick = onNavigateToLogin) {
+                Text(
+                    "Volver al inicio de sesión",
+                    color = White.copy(alpha = 0.9f),
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
                 )
             }
         }

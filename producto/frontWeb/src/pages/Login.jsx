@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { login } from "../services/authService";
+import { login, parseLoginBlockedDerivation } from "../services/authService";
 import "../styles/Login.css";
 import loginImage from "../assets/images/login-bg.jpg";
 
@@ -32,6 +32,16 @@ function Login() {
         navigate("/home");
 
         } catch (err) {
+        const blocked = parseLoginBlockedDerivation(err);
+        if (blocked) {
+          navigate("/recovery/locked", {
+            state: {
+              email: email.trim(),
+              lockReason: blocked.lockReason,
+            },
+          });
+          return;
+        }
         const message =
             err.response?.data?.error?.message ||
             "Error al iniciar sesión";
@@ -45,13 +55,12 @@ function Login() {
 
     return (
         <div className="login-container">
-        
-        {/* PANEL IZQUIERDO */}
+
         <div className="login-left">
             <div className="login-box">
-            
+
             <h4 className="welcome-text">Bienvenido a</h4>
-            
+
             <h1 className="logo">
                 Work<span>Sy</span>
             </h1>
@@ -59,10 +68,10 @@ function Login() {
             <p className="subtitle">Empresas</p>
 
             <form onSubmit={handleSubmit} className="form">
-                
+
                 <input
                 type="email"
-                placeholder="Username"
+                placeholder="Correo electrónico"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="input"
@@ -70,18 +79,24 @@ function Login() {
 
                 <input
                 type="password"
-                placeholder="Password"
+                placeholder="Contraseña"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="input"
                 />
 
-                <p className="forgot">Forgot Password?</p>
+                <button
+                type="button"
+                className="forgot"
+                onClick={() => navigate("/recovery/forgot")}
+                >
+                ¿Olvidaste tu contraseña?
+                </button>
 
                 {error && <p className="error">{error}</p>}
 
                 <button type="submit" disabled={loading} className="button">
-                {loading ? "Cargando..." : "Iniciar Sesión"}
+                {loading ? "Cargando..." : "Iniciar sesión"}
                 </button>
 
             </form>
@@ -89,7 +104,6 @@ function Login() {
             </div>
         </div>
 
-        {/* PANEL DERECHO (IMAGEN) */}
         <div className="login-right">
             <img src={loginImage} alt="Login visual" />
         </div>

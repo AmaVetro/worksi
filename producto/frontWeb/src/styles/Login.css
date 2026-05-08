@@ -64,11 +64,21 @@
     outline: none;
     }
 
-    /* FORGOT */
-    .forgot {
+    button.forgot {
+    align-self: flex-end;
     font-size: 12px;
     text-align: right;
     cursor: pointer;
+    background: none;
+    border: none;
+    color: inherit;
+    font-family: inherit;
+    padding: 0;
+    text-decoration: underline;
+    }
+
+    button.forgot:hover {
+    opacity: 0.9;
     }
 
     /* BOTÓN */
