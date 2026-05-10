@@ -16,6 +16,10 @@ public class CandidateSkill {
 
   protected CandidateSkill() {}
 
+  public CandidateSkill(Long candidateUserId, Long skillId) {
+    this.id = new CandidateSkillId(candidateUserId, skillId);
+  }
+
   public CandidateSkillId getId() {
     return id;
   }

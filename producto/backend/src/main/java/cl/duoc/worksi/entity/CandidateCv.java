@@ -55,7 +55,7 @@ public class CandidateCv {
   @Column(name = "updated_at", nullable = false, insertable = false, updatable = false)
   private LocalDateTime updatedAt;
 
-  protected CandidateCv() {}
+  public CandidateCv() {}
 
   public Long getId() {
     return id;
@@ -107,5 +107,45 @@ public class CandidateCv {
 
   public LocalDateTime getUpdatedAt() {
     return updatedAt;
+  }
+
+  public void setCandidateUserId(Long candidateUserId) {
+    this.candidateUserId = candidateUserId;
+  }
+
+  public void setOriginalFilename(String originalFilename) {
+    this.originalFilename = originalFilename;
+  }
+
+  public void setStoragePath(String storagePath) {
+    this.storagePath = storagePath;
+  }
+
+  public void setFileSizeBytes(int fileSizeBytes) {
+    this.fileSizeBytes = fileSizeBytes;
+  }
+
+  public void setMimeType(String mimeType) {
+    this.mimeType = mimeType;
+  }
+
+  public void setFileSha256(String fileSha256) {
+    this.fileSha256 = fileSha256;
+  }
+
+  public void setExtractedText(String extractedText) {
+    this.extractedText = extractedText;
+  }
+
+  public void setNormalizedText(String normalizedText) {
+    this.normalizedText = normalizedText;
+  }
+
+  public void setCurrent(boolean current) {
+    this.current = current;
+  }
+
+  public void setUploadedAt(LocalDateTime uploadedAt) {
+    this.uploadedAt = uploadedAt;
   }
 }

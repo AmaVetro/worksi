@@ -1,0 +1,225 @@
+GUIA PARA PRESENTAR EL SPRINT 4 — WORKSI
+========================================
+Equipo: Vicente, Ricardo, Fabián.
+Alcance: solo lo definido como Sprint 4 en "Sprints Oficiales Detallados Oficial.txt" y "Sprint oficiales.txt", cruzado con lo implementado en la carpeta producto/ del repositorio.
+Nota: La reparticion de paquetes por integrante es la acordada para la presentacion; si en la practica alguna tarea la hizo otra persona, pueden intercambiar nombres manteniendo los titulos de paquete para el tablero Kanban.
+
+
+--------------------------------------------------------------------------------
+1. COSAS BASICAS QUE LOS 3 DEBEN ENTENDER (Sprint 4)
+--------------------------------------------------------------------------------
+
+1.1 Version sencilla (para principiantes)
+-----------------------------------------
+El Sprint 4 se resume en una frase: cuando la persona termina de llenar el formulario en el celular y acepta la pantalla de "Uso de datos", en un solo paso el sistema crea la cuenta real de postulante en el servidor, guarda su curriculum en PDF en el equipo servidor, guarda sus datos y preferencias en la base de datos, y devuelve una "llave de sesion" para que pueda entrar como postulante. Antes de eso, el servidor no guardaba nada de ese postulante: todo vivia solo en el telefono.
+
+Tambien el Sprint 4 exige que, ya con esa llave de sesion, el postulante pueda consultar su ficha y actualizar parte de ella mediante el sistema, siempre alineado al contrato oficial de la API.
+
+Los tres integrantes deben poder contar esto en la misma linea: consentimiento obligatorio, un solo envio que crea todo, curriculum en archivo en servidor, perfil consultable y editable con sesion de postulante.
+
+1.2 Version tecnica (completar el entendimiento)
+------------------------------------------------
+Segun la definicion de terminado del Sprint 4 en la documentacion de workflow:
+
+- HU-21: pantalla "Uso de datos" con casilla obligatoria; sin consentimiento no hay alta; con consentimiento se crea usuario CANDIDATE y se emite access_token (JWT de acceso); en base de datos quedan consent_given y consent_given_at alineados al modelo.
+
+- Alta oficial: POST /api/v1/auth/register/candidate como multipart/form-data con parte "data" (JSON, consent_given true, identidad, sector_id, skills_ids, sueldos opcionales coherentes, preferred_modalities, preferred_workloads, etc.) y parte "file" (PDF, max 1 MB). Una sola operacion transaccional: usuario, perfil, relaciones de skills y preferencias, archivo CV en filesystem y fila de metadatos en BD. Sin rutas /onboarding ni borrador en servidor.
+
+- Perfil autenticado: GET y PATCH /api/v1/candidate/profile con Authorization Bearer y rol CANDIDATE; respuestas coherentes con lo persistido en el alta y con el Contrato Unificado API (snake_case en JSON publico).
+
+En producto/ eso se materializa en el backend Spring Boot (controladores, servicios, DTOs, entidades, repositorios, seguridad, manejo de excepciones para conflictos tras guardados parciales) y en la app Android (Compose, ViewModel, Retrofit multipart, Moshi, almacenamiento seguro del token, navegacion post-registro).
+
+
+--------------------------------------------------------------------------------
+2. PARTE DE INTEGRANTE 1 — VICENTE
+--------------------------------------------------------------------------------
+
+Paquete de actividades A
+Titulo: Alta oficial del candidato en el servidor (un solo envio multipart)
+
+Cosas hechas (lenguaje sencillo, detallado)
+-------------------------------------------
+Se implemento la "recepcion" en el servidor del registro completo del postulante: el sistema lee el formulario en formato JSON y el archivo PDF del curriculum, revisa que todo cumpla las reglas (correo no repetido, RUT valido, comuna que corresponda a la region, rubro activo, entre 3 y 12 habilidades que pertenezcan a ese rubro, modalidades y cargas horarias permitidas, curriculum que sea PDF de verdad y que no pese mas de un megabyte, y que el consentimiento venga marcado como aceptado). Si algo falla, responde con un mensaje de error claro. Si todo esta bien, crea el usuario postulante con contrasena protegida, graba la ficha personal con la marca de consentimiento y la fecha/hora, asocia las habilidades y las preferencias, guarda el PDF en una carpeta del servidor y registra en la base de datos donde quedo ese archivo. Al final entrega el identificador del usuario, el rol y la llave de sesion para que la app pueda entrar como postulante.
+
+Cosas hechas (version tecnica)
+------------------------------
+- Controlador REST POST /api/v1/auth/register/candidate consumiendo multipart: parte "data" como String JSON deserializada a CandidateRegisterDataRequest y parte "file" como MultipartFile.
+- CandidateRegistrationService: validaciones de negocio (consent_given true, email unico, politica de contrasena PasswordRules, RUT RutRules, region/comuna SectorRepository/CommuneRepository, sector activo SectorRepository.existsByIdAndActiveIsTrue, skills_ids 3-12 y subset de SkillRepository.findActiveBySectorId, enums Modality/Workload, PDF magic bytes, tamano max 1 MB, Content-Type application/pdf), orden transaccional User save + CandidateProfile + CandidateSkill + CandidatePreferredModality/Workload + escritura en Path bajo worksi.storage.candidate-cvs + CandidateCv, emision JWT via JwtService.createToken y respuesta 201 CandidateRegisterResponse (user_id, role, access_token, token_type, expires_in).
+- Manejo de conflicto por email o RUT duplicado en persistencia mediante ResponseStatusException para rollback transaccional (complementado por el manejador global).
+
+Archivos donde se evidencia (descripcion corta y sencilla)
+----------------------------------------------------------
+- producto/backend/src/main/java/cl/duoc/worksi/controller/CandidateRegistrationController.java — Punto de entrada HTTP del registro multipart del postulante.
+- producto/backend/src/main/java/cl/duoc/worksi/service/CandidateRegistrationService.java — Donde vive toda la logica de validacion, guardado en base y archivo, y respuesta con token.
+- producto/backend/src/main/java/cl/duoc/worksi/dto/candidate/CandidateRegisterDataRequest.java — Forma del JSON de la parte "data" alineada al contrato (nombres snake_case en API).
+- producto/backend/src/main/java/cl/duoc/worksi/dto/candidate/CandidateRegisterResponse.java — Forma de la respuesta exitosa 201 con usuario, rol y token.
+
+
+Paquete de actividades B
+Titulo: Modelo de datos y almacenamiento del curriculum en disco
+
+Cosas hechas (lenguaje sencillo, detallado)
+-------------------------------------------
+Para que el servidor pueda guardar de forma ordenada al postulante, se ajustaron las "piezas" de informacion en el codigo que representan la ficha, el curriculum, las habilidades elegidas y las preferencias de trabajo. Se habilito guardar y leer esos datos de manera consistente con la base de datos que ya existia en el proyecto. Tambien se configuro una carpeta base donde se guardan los PDF por postulante, para que el entorno Docker o local sepa donde escribir los archivos sin mezclarlos con otras cosas (por ejemplo imagenes de empresa).
+
+Cosas hechas (version tecnica)
+------------------------------
+- Entidades JPA: CandidateProfile (constructor publico y setters para escritura en alta y en servicios posteriores), CandidateCv (setters para metadatos y ruta storage_path), CandidateSkill / CandidateSkillId con constructor para clave compuesta, CandidatePreferredModality y CandidatePreferredWorkload con constructores (candidateUserId + enum).
+- Repositorios: CandidateProfileRepository.existsByRut; SectorRepository.existsByIdAndActiveIsTrue; uso de CandidateCvRepository, CandidateSkillRepository, CandidatePreferredModalityRepository, CandidatePreferredWorkloadRepository en el flujo de alta.
+- application.properties: propiedad worksi.storage.candidate-cvs enlazada a WORKSI_CV_STORAGE_DIR para raiz de almacenamiento; subcarpeta candidates/{userId}/ en CandidateRegistrationService.
+
+Archivos donde se evidencia (descripcion corta y sencilla)
+----------------------------------------------------------
+- producto/backend/src/main/java/cl/duoc/worksi/entity/CandidateProfile.java — Ficha del postulante en base de datos; aqui queda el consentimiento y los datos personales del alta.
+- producto/backend/src/main/java/cl/duoc/worksi/entity/CandidateCv.java — Registro del curriculum: nombre original, ruta del archivo en servidor, tamano, tipo PDF.
+- producto/backend/src/main/java/cl/duoc/worksi/entity/CandidateSkill.java y CandidateSkillId.java — Enlace postulante–habilidad en el alta.
+- producto/backend/src/main/java/cl/duoc/worksi/entity/CandidatePreferredModality.java y CandidatePreferredWorkload.java — Preferencias de modalidad y carga horaria del postulante.
+- producto/backend/src/main/java/cl/duoc/worksi/repository/CandidateProfileRepository.java — Consulta si un RUT de postulante ya existe antes de crear la ficha.
+- producto/backend/src/main/java/cl/duoc/worksi/repository/SectorRepository.java — Comprueba que el rubro exista y este activo.
+- producto/backend/src/main/resources/application.properties — Define la carpeta base donde el servidor guarda los curriculum de postulantes.
+
+
+Paquete de actividades C
+Titulo: Coherencia del registro con el filtro de seguridad existente
+
+Cosas hechas (lenguaje sencillo, detallado)
+-------------------------------------------
+El registro debe ser publico: cualquier persona con la app puede intentar crear cuenta sin estar logueada antes. Eso ya estaba pensado en el proyecto con un filtro que deja pasar ciertas direcciones sin pedir llave. Se dejo explicitamente que la direccion de registro de postulante sea una de esas excepciones, para que no se pida token donde no corresponde.
+
+Cosas hechas (version tecnica)
+------------------------------
+- JwtAuthenticationFilter.isPublicPath: inclusion de POST /api/v1/auth/register/candidate para no exigir Bearer en el filtro; coherente con SecurityConfig.requestMatchers permitAll para ese POST.
+
+Archivos donde se evidencia (descripcion corta y sencilla)
+----------------------------------------------------------
+- producto/backend/src/main/java/cl/duoc/worksi/security/JwtAuthenticationFilter.java — Lista de rutas publicas; incluye el alta de postulante sin sesion previa.
+
+
+--------------------------------------------------------------------------------
+3. PARTE DE INTEGRANTE 2 — RICARDO
+--------------------------------------------------------------------------------
+
+Paquete de actividades A
+Titulo: Perfil del postulante ya dentro del sistema (ver y actualizar)
+
+Cosas hechas (lenguaje sencillo, detallado)
+-------------------------------------------
+Una vez creada la cuenta, el Sprint 4 pide que el postulante pueda "ver su ficha" y "actualizar partes de su ficha" usando la misma llave de sesion que recibio al registrarse. Eso significa armar una respuesta completa que mezcle datos personales, correo, preferencias, lista de habilidades con nombre legible, y la informacion de consentimiento. Para actualizar, se aceptan solo los campos que el contrato permite cambiar por PATCH; si mandan nuevas habilidades o nuevas preferencias, se reemplazan las listas anteriores de forma controlada, y se vuelven a validar reglas (por ejemplo comuna con region, cantidad de habilidades, rubro activo).
+
+Cosas hechas (version tecnica)
+------------------------------
+- CandidateProfileController: GET /api/v1/candidate/profile y PATCH /api/v1/candidate/profile con @AuthenticationPrincipal UserPrincipal.
+- CandidateProfileService: getProfile(userId); patchProfile con reglas region/comuna (si region_id entonces commune_id obligatorio), sector activo, salario min/max paritario, reemplazo de modalities/workloads con deleteByCandidateUserId + save, skills_ids 3-12 y validacion contra SkillRepository.findActiveBySectorId, ensamblado CandidateProfileResponse con listas de enums como strings, skills con CandidateProfileSkillResponse desde CandidateSkillRepository.findByIdCandidateUserIdOrderByIdSkillIdAsc + SkillRepository.findAllById, consent_given_at como Instant ISO desde LocalDateTime UTC.
+
+Archivos donde se evidencia (descripcion corta y sencilla)
+----------------------------------------------------------
+- producto/backend/src/main/java/cl/duoc/worksi/controller/CandidateProfileController.java — Las dos operaciones HTTP de perfil para quien ya es postulante autenticado.
+- producto/backend/src/main/java/cl/duoc/worksi/service/CandidateProfileService.java — Toda la logica de armar la respuesta y aplicar el PATCH con validaciones.
+- producto/backend/src/main/java/cl/duoc/worksi/dto/candidate/CandidateProfileResponse.java — Formato de la ficha completa que devuelve el GET (y el PATCH al cerrar).
+- producto/backend/src/main/java/cl/duoc/worksi/dto/candidate/CandidateProfilePatchRequest.java — Campos opcionales que el cliente puede mandar para actualizar.
+- producto/backend/src/main/java/cl/duoc/worksi/dto/candidate/CandidateProfileSkillResponse.java — Cada habilidad con id y nombre en la respuesta de perfil.
+
+
+Paquete de actividades B
+Titulo: Proteccion de las rutas de postulante y respuestas de error alineadas al contrato
+
+Cosas hechas (lenguaje sencillo, detallado)
+-------------------------------------------
+Las direcciones que solo deben usar los postulantes logueados quedaron protegidas: sin la llave correcta o sin ser postulante, no se accede. Ademas, cuando hay un choque al guardar (por ejemplo dos personas intentando el mismo correo casi al mismo tiempo), el sistema no debe dejar medias cuentas: se acordo lanzar un tipo de error que haga que la operacion completa se deshaga y el mensaje al cliente siga el formato estandar de errores del proyecto.
+
+Cosas hechas (version tecnica)
+------------------------------
+- SecurityConfig: requestMatchers("/api/v1/candidate/**").hasRole("CANDIDATE") junto con reglas existentes de admin y rutas publicas (login, catalogos, recuperacion, registro candidato).
+- GlobalExceptionHandler: @ExceptionHandler(ResponseStatusException) mapeando HttpStatus a codigos error del contrato (CONFLICT, VALIDATION_ERROR, PAYLOAD_TOO_LARGE, UNSUPPORTED_MEDIA_TYPE, etc.) con cuerpo { error: { code, message, details, trace_id } }.
+
+Archivos donde se evidencia (descripcion corta y sencilla)
+----------------------------------------------------------
+- producto/backend/src/main/java/cl/duoc/worksi/config/SecurityConfig.java — Quien puede llamar a las rutas bajo /api/v1/candidate/ (solo rol postulante).
+- producto/backend/src/main/java/cl/duoc/worksi/exception/GlobalExceptionHandler.java — Traduce ciertos errores del servidor al formato unificado de la API, incluidos conflictos tras guardar.
+
+
+Paquete de actividades C
+Titulo: Repositorios que permiten reemplazar listas del perfil al editar
+
+Cosas hechas (lenguaje sencillo, detallado)
+-------------------------------------------
+Para poder "cambiar" modalidades, cargas horarias o lista de habilidades sin dejar basura en la base de datos, se agregaron operaciones de borrado por usuario y consultas para listar lo guardado. Asi el servidor puede vaciar lo anterior y volver a insertar lo nuevo en una misma operacion ordenada.
+
+Cosas hechas (version tecnica)
+------------------------------
+- CandidateSkillRepository: @Modifying deleteByCandidateUserId; findByIdCandidateUserIdOrderByIdSkillIdAsc para GET perfil.
+- CandidatePreferredModalityRepository y CandidatePreferredWorkloadRepository: findByCandidateUserId para lectura; @Modifying deleteByCandidateUserId para PATCH.
+
+Archivos donde se evidencia (descripcion corta y sencilla)
+----------------------------------------------------------
+- producto/backend/src/main/java/cl/duoc/worksi/repository/CandidateSkillRepository.java — Borra y lista habilidades del postulante al actualizar o mostrar perfil.
+- producto/backend/src/main/java/cl/duoc/worksi/repository/CandidatePreferredModalityRepository.java — Borra y consulta modalidades preferidas del postulante.
+- producto/backend/src/main/java/cl/duoc/worksi/repository/CandidatePreferredWorkloadRepository.java — Borra y consulta cargas horarias preferidas del postulante.
+
+
+--------------------------------------------------------------------------------
+4. PARTE DE INTEGRANTE 3 — FABIÁN
+--------------------------------------------------------------------------------
+
+Paquete de actividades A
+Titulo: Pantalla de consentimiento y cierre del flujo de registro en el telefono
+
+Cosas hechas (lenguaje sencillo, detallado)
+-------------------------------------------
+La ultima pantalla antes de crear la cuenta en el servidor es "Uso de datos": el usuario debe marcar una casilla que dice que acepta el tratamiento de datos. Si no la marca, no puede pulsar el boton de completar (o el boton no hace el envio). Si la marca y pulsa completar, la app muestra que esta trabajando, y si el servidor responde bien, guarda la llave de sesion y lleva al usuario a la misma zona de "ya entre" que despues del login, sin pasar por una pantalla que diga que solo se guardo en el telefono (eso era del sprint anterior). Si hay error (correo repetido, archivo invalido, etc.), se muestra un mensaje para poder corregir e intentar de nuevo.
+
+Cosas hechas (version tecnica)
+------------------------------
+- RegisterConsentScreen: checkbox ligado a RegisterDraft.consentAccepted; boton deshabilitado sin consentimiento o durante registerSubmitting; CircularProgressIndicator; muestra registerError; onClick llama CandidateRegisterViewModel.submitRegistration(onRegistered).
+- AppNavigation: ruta RegisterConsent navega a Session tras exito con registerVm.reset(), popUpTo Welcome; eliminacion del flujo intermedio solo-local (RegisterSuccessScreen removido del grafo).
+
+Archivos donde se evidencia (descripcion corta y sencilla)
+----------------------------------------------------------
+- producto/frontmovil/app/src/main/java/com/worksi/app/ui/register/RegisterConsentScreen.kt — Pantalla HU-21 y disparo del envio final al servidor.
+- producto/frontmovil/app/src/main/java/com/worksi/app/ui/navigation/AppNavigation.kt — Navegacion del flujo de registro hacia sesion autenticada tras alta exitosa.
+
+
+Paquete de actividades B
+Titulo: Logica de armado del registro y envio seguro al servidor
+
+Cosas hechas (lenguaje sencillo, detallado)
+-------------------------------------------
+Toda la informacion que el usuario fue llenando en varias pantallas queda reunida en un solo estado de la app. Al momento de registrar, la app revisa lo minimo (region, comuna, rubro, cantidad de habilidades, preferencias, curriculum elegido, consentimiento), abre el PDF desde la ubicacion del telefono, comprueba tamano y que parezca un PDF real, construye el texto JSON que pide el servidor con todos los campos en el orden y nombres acordados, y envia en un solo paso el JSON y el archivo. Si el servidor devuelve error, intenta mostrar el mensaje util del cuerpo de error. Si devuelve token, lo guarda en el almacen cifrado de la app para las siguientes pantallas.
+
+Cosas hechas (version tecnica)
+------------------------------
+- CandidateRegisterViewModel.submitRegistration: validaciones previas; withContext(Dispatchers.IO) lee Uri via ContentResolver, valida <= 1MB y prefijo PDF %PDF; construye CandidateRegisterPayload (consentGiven true, salary optional coherence, listas modalities/workloads, skillsIds); Moshi adapter desde RetrofitClient.moshi; RequestBody application/json UTF-8 + MultipartBody.Part file application/pdf; authService.registerCandidate; SecureTokenStore.saveAccessToken; manejo de error parseando fragmento message del JSON de error; estado registerSubmitting/registerError en CandidateRegisterUiState.
+
+Archivos donde se evidencia (descripcion corta y sencilla)
+----------------------------------------------------------
+- producto/frontmovil/app/src/main/java/com/worksi/app/ui/register/CandidateRegisterViewModel.kt — Estado del borrador, catalogos del sprint anterior, y envio multipart del sprint 4.
+- producto/frontmovil/app/src/main/java/com/worksi/app/data/local/SecureTokenStore.kt — Donde se guarda la llave de sesion tras registro exitoso (ya existia para login; ahora tambien al crear cuenta).
+
+
+Paquete de actividades C
+Titulo: Contrato de comunicacion app–servidor para el registro
+
+Cosas hechas (lenguaje sencillo, detallado)
+-------------------------------------------
+La aplicacion necesita saber exactamente como "empaquetar" la solicitud para que el servidor la entienda: una parte con el texto de datos y otra con el archivo. Tambien necesita saber como leer la respuesta exitosa (identificador, rol, token). Eso se definio en la capa de llamadas a internet de la app, usando los mismos nombres de campos que el contrato oficial (por ejemplo con guion bajo en los nombres que ve el servidor).
+
+Cosas hechas (version tecnica)
+------------------------------
+- AuthService: @Multipart POST api/v1/auth/register/candidate con @Part("data") RequestBody y @Part MultipartBody.Part file; respuesta CandidateRegisterResponseDto.
+- CandidateRegisterModels.kt: @JsonClass CandidateRegisterPayload y CandidateRegisterResponseDto con @Json name snake_case.
+- RetrofitClient: instancia authService y moshi compartidos para serializar payload y respuesta.
+
+Archivos donde se evidencia (descripcion corta y sencilla)
+----------------------------------------------------------
+- producto/frontmovil/app/src/main/java/com/worksi/app/data/api/AuthService.kt — Declaracion del endpoint multipart de registro candidato.
+- producto/frontmovil/app/src/main/java/com/worksi/app/data/model/CandidateRegisterModels.kt — Formas de datos y respuesta alineadas al contrato API.
+- producto/frontmovil/app/src/main/java/com/worksi/app/data/api/RetrofitClient.kt — Cliente HTTP base y servicios creados a partir de el.
+
+
+--------------------------------------------------------------------------------
+5. CONCLUSION
+--------------------------------------------------------------------------------
+
+El Sprint 4 en la documentacion pide tres pilares alineados al Contrato Unificado API: (1) consentimiento HU-21 como ultima barrera antes de persistir, (2) alta oficial en un solo POST multipart que crea cuenta, perfil, preferencias, habilidades y CV en servidor, y (3) perfil autenticado con GET/PATCH bajo prefijo /api/v1/candidate/ con sesion de postulante.
+
+En producto/, esos pilares quedan reflejados de punta a punta: la app Android cierra el flujo en "Uso de datos" y envia multipart conservando el principio de que el servidor no tenia borrador previo; el backend implementa el POST con transaccion y almacenamiento en disco; y expone GET/PATCH de perfil con seguridad por rol y formato de error estable. Los paquetes asignados a Vicente, Ricardo y Fabián sirven para repartir la narracion en la presentacion y para trasladar titulos y descripciones a tarjetas Kanban: cada integrante puede hablar de sus dos o tres paquetes como su bloque de trabajo del Sprint 4, siempre conectando cada bloque con la frase de terminado del sprint que corresponde (consentimiento, alta unica, perfil con Bearer CANDIDATE).

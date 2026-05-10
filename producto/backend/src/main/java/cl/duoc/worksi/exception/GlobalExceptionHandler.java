@@ -11,6 +11,7 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
@@ -40,6 +41,25 @@ public class GlobalExceptionHandler {
   public ResponseEntity<Map<String, Object>> handleNotReadable(HttpMessageNotReadableException ex) {
     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
         .body(error("VALIDATION_ERROR", "Cuerpo de solicitud invalido", List.of()));
+  }
+
+  @ExceptionHandler(ResponseStatusException.class)
+  public ResponseEntity<Map<String, Object>> handleResponseStatus(ResponseStatusException ex) {
+    HttpStatus status = HttpStatus.resolve(ex.getStatusCode().value());
+    if (status == null) {
+      status = HttpStatus.INTERNAL_SERVER_ERROR;
+    }
+    String message =
+        ex.getReason() != null ? ex.getReason() : status.getReasonPhrase();
+    String code =
+        switch (status) {
+          case CONFLICT -> "CONFLICT";
+          case BAD_REQUEST -> "VALIDATION_ERROR";
+          case PAYLOAD_TOO_LARGE -> "PAYLOAD_TOO_LARGE";
+          case UNSUPPORTED_MEDIA_TYPE -> "UNSUPPORTED_MEDIA_TYPE";
+          default -> "BUSINESS_RULE_VIOLATION";
+        };
+    return ResponseEntity.status(ex.getStatusCode()).body(error(code, message, List.of()));
   }
 
   @ExceptionHandler(Exception.class)

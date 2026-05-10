@@ -28,6 +28,11 @@ public class CandidatePreferredWorkload {
 
   protected CandidatePreferredWorkload() {}
 
+  public CandidatePreferredWorkload(Long candidateUserId, Workload workload) {
+    this.candidateUserId = candidateUserId;
+    this.workload = workload;
+  }
+
   public Long getCandidateUserId() {
     return candidateUserId;
   }

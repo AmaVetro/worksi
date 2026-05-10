@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface SectorRepository extends JpaRepository<Sector, Long> {
   List<Sector> findByActiveIsTrueOrderByNameAsc();
+
+  boolean existsByIdAndActiveIsTrue(Long id);
 }

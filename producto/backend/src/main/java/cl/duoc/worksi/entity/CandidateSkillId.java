@@ -15,6 +15,11 @@ public class CandidateSkillId implements Serializable {
 
   protected CandidateSkillId() {}
 
+  public CandidateSkillId(Long candidateUserId, Long skillId) {
+    this.candidateUserId = candidateUserId;
+    this.skillId = skillId;
+  }
+
   public Long getCandidateUserId() {
     return candidateUserId;
   }
