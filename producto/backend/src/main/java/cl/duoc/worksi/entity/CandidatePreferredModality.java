@@ -28,6 +28,11 @@ public class CandidatePreferredModality {
 
   protected CandidatePreferredModality() {}
 
+  public CandidatePreferredModality(Long candidateUserId, Modality modality) {
+    this.candidateUserId = candidateUserId;
+    this.modality = modality;
+  }
+
   public Long getCandidateUserId() {
     return candidateUserId;
   }

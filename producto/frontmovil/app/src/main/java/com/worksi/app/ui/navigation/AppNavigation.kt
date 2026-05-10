@@ -24,7 +24,6 @@ import com.worksi.app.ui.register.RegisterCvScreen
 import com.worksi.app.ui.register.RegisterPersonalScreen
 import com.worksi.app.ui.register.RegisterPreferencesScreen
 import com.worksi.app.ui.register.RegisterSkillsScreen
-import com.worksi.app.ui.register.RegisterSuccessScreen
 import com.worksi.app.ui.session.SessionPlaceholderScreen
 import com.worksi.app.ui.splash.SplashScreen
 import com.worksi.app.ui.welcome.WelcomeScreen
@@ -39,7 +38,6 @@ sealed class Screen(val route: String) {
     object RegisterSkills : Screen("register_skills")
     object RegisterPreferences : Screen("register_preferences")
     object RegisterConsent : Screen("register_consent")
-    object RegisterSuccess : Screen("register_success")
     object RecoveryLocked : Screen("recovery_locked")
     object RecoveryEmail : Screen("recovery_email")
     object RecoveryCode : Screen("recovery_code")
@@ -140,15 +138,12 @@ fun AppNavigation() {
             RegisterConsentScreen(
                 viewModel = registerVm,
                 onBack = { navController.popBackStack() },
-                onComplete = { navController.navigate(Screen.RegisterSuccess.route) }
-            )
-        }
-
-        composable(Screen.RegisterSuccess.route) {
-            RegisterSuccessScreen(
-                onFinish = {
+                onRegistered = {
                     registerVm.reset()
-                    navController.popBackStack(Screen.Welcome.route, inclusive = false)
+                    navController.navigate(Screen.Session.route) {
+                        launchSingleTop = true
+                        popUpTo(Screen.Welcome.route) { inclusive = false }
+                    }
                 }
             )
         }

@@ -67,7 +67,7 @@ public class CandidateProfile {
   @Column(name = "updated_at", nullable = false, insertable = false, updatable = false)
   private LocalDateTime updatedAt;
 
-  protected CandidateProfile() {}
+  public CandidateProfile() {}
 
   public Long getUserId() {
     return userId;
@@ -143,5 +143,73 @@ public class CandidateProfile {
 
   public LocalDateTime getUpdatedAt() {
     return updatedAt;
+  }
+
+  public void setUserId(Long userId) {
+    this.userId = userId;
+  }
+
+  public void setFirstName(String firstName) {
+    this.firstName = firstName;
+  }
+
+  public void setMiddleName(String middleName) {
+    this.middleName = middleName;
+  }
+
+  public void setLastNamePaternal(String lastNamePaternal) {
+    this.lastNamePaternal = lastNamePaternal;
+  }
+
+  public void setLastNameMaternal(String lastNameMaternal) {
+    this.lastNameMaternal = lastNameMaternal;
+  }
+
+  public void setPhone(String phone) {
+    this.phone = phone;
+  }
+
+  public void setRut(String rut) {
+    this.rut = rut;
+  }
+
+  public void setDocumentNumber(String documentNumber) {
+    this.documentNumber = documentNumber;
+  }
+
+  public void setStreet(String street) {
+    this.street = street;
+  }
+
+  public void setRegionId(Long regionId) {
+    this.regionId = regionId;
+  }
+
+  public void setCommuneId(Long communeId) {
+    this.communeId = communeId;
+  }
+
+  public void setSectorId(Long sectorId) {
+    this.sectorId = sectorId;
+  }
+
+  public void setProfileSummary(String profileSummary) {
+    this.profileSummary = profileSummary;
+  }
+
+  public void setSalaryExpectedMin(Integer salaryExpectedMin) {
+    this.salaryExpectedMin = salaryExpectedMin;
+  }
+
+  public void setSalaryExpectedMax(Integer salaryExpectedMax) {
+    this.salaryExpectedMax = salaryExpectedMax;
+  }
+
+  public void setConsentGiven(boolean consentGiven) {
+    this.consentGiven = consentGiven;
+  }
+
+  public void setConsentGivenAt(LocalDateTime consentGivenAt) {
+    this.consentGivenAt = consentGivenAt;
   }
 }

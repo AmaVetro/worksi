@@ -9,12 +9,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -38,7 +40,7 @@ private val RegisterBackButtonRowHeight = 56.dp
 fun RegisterConsentScreen(
     viewModel: CandidateRegisterViewModel,
     onBack: () -> Unit,
-    onComplete: () -> Unit
+    onRegistered: () -> Unit
 ) {
     val state by viewModel.ui.collectAsState()
     val d = state.draft
@@ -57,8 +59,7 @@ fun RegisterConsentScreen(
             Spacer(Modifier.height(16.dp))
             Text(
                 "Al marcar la casilla confirmas que leiste y aceptas el tratamiento de tus datos personales segun la politica de WorkSi. " +
-                    "En esta version de la app el envio al servidor se habilitara al implementar el registro oficial; " +
-                    "tus datos permanecen solo en este dispositivo hasta entonces.",
+                    "Al pulsar Completar se creara tu cuenta en el servidor con el CV y datos ingresados.",
                 color = White.copy(alpha = 0.9f)
             )
             Spacer(Modifier.height(24.dp))
@@ -73,10 +74,18 @@ fun RegisterConsentScreen(
                 )
                 Text("Acepto el uso de mis datos", color = White, modifier = Modifier.weight(1f))
             }
+            if (state.registerError != null) {
+                Spacer(Modifier.height(8.dp))
+                Text(state.registerError!!, color = White)
+            }
             Spacer(Modifier.height(24.dp))
             Button(
-                onClick = { if (d.consentAccepted) onComplete() },
-                enabled = d.consentAccepted,
+                onClick = {
+                    if (d.consentAccepted) {
+                        viewModel.submitRegistration(onRegistered)
+                    }
+                },
+                enabled = d.consentAccepted && !state.registerSubmitting,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)
@@ -84,7 +93,15 @@ fun RegisterConsentScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = OrangeAccent, contentColor = White),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Completar", fontWeight = FontWeight.Bold)
+                if (state.registerSubmitting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = White,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text("Completar", fontWeight = FontWeight.Bold)
+                }
             }
         }
         IconButton(
