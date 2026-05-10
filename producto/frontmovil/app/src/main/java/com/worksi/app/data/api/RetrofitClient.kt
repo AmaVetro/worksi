@@ -33,4 +33,6 @@ object RetrofitClient {
         .build()
 
     val authService: AuthService = retrofit.create(AuthService::class.java)
+
+    val catalogApi: CatalogApi = retrofit.create(CatalogApi::class.java)
 }
