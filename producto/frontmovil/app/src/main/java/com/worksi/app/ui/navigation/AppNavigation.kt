@@ -1,24 +1,32 @@
 package com.worksi.app.ui.navigation
 
+import android.app.Application
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.lifecycle.viewmodel.compose.viewModel
+import com.worksi.app.data.local.SecureTokenStore
 import com.worksi.app.ui.login.LoginScreen
+import com.worksi.app.ui.login.LoginViewModel
 import com.worksi.app.ui.recovery.RecoveryCodeScreen
 import com.worksi.app.ui.recovery.RecoveryEmailScreen
+import com.worksi.app.ui.recovery.RecoveryLockedScreen
 import com.worksi.app.ui.recovery.RecoveryNewPasswordScreen
 import com.worksi.app.ui.recovery.RecoverySuccessScreen
 import com.worksi.app.ui.recovery.RecoveryViewModel
-import com.worksi.app.ui.register.RegisterScreen
-import com.worksi.app.ui.splash.SplashScreen
-import com.worksi.app.ui.login.LoginViewModel
-import com.worksi.app.ui.recovery.RecoveryLockedScreen
-import com.worksi.app.data.local.SecureTokenStore
+import com.worksi.app.ui.register.CandidateRegisterViewModel
+import com.worksi.app.ui.register.RegisterConsentScreen
+import com.worksi.app.ui.register.RegisterCvScreen
+import com.worksi.app.ui.register.RegisterPersonalScreen
+import com.worksi.app.ui.register.RegisterPreferencesScreen
+import com.worksi.app.ui.register.RegisterSkillsScreen
+import com.worksi.app.ui.register.RegisterSuccessScreen
 import com.worksi.app.ui.session.SessionPlaceholderScreen
+import com.worksi.app.ui.splash.SplashScreen
 import com.worksi.app.ui.welcome.WelcomeScreen
 
 sealed class Screen(val route: String) {
@@ -26,7 +34,12 @@ sealed class Screen(val route: String) {
     object Welcome : Screen("welcome")
     object Login : Screen("login")
     object Session : Screen("session")
-    object Register : Screen("register")
+    object RegisterPersonal : Screen("register_personal")
+    object RegisterCv : Screen("register_cv")
+    object RegisterSkills : Screen("register_skills")
+    object RegisterPreferences : Screen("register_preferences")
+    object RegisterConsent : Screen("register_consent")
+    object RegisterSuccess : Screen("register_success")
     object RecoveryLocked : Screen("recovery_locked")
     object RecoveryEmail : Screen("recovery_email")
     object RecoveryCode : Screen("recovery_code")
@@ -38,7 +51,11 @@ sealed class Screen(val route: String) {
 fun AppNavigation() {
     val navController = rememberNavController()
     val activity = LocalContext.current as ComponentActivity
+    val app = LocalContext.current.applicationContext as Application
     val recoveryVm: RecoveryViewModel = viewModel(viewModelStoreOwner = activity)
+    val registerVm: CandidateRegisterViewModel = viewModel(
+        factory = ViewModelProvider.AndroidViewModelFactory.getInstance(app)
+    )
 
     NavHost(navController = navController, startDestination = Screen.Splash.route) {
         composable(Screen.Splash.route) {
@@ -52,7 +69,7 @@ fun AppNavigation() {
         composable(Screen.Welcome.route) {
             WelcomeScreen(
                 onNavigateToLogin = { navController.navigate(Screen.Login.route) },
-                onNavigateToRegister = { navController.navigate(Screen.Register.route) }
+                onNavigateToRegister = { navController.navigate(Screen.RegisterPersonal.route) }
             )
         }
 
@@ -87,8 +104,53 @@ fun AppNavigation() {
             )
         }
 
-        composable(Screen.Register.route) {
-            RegisterScreen(onNavigateBack = { navController.popBackStack() })
+        composable(Screen.RegisterPersonal.route) {
+            RegisterPersonalScreen(
+                viewModel = registerVm,
+                onBack = { navController.popBackStack() },
+                onNext = { navController.navigate(Screen.RegisterCv.route) }
+            )
+        }
+
+        composable(Screen.RegisterCv.route) {
+            RegisterCvScreen(
+                viewModel = registerVm,
+                onBack = { navController.popBackStack() },
+                onNext = { navController.navigate(Screen.RegisterSkills.route) }
+            )
+        }
+
+        composable(Screen.RegisterSkills.route) {
+            RegisterSkillsScreen(
+                viewModel = registerVm,
+                onBack = { navController.popBackStack() },
+                onNext = { navController.navigate(Screen.RegisterPreferences.route) }
+            )
+        }
+
+        composable(Screen.RegisterPreferences.route) {
+            RegisterPreferencesScreen(
+                viewModel = registerVm,
+                onBack = { navController.popBackStack() },
+                onNext = { navController.navigate(Screen.RegisterConsent.route) }
+            )
+        }
+
+        composable(Screen.RegisterConsent.route) {
+            RegisterConsentScreen(
+                viewModel = registerVm,
+                onBack = { navController.popBackStack() },
+                onComplete = { navController.navigate(Screen.RegisterSuccess.route) }
+            )
+        }
+
+        composable(Screen.RegisterSuccess.route) {
+            RegisterSuccessScreen(
+                onFinish = {
+                    registerVm.reset()
+                    navController.popBackStack(Screen.Welcome.route, inclusive = false)
+                }
+            )
         }
 
         composable(Screen.RecoveryLocked.route) {

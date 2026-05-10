@@ -168,3 +168,27 @@ curl -s -o NUL -w "%{http_code}" "$BASE/api/v1/admin/companies?page=1&size=5" -H
 Se espera codigo HTTP **403** (o **401** si el filtro JWT no autentica) al llamar recurso **/api/v1/admin/** con usuario **RECRUITER**.
 
 **Imagen empresa (opcional)**: misma peticion multipart añadiendo archivo en parte `image` (PNG o JPEG); el backend guarda bajo `worksi.storage.company-images` (por defecto `{WORKSI_CV_STORAGE_DIR}/company-images` en Docker: `/data/cv/company-images`).
+
+## 11) Sprint 3 — Catálogos rubro/skills y registro móvil (solo cliente)
+
+**API pública (sin JWT)**
+
+- `GET /api/v1/catalogs/sectors`
+- `GET /api/v1/catalogs/sectors/{sector_id}/skills` (404 si el sector no existe o está inactivo)
+
+**App móvil (`producto/frontmovil`)**
+
+- Flujo **Crear cuenta**: datos personales + región/comuna (catálogos), **CV PDF máx. 1 MB** solo en dispositivo, **rubro + 3–12 skills** (por sector), **preferencias** (presentación opcional, renta opcional coherente, modalidades y cargas horarias según enums del Contrato), pantalla **Uso de datos** (checkbox) y cierre **sin** `POST /api/v1/auth/register/candidate` (ese envío corresponde al Sprint 4). Solo se llaman `GET /api/v1/catalogs/*` durante el recorrido.
+
+## 12) Referencia Sprint 4 — Ejemplo `POST /api/v1/auth/register/candidate` (multipart)
+
+Cuando el backend exponga el endpoint, el cuerpo lógico en la parte `data` debe alinearse al **Contrato Unificado API** (JSON con `consent_given: true`, identidad, `region_id`, `commune_id`, `sector_id`, `skills_ids` 3–12, `preferred_modalities`, `preferred_workloads`, rentas opcionales, etc.) y la parte `file` debe ser el PDF del CV (máx. 1 MB). Ejemplo ilustrativo con `curl` (sustituir IDs y archivo reales):
+
+```powershell
+$BASE = "http://localhost:8080"
+curl -s -X POST "$BASE/api/v1/auth/register/candidate" `
+  -F "data={\"email\":\"nuevo@dominio.cl\",\"password\":\"Aa!1234567890\",\"first_name\":\"Juan\",\"middle_name\":null,\"last_name_paternal\":\"Perez\",\"last_name_maternal\":\"Rojas\",\"phone\":\"+56912345678\",\"rut\":\"12345678-5\",\"document_number\":\"12345678\",\"street\":null,\"region_id\":7,\"commune_id\":75,\"consent_given\":true,\"sector_id\":1,\"profile_summary\":\"\",\"salary_expected_min\":700000,\"salary_expected_max\":1200000,\"preferred_modalities\":[\"REMOTE\",\"HYBRID\"],\"preferred_workloads\":[\"FULL_TIME\"],\"skills_ids\":[1,2,3]};type=application/json" `
+  -F "file=@C:\ruta\cv.pdf;type=application/pdf"
+```
+
+La respuesta esperada **201** incluye `access_token` con rol **CANDIDATE** según Contrato (cuando la implementación esté disponible).
