@@ -10,6 +10,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.worksi.app.data.local.SecureTokenStore
+import com.worksi.app.ui.home.HomeScreen
+import com.worksi.app.ui.home.HomeViewModel
 import com.worksi.app.ui.login.LoginScreen
 import com.worksi.app.ui.login.LoginViewModel
 import com.worksi.app.ui.recovery.RecoveryCodeScreen
@@ -24,7 +26,6 @@ import com.worksi.app.ui.register.RegisterCvScreen
 import com.worksi.app.ui.register.RegisterPersonalScreen
 import com.worksi.app.ui.register.RegisterPreferencesScreen
 import com.worksi.app.ui.register.RegisterSkillsScreen
-import com.worksi.app.ui.session.SessionPlaceholderScreen
 import com.worksi.app.ui.splash.SplashScreen
 import com.worksi.app.ui.welcome.WelcomeScreen
 
@@ -91,7 +92,12 @@ fun AppNavigation() {
         }
 
         composable(Screen.Session.route) {
-            SessionPlaceholderScreen(
+            val homeViewModel: HomeViewModel = viewModel()
+            HomeScreen(
+                viewModel = homeViewModel,
+                onNavigateToProfile = { /* TODO: navegar a perfil */ },
+                onNavigateToMenu = { /* TODO: navegar a menú */ },
+                onSettings = { /* TODO: pantalla de configuración */ },
                 onLogout = {
                     SecureTokenStore.clear()
                     navController.navigate(Screen.Welcome.route) {

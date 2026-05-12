@@ -78,6 +78,9 @@ dependencies {
     // Seguridad para token
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
 
+    // AsyncImage
+    implementation("io.coil-kt:coil-compose:2.7.0")
+
     // Testing (solo básico)
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
