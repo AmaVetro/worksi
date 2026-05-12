@@ -1,7 +1,9 @@
+import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import "../styles/Home.css";
 
 function Home() {
+    const navigate = useNavigate();
     return (
         <div>
         <Navbar />
@@ -27,7 +29,7 @@ function Home() {
                     </p>
                 </div>
 
-                <button className="primary-btn">Publicar aviso</button>
+                <button type="button" className="primary-btn">Publicar aviso</button>
                 </div>
 
                 {/* 🔹 ACCIONES */}
@@ -35,12 +37,12 @@ function Home() {
 
                 <div className="action-card">
                     <p>Registrar empresa</p>
-                    <button className="secondary-btn">IR</button>
+                    <button type="button" className="secondary-btn" onClick={() => navigate("/companies")}>IR</button>
                 </div>
 
                 <div className="action-card">
                     <p>Registrar reclutador</p>
-                    <button className="secondary-btn">IR</button>
+                    <button type="button" className="secondary-btn" onClick={() => navigate("/recruiters")}>IR</button>
                 </div>
 
                 </div>

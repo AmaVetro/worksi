@@ -69,6 +69,7 @@ public class CandidateRegistrationService {
   private final ObjectMapper objectMapper;
   private final Path cvBaseDir;
   private final int jwtExpirationSeconds;
+  private final CvTextExtractionService cvTextExtractionService;
 
   public CandidateRegistrationService(
       UserRepository userRepository,
@@ -85,7 +86,8 @@ public class CandidateRegistrationService {
       JwtService jwtService,
       ObjectMapper objectMapper,
       @Value("${worksi.storage.candidate-cvs}") String candidateCvsDir,
-      @Value("${worksi.jwt.expiration-seconds}") int jwtExpirationSeconds) {
+      @Value("${worksi.jwt.expiration-seconds}") int jwtExpirationSeconds,
+      CvTextExtractionService cvTextExtractionService) {
     this.userRepository = userRepository;
     this.candidateProfileRepository = candidateProfileRepository;
     this.candidateSkillRepository = candidateSkillRepository;
@@ -101,6 +103,7 @@ public class CandidateRegistrationService {
     this.objectMapper = objectMapper;
     this.cvBaseDir = Path.of(candidateCvsDir);
     this.jwtExpirationSeconds = jwtExpirationSeconds;
+    this.cvTextExtractionService = cvTextExtractionService;
   }
 
   @Transactional(rollbackFor = Exception.class)
@@ -235,6 +238,8 @@ public class CandidateRegistrationService {
     cv.setCurrent(true);
     cv.setUploadedAt(LocalDateTime.now(ZoneOffset.UTC));
     candidateCvRepository.save(cv);
+
+    cvTextExtractionService.extractAndPersist(cv.getId());
 
     String token = jwtService.createToken(user);
     return ResponseEntity.status(HttpStatus.CREATED)

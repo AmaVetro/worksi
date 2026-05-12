@@ -26,10 +26,22 @@ function Login() {
 
         const data = await login(email, password);
 
-        localStorage.setItem("token", data.access_token);
+        const token = data?.access_token ?? data?.accessToken;
+        if (!token || typeof token !== "string" || !token.trim()) {
+          setError("Respuesta de login invalida");
+          return;
+        }
+        localStorage.setItem("token", token.trim());
         localStorage.setItem("user", JSON.stringify(data.user));
 
-        navigate("/home");
+        const r = data.user?.role;
+        if (r === "ADMIN") {
+          navigate("/home");
+        } else if (r === "RECRUITER") {
+          navigate("/recruiter/home");
+        } else {
+          navigate("/home");
+        }
 
         } catch (err) {
         const blocked = parseLoginBlockedDerivation(err);

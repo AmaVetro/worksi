@@ -37,9 +37,9 @@ public class AdminController {
 
   @GetMapping("/companies")
   public ResponseEntity<PageResponse<AdminCompanyListItem>> listCompanies(
-      @RequestParam(defaultValue = "1") int page,
-      @RequestParam(defaultValue = "20") int size,
-      @RequestParam(defaultValue = "created_at,desc") String sort) {
+      @RequestParam(name = "page", defaultValue = "1") int page,
+      @RequestParam(name = "size", defaultValue = "20") int size,
+      @RequestParam(name = "sort", defaultValue = "created_at,desc") String sort) {
     return adminCompanyService.listCompanies(page, size, sort);
   }
 

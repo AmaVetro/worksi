@@ -57,6 +57,7 @@ public class GlobalExceptionHandler {
           case BAD_REQUEST -> "VALIDATION_ERROR";
           case PAYLOAD_TOO_LARGE -> "PAYLOAD_TOO_LARGE";
           case UNSUPPORTED_MEDIA_TYPE -> "UNSUPPORTED_MEDIA_TYPE";
+          case FORBIDDEN -> "FORBIDDEN";
           default -> "BUSINESS_RULE_VIOLATION";
         };
     return ResponseEntity.status(ex.getStatusCode()).body(error(code, message, List.of()));

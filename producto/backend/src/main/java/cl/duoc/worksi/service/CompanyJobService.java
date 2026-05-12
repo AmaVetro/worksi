@@ -1,0 +1,297 @@
+package cl.duoc.worksi.service;
+
+import cl.duoc.worksi.dto.PageResponse;
+import cl.duoc.worksi.dto.company.CompanyJobCreateRequest;
+import cl.duoc.worksi.dto.company.CompanyJobCreatedResponse;
+import cl.duoc.worksi.dto.company.CompanyJobDetailResponse;
+import cl.duoc.worksi.dto.company.CompanyJobListItemResponse;
+import cl.duoc.worksi.dto.company.CompanyProfileImagePatchRequest;
+import cl.duoc.worksi.dto.company.CompanyProfileImageResponse;
+import cl.duoc.worksi.entity.Company;
+import cl.duoc.worksi.entity.Job;
+import cl.duoc.worksi.entity.JobSkill;
+import cl.duoc.worksi.entity.enums.JobStatus;
+import cl.duoc.worksi.entity.enums.Modality;
+import cl.duoc.worksi.entity.enums.Workload;
+import cl.duoc.worksi.repository.CommuneRepository;
+import cl.duoc.worksi.repository.CompanyRepository;
+import cl.duoc.worksi.repository.JobRepository;
+import cl.duoc.worksi.repository.JobSkillRepository;
+import cl.duoc.worksi.repository.RecruiterProfileRepository;
+import cl.duoc.worksi.repository.RegionRepository;
+import cl.duoc.worksi.repository.SkillRepository;
+import cl.duoc.worksi.util.JobSemanticText;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+public class CompanyJobService {
+  private final RecruiterProfileRepository recruiterProfileRepository;
+  private final CompanyRepository companyRepository;
+  private final JobRepository jobRepository;
+  private final JobSkillRepository jobSkillRepository;
+  private final RegionRepository regionRepository;
+  private final CommuneRepository communeRepository;
+  private final SkillRepository skillRepository;
+
+  public CompanyJobService(
+      RecruiterProfileRepository recruiterProfileRepository,
+      CompanyRepository companyRepository,
+      JobRepository jobRepository,
+      JobSkillRepository jobSkillRepository,
+      RegionRepository regionRepository,
+      CommuneRepository communeRepository,
+      SkillRepository skillRepository) {
+    this.recruiterProfileRepository = recruiterProfileRepository;
+    this.companyRepository = companyRepository;
+    this.jobRepository = jobRepository;
+    this.jobSkillRepository = jobSkillRepository;
+    this.regionRepository = regionRepository;
+    this.communeRepository = communeRepository;
+    this.skillRepository = skillRepository;
+  }
+
+  @Transactional
+  public ResponseEntity<?> patchCompanyImage(long recruiterUserId, CompanyProfileImagePatchRequest body) {
+    var profile =
+        recruiterProfileRepository
+            .findById(recruiterUserId)
+            .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN));
+    Company company =
+        companyRepository
+            .findById(profile.getCompanyId())
+            .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(HttpStatus.NOT_FOUND));
+    String url = body.getImageUrl();
+    if (url != null && url.isBlank()) {
+      url = null;
+    }
+    company.setImageUrl(url);
+    companyRepository.save(company);
+    return ResponseEntity.ok(new CompanyProfileImageResponse(company.getId(), company.getImageUrl()));
+  }
+
+  @Transactional
+  public ResponseEntity<?> createJob(long recruiterUserId, CompanyJobCreateRequest req) {
+    var profile =
+        recruiterProfileRepository
+            .findById(recruiterUserId)
+            .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN));
+    ResponseEntity<?> v = validateJobPayload(req);
+    if (v != null) {
+      return v;
+    }
+    Modality modality;
+    Workload workload;
+    try {
+      modality = Modality.valueOf(req.getModality().trim());
+      workload = Workload.valueOf(req.getWorkload().trim());
+    } catch (IllegalArgumentException e) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "modality o workload invalido");
+    }
+    LocalDateTime publishedAt = LocalDateTime.now(ZoneOffset.UTC);
+    Job job = new Job();
+    job.setCompanyId(profile.getCompanyId());
+    job.setPublishedByUserId(recruiterUserId);
+    job.setCompanyCommercialName(req.getCompanyCommercialName().trim());
+    job.setTitle(req.getTitle().trim());
+    job.setDescription(req.getDescription().trim());
+    job.setCity(req.getCity().trim());
+    job.setRegionId(req.getRegionId());
+    job.setCommuneId(req.getCommuneId());
+    job.setSalaryOffered(req.getSalaryOffered());
+    job.setYearsExperienceRequired(req.getYearsExperienceRequired());
+    job.setModality(modality);
+    job.setWorkload(workload);
+    job.setImageUrl(trimNull(req.getImageUrl()));
+    job.setStatus(JobStatus.ACTIVE);
+    job.setPublishedAt(publishedAt);
+    String semantic =
+        JobSemanticText.build(job.getTitle(), job.getDescription(), modality, workload);
+    if (semantic.isBlank()) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Texto semantico de oferta vacio");
+    }
+    job = jobRepository.saveAndFlush(job);
+    long jobId = job.getId();
+    for (Long sid : new LinkedHashSet<>(req.getSkillsIds())) {
+      jobSkillRepository.save(new JobSkill(jobId, sid));
+    }
+    Instant publishedInstant = publishedAt.atZone(ZoneOffset.UTC).toInstant();
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(new CompanyJobCreatedResponse(jobId, JobStatus.ACTIVE.name(), publishedInstant));
+  }
+
+  public ResponseEntity<?> listMyJobs(long recruiterUserId, int page, int size, String sort) {
+    if (!recruiterProfileRepository.existsById(recruiterUserId)) {
+      return err(HttpStatus.FORBIDDEN, "FORBIDDEN", "Sesion no autorizada como reclutador");
+    }
+    int p = Math.max(1, page);
+    int sz = Math.min(100, Math.max(1, size));
+    Pageable pageable = PageRequest.of(p - 1, sz, parseSort(sort));
+    Page<Job> result =
+        jobRepository.findByStatusAndPublishedByUserId(JobStatus.ACTIVE, recruiterUserId, pageable);
+    List<CompanyJobListItemResponse> items =
+        result.getContent().stream().map(this::toListItem).toList();
+    PageResponse<CompanyJobListItemResponse> body =
+        new PageResponse<>(
+            items, p, result.getSize(), result.getTotalElements(), result.getTotalPages());
+    return ResponseEntity.ok(body);
+  }
+
+  public ResponseEntity<?> getMyJob(long recruiterUserId, long jobId) {
+    Optional<Job> opt = jobRepository.findById(jobId);
+    if (opt.isEmpty()) {
+      return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
+    }
+    Job job = opt.get();
+    if (job.getPublishedByUserId() == null || !job.getPublishedByUserId().equals(recruiterUserId)) {
+      return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
+    }
+    return ResponseEntity.ok(toDetail(job));
+  }
+
+  private CompanyJobListItemResponse toListItem(Job job) {
+    Instant published =
+        job.getPublishedAt() != null
+            ? job.getPublishedAt().atZone(ZoneOffset.UTC).toInstant()
+            : Instant.EPOCH;
+    Instant created =
+        job.getCreatedAt() != null
+            ? job.getCreatedAt().atZone(ZoneOffset.UTC).toInstant()
+            : published;
+    return new CompanyJobListItemResponse(
+        job.getId(),
+        job.getTitle(),
+        job.getCompanyCommercialName(),
+        job.getSalaryOffered(),
+        job.getModality().name(),
+        job.getStatus().name(),
+        published,
+        created);
+  }
+
+  private CompanyJobDetailResponse toDetail(Job job) {
+    List<Long> skillIds =
+        jobSkillRepository.findAllByJobIdOrderBySkillName(job.getId()).stream()
+            .map(js -> js.getId().getSkillId())
+            .toList();
+    Instant published =
+        job.getPublishedAt() != null
+            ? job.getPublishedAt().atZone(ZoneOffset.UTC).toInstant()
+            : Instant.EPOCH;
+    return new CompanyJobDetailResponse(
+        job.getId(),
+        job.getCompanyCommercialName(),
+        job.getTitle(),
+        job.getDescription(),
+        job.getCity(),
+        job.getRegionId(),
+        job.getCommuneId(),
+        job.getSalaryOffered(),
+        job.getYearsExperienceRequired(),
+        job.getModality().name(),
+        job.getWorkload().name(),
+        job.getImageUrl(),
+        job.getStatus().name(),
+        published,
+        skillIds);
+  }
+
+  private ResponseEntity<?> validateJobPayload(CompanyJobCreateRequest req) {
+    if (req.getCompanyCommercialName() == null || req.getCompanyCommercialName().isBlank()) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "company_commercial_name obligatorio");
+    }
+    if (req.getTitle() == null || req.getTitle().isBlank()) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "title obligatorio");
+    }
+    if (req.getDescription() == null || req.getDescription().isBlank()) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "description obligatorio");
+    }
+    if (req.getCity() == null || req.getCity().isBlank()) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "city obligatorio");
+    }
+    if (req.getSalaryOffered() == null || req.getSalaryOffered() < 1) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "salary_offered invalido");
+    }
+    if (req.getYearsExperienceRequired() == null
+        || req.getYearsExperienceRequired() < 0
+        || req.getYearsExperienceRequired() > 80) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "years_experience_required invalido");
+    }
+    if (req.getRegionId() == null || req.getCommuneId() == null) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "region_id y commune_id obligatorios");
+    }
+    if (!regionRepository.existsById(req.getRegionId())) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "region_id no existe");
+    }
+    if (!communeRepository.existsByIdAndRegionId(req.getCommuneId(), req.getRegionId())) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "commune_id no coincide con region");
+    }
+    List<Long> skillIds = req.getSkillsIds();
+    if (skillIds == null || skillIds.size() < 3 || skillIds.size() > 8) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "skills_ids debe tener entre 3 y 8");
+    }
+    if (skillIds.size() != new LinkedHashSet<>(skillIds).size()) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "skills_ids duplicados");
+    }
+    List<cl.duoc.worksi.entity.Skill> skills = skillRepository.findAllActiveByIdIn(skillIds);
+    if (skills.size() != skillIds.size()) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "skill_id invalido o inactivo");
+    }
+    return null;
+  }
+
+  private static String trimNull(String s) {
+    if (s == null) {
+      return null;
+    }
+    String t = s.trim();
+    return t.isEmpty() ? null : t;
+  }
+
+  private static Sort parseSort(String raw) {
+    if (raw == null || raw.isBlank()) {
+      return Sort.by(Sort.Direction.DESC, "createdAt");
+    }
+    String[] parts = raw.split(",");
+    if (parts.length < 2) {
+      return Sort.by(Sort.Direction.DESC, "createdAt");
+    }
+    String field = parts[0].trim();
+    if (field.equals("created_at")) {
+      field = "createdAt";
+    }
+    Sort.Direction dir =
+        "asc".equalsIgnoreCase(parts[1].trim()) ? Sort.Direction.ASC : Sort.Direction.DESC;
+    return Sort.by(dir, field);
+  }
+
+  private static ResponseEntity<Map<String, Object>> err(
+      HttpStatus status, String code, String message) {
+    return ResponseEntity.status(status)
+        .body(
+            Map.of(
+                "error",
+                Map.of(
+                    "code",
+                    code,
+                    "message",
+                    message,
+                    "details",
+                    List.of(),
+                    "trace_id",
+                    "")));
+  }
+}

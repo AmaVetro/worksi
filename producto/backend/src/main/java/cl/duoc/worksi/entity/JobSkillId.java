@@ -15,6 +15,11 @@ public class JobSkillId implements Serializable {
 
   protected JobSkillId() {}
 
+  public JobSkillId(long jobId, long skillId) {
+    this.jobId = jobId;
+    this.skillId = skillId;
+  }
+
   public Long getJobId() {
     return jobId;
   }

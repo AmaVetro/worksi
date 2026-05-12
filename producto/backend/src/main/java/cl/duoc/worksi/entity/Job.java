@@ -25,6 +25,9 @@ public class Job {
   @Column(name = "company_id", nullable = false)
   private Long companyId;
 
+  @Column(name = "published_by_user_id")
+  private Long publishedByUserId;
+
   @Column(name = "company_commercial_name", nullable = false, length = 180)
   private String companyCommercialName;
 
@@ -74,7 +77,7 @@ public class Job {
   @Column(name = "updated_at", nullable = false, insertable = false, updatable = false)
   private LocalDateTime updatedAt;
 
-  protected Job() {}
+  public Job() {}
 
   public Long getId() {
     return id;
@@ -82,6 +85,10 @@ public class Job {
 
   public Long getCompanyId() {
     return companyId;
+  }
+
+  public Long getPublishedByUserId() {
+    return publishedByUserId;
   }
 
   public String getCompanyCommercialName() {
@@ -142,5 +149,65 @@ public class Job {
 
   public LocalDateTime getUpdatedAt() {
     return updatedAt;
+  }
+
+  public void setCompanyId(Long companyId) {
+    this.companyId = companyId;
+  }
+
+  public void setPublishedByUserId(Long publishedByUserId) {
+    this.publishedByUserId = publishedByUserId;
+  }
+
+  public void setCompanyCommercialName(String companyCommercialName) {
+    this.companyCommercialName = companyCommercialName;
+  }
+
+  public void setTitle(String title) {
+    this.title = title;
+  }
+
+  public void setDescription(String description) {
+    this.description = description;
+  }
+
+  public void setCity(String city) {
+    this.city = city;
+  }
+
+  public void setRegionId(Long regionId) {
+    this.regionId = regionId;
+  }
+
+  public void setCommuneId(Long communeId) {
+    this.communeId = communeId;
+  }
+
+  public void setSalaryOffered(int salaryOffered) {
+    this.salaryOffered = salaryOffered;
+  }
+
+  public void setYearsExperienceRequired(int yearsExperienceRequired) {
+    this.yearsExperienceRequired = yearsExperienceRequired;
+  }
+
+  public void setModality(Modality modality) {
+    this.modality = modality;
+  }
+
+  public void setWorkload(Workload workload) {
+    this.workload = workload;
+  }
+
+  public void setImageUrl(String imageUrl) {
+    this.imageUrl = imageUrl;
+  }
+
+  public void setStatus(JobStatus status) {
+    this.status = status;
+  }
+
+  public void setPublishedAt(LocalDateTime publishedAt) {
+    this.publishedAt = publishedAt;
   }
 }

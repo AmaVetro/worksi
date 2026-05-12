@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { requestRecoveryCode } from "../../services/passwordRecoveryService";
 import "../../styles/Recovery.css";
@@ -8,13 +8,6 @@ export default function RecoveryForgot() {
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState(location.state?.email ?? "");
-
-  useEffect(() => {
-    const next = location.state?.email;
-    if (typeof next === "string" && next.length > 0) {
-      setEmail(next);
-    }
-  }, [location.state?.email]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
