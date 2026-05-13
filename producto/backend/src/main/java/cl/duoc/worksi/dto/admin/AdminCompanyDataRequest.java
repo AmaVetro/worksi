@@ -15,6 +15,9 @@ public class AdminCompanyDataRequest {
   @JsonProperty("address")
   private String address;
 
+  @JsonProperty("corporate_email")
+  private String corporateEmail;
+
   @JsonProperty("rut")
   private String rut;
 
@@ -60,6 +63,14 @@ public class AdminCompanyDataRequest {
 
   public void setAddress(String address) {
     this.address = address;
+  }
+
+  public String getCorporateEmail() {
+    return corporateEmail;
+  }
+
+  public void setCorporateEmail(String corporateEmail) {
+    this.corporateEmail = corporateEmail;
   }
 
   public String getRut() {

@@ -12,7 +12,7 @@ class HomeViewModel : ViewModel() {
             id = 1,
             title = "Desarrollador Backend",
             company = "Google",
-            location = "Santiago",
+            communeName = "Providencia",
             modality = "Remoto",
             salary = 750000,
             experienceYears = 2,

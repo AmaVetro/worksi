@@ -18,7 +18,7 @@ export default function RecoveryLocked() {
       <div className="recovery-panel">
         <div className="recovery-inner" style={{ textAlign: "center" }}>
           <h1 className="recovery-logo">
-            Work<span>Sy</span>
+            Work<span>Sí</span>
           </h1>
           <p className="recovery-orange recovery-text">{primaryMessage}</p>
           <p className="recovery-text">Pulsa aquí:</p>

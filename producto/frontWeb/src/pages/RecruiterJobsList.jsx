@@ -25,23 +25,16 @@ export default function RecruiterJobsList() {
       <Navbar />
       <div className="home-container">
         <div className="home-content">
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 16,
-            }}
-          >
-            <h2 style={{ margin: 0, color: "#0f766e" }}>Ofertas publicadas</h2>
+          <div style={{ marginBottom: 16 }}>
             <button
               type="button"
-              className="primary-btn"
-              style={{ marginTop: 0 }}
-              onClick={() => navigate("/recruiter/ofertas/nueva")}
+              className="secondary-btn"
+              style={{ marginTop: 0, marginBottom: 12 }}
+              onClick={() => navigate("/recruiter/reclutamiento")}
             >
-              Crear oferta
+              Volver
             </button>
+            <h2 style={{ margin: 0, color: "#0f766e" }}>Ofertas publicadas</h2>
           </div>
           {error && <p style={{ color: "#b91c1c" }}>{error}</p>}
           <div className="recruitment-card" style={{ marginBottom: 12 }}>

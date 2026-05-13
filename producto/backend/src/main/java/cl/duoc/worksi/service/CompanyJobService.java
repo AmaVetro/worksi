@@ -5,11 +5,14 @@ import cl.duoc.worksi.dto.company.CompanyJobCreateRequest;
 import cl.duoc.worksi.dto.company.CompanyJobCreatedResponse;
 import cl.duoc.worksi.dto.company.CompanyJobDetailResponse;
 import cl.duoc.worksi.dto.company.CompanyJobListItemResponse;
+import cl.duoc.worksi.dto.company.CompanyJobSkillItemResponse;
 import cl.duoc.worksi.dto.company.CompanyProfileImagePatchRequest;
 import cl.duoc.worksi.dto.company.CompanyProfileImageResponse;
+import cl.duoc.worksi.dto.company.RecruiterCompanyProfileResponse;
 import cl.duoc.worksi.entity.Company;
 import cl.duoc.worksi.entity.Job;
 import cl.duoc.worksi.entity.JobSkill;
+import cl.duoc.worksi.entity.Skill;
 import cl.duoc.worksi.entity.enums.JobStatus;
 import cl.duoc.worksi.entity.enums.Modality;
 import cl.duoc.worksi.entity.enums.Workload;
@@ -21,24 +24,39 @@ import cl.duoc.worksi.repository.RecruiterProfileRepository;
 import cl.duoc.worksi.repository.RegionRepository;
 import cl.duoc.worksi.repository.SkillRepository;
 import cl.duoc.worksi.util.JobSemanticText;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class CompanyJobService {
+  private static final Set<String> ALLOWED_JOB_IMAGE_TYPES = Set.of("image/png", "image/jpeg");
+
   private final RecruiterProfileRepository recruiterProfileRepository;
   private final CompanyRepository companyRepository;
   private final JobRepository jobRepository;
@@ -46,6 +64,9 @@ public class CompanyJobService {
   private final RegionRepository regionRepository;
   private final CommuneRepository communeRepository;
   private final SkillRepository skillRepository;
+  private final Path companyImageBaseDir;
+  private final Path jobImageBaseDir;
+  private final ObjectMapper objectMapper;
 
   public CompanyJobService(
       RecruiterProfileRepository recruiterProfileRepository,
@@ -54,7 +75,10 @@ public class CompanyJobService {
       JobSkillRepository jobSkillRepository,
       RegionRepository regionRepository,
       CommuneRepository communeRepository,
-      SkillRepository skillRepository) {
+      SkillRepository skillRepository,
+      ObjectMapper objectMapper,
+      @Value("${worksi.storage.company-images}") String companyImagesDir,
+      @Value("${worksi.storage.job-images}") String jobImagesDir) {
     this.recruiterProfileRepository = recruiterProfileRepository;
     this.companyRepository = companyRepository;
     this.jobRepository = jobRepository;
@@ -62,6 +86,81 @@ public class CompanyJobService {
     this.regionRepository = regionRepository;
     this.communeRepository = communeRepository;
     this.skillRepository = skillRepository;
+    this.objectMapper = objectMapper;
+    this.companyImageBaseDir = Path.of(companyImagesDir);
+    this.jobImageBaseDir = Path.of(jobImagesDir);
+  }
+
+  public ResponseEntity<?> getRecruiterCompanyProfile(long recruiterUserId) {
+    var profile =
+        recruiterProfileRepository
+            .findById(recruiterUserId)
+            .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN));
+    Company company =
+        companyRepository
+            .findById(profile.getCompanyId())
+            .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(HttpStatus.NOT_FOUND));
+    String raw = company.getImageUrl();
+    String trimmed = raw == null ? "" : raw.trim();
+    String external = null;
+    boolean hasProtected = false;
+    if (!trimmed.isEmpty()) {
+      String lower = trimmed.toLowerCase(Locale.ROOT);
+      if (lower.startsWith("http://") || lower.startsWith("https://")) {
+        external = trimmed;
+      } else {
+        hasProtected = true;
+      }
+    }
+    return ResponseEntity.ok(
+        new RecruiterCompanyProfileResponse(
+            company.getId(),
+            company.getCommercialName(),
+            company.getCorporateEmail(),
+            external,
+            hasProtected));
+  }
+
+  public ResponseEntity<?> getRecruiterCompanyProfileImage(long recruiterUserId) {
+    var profile =
+        recruiterProfileRepository
+            .findById(recruiterUserId)
+            .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN));
+    Company company =
+        companyRepository
+            .findById(profile.getCompanyId())
+            .orElseThrow(() -> new org.springframework.web.server.ResponseStatusException(HttpStatus.NOT_FOUND));
+    String raw = company.getImageUrl();
+    if (raw == null || raw.isBlank()) {
+      return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Imagen no disponible");
+    }
+    String trimmed = raw.trim();
+    String lower = trimmed.toLowerCase(Locale.ROOT);
+    if (lower.startsWith("http://") || lower.startsWith("https://")) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Imagen externa no descargable por este endpoint");
+    }
+    Path base = companyImageBaseDir.toAbsolutePath().normalize();
+    Path file = Path.of(trimmed).toAbsolutePath().normalize();
+    if (!file.startsWith(base)) {
+      return err(HttpStatus.FORBIDDEN, "FORBIDDEN", "Ruta de imagen no permitida");
+    }
+    if (!Files.isRegularFile(file)) {
+      return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Archivo de imagen no encontrado");
+    }
+    byte[] bytes;
+    try {
+      bytes = Files.readAllBytes(file);
+    } catch (IOException e) {
+      return err(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "No se pudo leer la imagen");
+    }
+    String name = file.getFileName().toString().toLowerCase(Locale.ROOT);
+    MediaType mt =
+        name.endsWith(".png")
+            ? MediaType.IMAGE_PNG
+            : (name.endsWith(".jpg") || name.endsWith(".jpeg"))
+                ? MediaType.IMAGE_JPEG
+                : MediaType.APPLICATION_OCTET_STREAM;
+    return ResponseEntity.ok().contentType(mt).body(bytes);
   }
 
   @Transactional
@@ -84,7 +183,22 @@ public class CompanyJobService {
   }
 
   @Transactional
-  public ResponseEntity<?> createJob(long recruiterUserId, CompanyJobCreateRequest req) {
+  public ResponseEntity<?> createJob(long recruiterUserId, String dataJson, MultipartFile image) {
+    if (dataJson == null || dataJson.isBlank()) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Parte data obligatoria");
+    }
+    CompanyJobCreateRequest req;
+    try {
+      req = objectMapper.readValue(dataJson, CompanyJobCreateRequest.class);
+    } catch (IOException e) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "JSON data invalido");
+    }
+    if (image != null && !image.isEmpty()) {
+      String ct = image.getContentType();
+      if (ct == null || !ALLOWED_JOB_IMAGE_TYPES.contains(ct.toLowerCase(Locale.ROOT))) {
+        return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Imagen debe ser PNG o JPEG");
+      }
+    }
     var profile =
         recruiterProfileRepository
             .findById(recruiterUserId)
@@ -108,7 +222,6 @@ public class CompanyJobService {
     job.setCompanyCommercialName(req.getCompanyCommercialName().trim());
     job.setTitle(req.getTitle().trim());
     job.setDescription(req.getDescription().trim());
-    job.setCity(req.getCity().trim());
     job.setRegionId(req.getRegionId());
     job.setCommuneId(req.getCommuneId());
     job.setSalaryOffered(req.getSalaryOffered());
@@ -127,6 +240,22 @@ public class CompanyJobService {
     long jobId = job.getId();
     for (Long sid : new LinkedHashSet<>(req.getSkillsIds())) {
       jobSkillRepository.save(new JobSkill(jobId, sid));
+    }
+    if (image != null && !image.isEmpty()) {
+      try {
+        Files.createDirectories(jobImageBaseDir);
+        String ext =
+            image.getContentType().toLowerCase(Locale.ROOT).contains("png") ? ".png" : ".jpg";
+        String filename = jobId + "_" + UUID.randomUUID() + ext;
+        Path target = jobImageBaseDir.resolve(filename);
+        try (InputStream in = image.getInputStream()) {
+          Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
+        }
+        job.setImageUrl(target.toAbsolutePath().normalize().toString());
+        jobRepository.save(job);
+      } catch (IOException e) {
+        return err(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "No se pudo guardar la imagen");
+      }
     }
     Instant publishedInstant = publishedAt.atZone(ZoneOffset.UTC).toInstant();
     return ResponseEntity.status(HttpStatus.CREATED)
@@ -162,6 +291,48 @@ public class CompanyJobService {
     return ResponseEntity.ok(toDetail(job));
   }
 
+  public ResponseEntity<?> getMyJobImage(long recruiterUserId, long jobId) {
+    Optional<Job> opt = jobRepository.findById(jobId);
+    if (opt.isEmpty()) {
+      return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
+    }
+    Job job = opt.get();
+    if (job.getPublishedByUserId() == null || !job.getPublishedByUserId().equals(recruiterUserId)) {
+      return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
+    }
+    String raw = job.getImageUrl();
+    if (raw == null || raw.isBlank()) {
+      return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Imagen no disponible");
+    }
+    String trimmed = raw.trim();
+    String lower = trimmed.toLowerCase(Locale.ROOT);
+    if (lower.startsWith("http://") || lower.startsWith("https://")) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Imagen externa no descargable por este endpoint");
+    }
+    Path base = jobImageBaseDir.toAbsolutePath().normalize();
+    Path file = Path.of(trimmed).toAbsolutePath().normalize();
+    if (!file.startsWith(base)) {
+      return err(HttpStatus.FORBIDDEN, "FORBIDDEN", "Ruta de imagen no permitida");
+    }
+    if (!Files.isRegularFile(file)) {
+      return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Archivo de imagen no encontrado");
+    }
+    byte[] bytes;
+    try {
+      bytes = Files.readAllBytes(file);
+    } catch (IOException e) {
+      return err(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "No se pudo leer la imagen");
+    }
+    String name = file.getFileName().toString().toLowerCase(Locale.ROOT);
+    MediaType mt =
+        name.endsWith(".png")
+            ? MediaType.IMAGE_PNG
+            : (name.endsWith(".jpg") || name.endsWith(".jpeg"))
+                ? MediaType.IMAGE_JPEG
+                : MediaType.APPLICATION_OCTET_STREAM;
+    return ResponseEntity.ok().contentType(mt).body(bytes);
+  }
+
   private CompanyJobListItemResponse toListItem(Job job) {
     Instant published =
         job.getPublishedAt() != null
@@ -183,10 +354,38 @@ public class CompanyJobService {
   }
 
   private CompanyJobDetailResponse toDetail(Job job) {
-    List<Long> skillIds =
+    List<Long> skillIdsOrdered =
         jobSkillRepository.findAllByJobIdOrderBySkillName(job.getId()).stream()
             .map(js -> js.getId().getSkillId())
             .toList();
+    List<Skill> skRows =
+        skillIdsOrdered.isEmpty()
+            ? List.of()
+            : skillRepository.findAllActiveByIdIn(skillIdsOrdered);
+    Map<Long, String> idToName = new LinkedHashMap<>();
+    for (Skill s : skRows) {
+      idToName.put(s.getId(), s.getName());
+    }
+    List<CompanyJobSkillItemResponse> skillsOut =
+        skillIdsOrdered.stream()
+            .map(sid -> new CompanyJobSkillItemResponse(sid, idToName.getOrDefault(sid, "")))
+            .toList();
+    String regionName =
+        regionRepository.findById(job.getRegionId()).map(r -> r.getName()).orElse("");
+    String communeName =
+        communeRepository.findById(job.getCommuneId()).map(c -> c.getName()).orElse("");
+    String rawImg = job.getImageUrl();
+    String extImg = null;
+    boolean prot = false;
+    if (rawImg != null && !rawImg.isBlank()) {
+      String t = rawImg.trim();
+      String lower = t.toLowerCase(Locale.ROOT);
+      if (lower.startsWith("http://") || lower.startsWith("https://")) {
+        extImg = t;
+      } else {
+        prot = true;
+      }
+    }
     Instant published =
         job.getPublishedAt() != null
             ? job.getPublishedAt().atZone(ZoneOffset.UTC).toInstant()
@@ -196,17 +395,21 @@ public class CompanyJobService {
         job.getCompanyCommercialName(),
         job.getTitle(),
         job.getDescription(),
-        job.getCity(),
         job.getRegionId(),
         job.getCommuneId(),
+        regionName,
+        communeName,
         job.getSalaryOffered(),
         job.getYearsExperienceRequired(),
         job.getModality().name(),
         job.getWorkload().name(),
         job.getImageUrl(),
+        extImg,
+        prot,
         job.getStatus().name(),
         published,
-        skillIds);
+        skillIdsOrdered,
+        skillsOut);
   }
 
   private ResponseEntity<?> validateJobPayload(CompanyJobCreateRequest req) {
@@ -218,9 +421,6 @@ public class CompanyJobService {
     }
     if (req.getDescription() == null || req.getDescription().isBlank()) {
       return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "description obligatorio");
-    }
-    if (req.getCity() == null || req.getCity().isBlank()) {
-      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "city obligatorio");
     }
     if (req.getSalaryOffered() == null || req.getSalaryOffered() < 1) {
       return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "salary_offered invalido");

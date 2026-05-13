@@ -71,7 +71,7 @@ export default function RecoveryCode() {
         </button>
         <div className="recovery-inner">
           <h1 className="recovery-logo">
-            Work<span>Sy</span>
+            Work<span>Sí</span>
           </h1>
           <h2 className="recovery-title">Ingresa tu código</h2>
           <p className="recovery-hint">

@@ -241,7 +241,7 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 2
 
 2) HU-02 Alta empresa y reclutadores (no registro público empresa)
 - No existe POST público empresa en MVP web obligatorio ni rol COMPANY para login empresa.
-- Con ADMIN Bearer: POST /api/v1/admin/companies multipart (parte datos negocio según HU; sin correo/clave empresa).
+- Con ADMIN Bearer: POST /api/v1/admin/companies multipart (parte datos negocio según HU: incluye corporate_email obligatorio de contacto corporativo; sin clave ni cuenta de login empresa).
 - GET /api/v1/admin/companies para listado/desplegable al registrar reclutadores.
 - POST /api/v1/admin/recruiters con company_id existente, email reclutador, password bajo política (mínimo 10 caracteres;
   al menos una mayúscula, al menos una minúscula, al menos un símbolo y al menos un número), unicidad email y campos HU.
@@ -448,7 +448,7 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 5
   según Contrato Oficial del repositorio.
 - Campos obligatorios Contrato HU-15 Flujo Pantallas: company_commercial_name; title;
   description único texto largo (no hay tabla requirements persistida aparte ni segundo recuadro);
-  city; region_id y commune_id coherentes catálogo; salary_offered y years_experience_required obligatorios;
+  region_id y commune_id coherentes catálogo; salary_offered y years_experience_required obligatorios;
   modality y workload enums; skills_ids entre 3 y 8 en job_skills.
 - Opcional por oferta image_url/imagen archivo según Flujo Contrato si el equipo ya modela esa parte en Sprint 8 UI.
 - job_text construido en backend para IA concatena únicamente title + description + modality + workload (no incluye skills,

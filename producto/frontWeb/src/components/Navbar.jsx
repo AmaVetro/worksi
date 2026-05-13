@@ -9,6 +9,16 @@ function readUser() {
   }
 }
 
+function recruiterFullName(user) {
+  if (!user || typeof user !== "object") return "";
+  const parts = [
+    user.first_name,
+    user.last_name_paternal,
+    user.last_name_maternal,
+  ].filter((x) => typeof x === "string" && x.trim() !== "");
+  return parts.join(" ").trim();
+}
+
 function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -36,11 +46,11 @@ function Navbar() {
       <div className="navbar-container">
         <div className="navbar-top">
           <h2 className="logo">
-            Work<span>Sy</span>
+            Work<span>Sí</span>
           </h2>
           <div className="user-section">
             <span>
-              {roleLabel} · {user.email || ""}
+              {roleLabel} · {recruiterFullName(user) || user.email || ""}
             </span>
             <button type="button" onClick={handleLogout}>
               Cerrar sesión
@@ -75,7 +85,7 @@ function Navbar() {
     <div className="navbar-container">
       <div className="navbar-top">
         <h2 className="logo">
-          Work<span>Sy</span>
+          Work<span>Sí</span>
         </h2>
         <div className="user-section">
           <span>

@@ -15,12 +15,16 @@ public class AdminCompanyListItem {
   @JsonProperty("rut")
   private final String rut;
 
+  @JsonProperty("corporate_email")
+  private final String corporateEmail;
+
   public AdminCompanyListItem(
-      long companyId, String commercialName, String legalName, String rut) {
+      long companyId, String commercialName, String legalName, String rut, String corporateEmail) {
     this.companyId = companyId;
     this.commercialName = commercialName;
     this.legalName = legalName;
     this.rut = rut;
+    this.corporateEmail = corporateEmail;
   }
 
   public long getCompanyId() {
@@ -37,5 +41,9 @@ public class AdminCompanyListItem {
 
   public String getRut() {
     return rut;
+  }
+
+  public String getCorporateEmail() {
+    return corporateEmail;
   }
 }

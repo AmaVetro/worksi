@@ -141,7 +141,7 @@ curl -s -X POST "$BASE/api/v1/auth/login" -H "Content-Type: application/json" -d
 **Crear empresa** (parte `data` JSON; `region_id`, `commune_id`, `sector_id` deben existir en BD, comuna coherente con region; `rut` chileno valido):
 
 ```powershell
-curl -s -X POST "$BASE/api/v1/admin/companies" -H "Authorization: Bearer TOKEN_ADMIN" -F "data={\"commercial_name\":\"Empresa Demo\",\"legal_name\":\"Empresa Demo SPA\",\"phone\":\"+56912345678\",\"address\":\"Calle 123\",\"rut\":\"76123456-7\",\"region_id\":7,\"commune_id\":XX,\"sector_id\":1,\"worker_count_approx\":10};type=application/json"
+curl -s -X POST "$BASE/api/v1/admin/companies" -H "Authorization: Bearer TOKEN_ADMIN" -F "data={\"commercial_name\":\"Empresa Demo\",\"legal_name\":\"Empresa Demo SPA\",\"phone\":\"+56912345678\",\"corporate_email\":\"contacto@empresademo.cl\",\"address\":\"Calle 123\",\"rut\":\"76123456-7\",\"region_id\":7,\"commune_id\":XX,\"sector_id\":1,\"worker_count_approx\":10};type=application/json"
 ```
 
 Sustituir `commune_id` por un id valido para esa region (por ejemplo tras `GET /api/v1/catalogs/regions` y `GET /api/v1/catalogs/regions/{id}/communes`). La respuesta **201** incluye `company_id`.

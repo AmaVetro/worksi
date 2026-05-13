@@ -1,14 +1,6 @@
 CONTRATO UNIFICADO DE INTEGRACION - WORKSI
-Version: 1.7
+Version: 1.11
 Estado: Oficial para desarrollo paralelo (Backend + Web + Android)
-Fecha base: 2026-04-25
-Cambio 1.2 (2026-04-27): Registro candidato en un unico paso al aceptar consentimiento en pantalla "Uso de datos" (sin sesion de borrador ni rutas /onboarding/candidate/*).
-Cambio 1.3 (2026-04-30): Flujo web empresa segun Flujo Pantallas App Web: alta empresa y alta reclutador por administrador (POST /api/v1/admin/companies y POST /api/v1/admin/recruiters, GET /api/v1/admin/companies); registro publico empresa desalineado con MVP web; oferta sin campo requirements; company_commercial_name y salary_offered y years_experience_required obligatorios en creacion de oferta; rutas /api/v1/company/* operadas solo por RECRUITER. Ver detalle en secciones actualizadas.
-Cambio 1.4 (2026-04-30): Tres roles de aplicacion unicamente CANDIDATE, ADMIN, RECRUITER. No existe cuenta de usuario empresa (rol COMPANY ni SYSTEM_ADMIN eliminados de JWT): la empresa es fila en tabla companies sin login; ADMIN da de alta empresa (datos negocio) y reclutadores vinculados a company_id; RECRUITER reemplaza a COMPANY en sesion empresa web.
-Cambio 1.5 (2026-04-30): Documentacion solo: contraseña persistida unicamente como password_hash para usuarios candidato, admin y reclutador; sin contraseña en alta empresa por panel; ADMIN inicial por migracion Flyway (bcrypt) sin publicar texto claro aqui.
-Cambio 1.6 (2026-05-02): Politica de contraseña unificada en documentacion: minimo 10 caracteres; al menos una mayuscula, una minuscula, un numero y un simbolo. Ejemplos JSON actualizados a contraseña de muestra que cumple la politica.
-Cambio 1.7 (2026-05-02): Recuperacion de contraseña en MVP — regla de producto consolidada en seccion dedicada: bloqueo a 4 intentos real; sin codigo OTP entregado al usuario; pasos previos solo maqueta UI; solo el paso de nueva contraseña persiste en backend (alineado a Flujo Pantallas App Móvil, Flujo Pantallas App Web y demas workflow).
-
 
 
 OBJETIVO
@@ -192,13 +184,14 @@ ENDPOINTS DE AUTENTICACION
 - Auth: Bearer ADMIN
 - Content-Type: multipart/form-data; charset=UTF-8
 - Partes (nombres oficiales):
-  - "data" (string JSON, application/json en la parte): obligatorio, perfil empresa (sin email ni contrasena para la empresa; la empresa no es cuenta de usuario).
+  - "data" (string JSON, application/json en la parte): obligatorio, perfil empresa (corporate_email obligatorio de contacto corporativo; sin contrasena ni cuenta de login para la empresa; la empresa no es cuenta de usuario).
   - "image" (binario, opcional): imagen empresa (ej. PNG).
 - Cuerpo logico JSON en parte "data":
 {
   "commercial_name": "Empresa X",
   "legal_name": "Empresa X SPA",
   "phone": "+56912345678",
+  "corporate_email": "contacto@empresax.cl",
   "address": "Av. Ejemplo 123, Oficina 4",
   "rut": "76123456-7",
   "region_id": 7,
@@ -206,7 +199,7 @@ ENDPOINTS DE AUTENTICACION
   "sector_id": 1,
   "worker_count_approx": 50
 }
-- Validaciones: RUT valido y formato UI, comuna-region consistente, commercial_name legal_name phone address obligatorios; image opcional.
+- Validaciones: RUT valido y formato UI, comuna-region consistente, commercial_name legal_name phone corporate_email address obligatorios; corporate_email formato email valido (max 254); image opcional.
 - Response 201:
 {
   "company_id": 201
@@ -217,7 +210,7 @@ ENDPOINTS DE AUTENTICACION
 - GET /api/v1/admin/companies?page=1&size=20&sort=created_at,desc
 - Auth: Bearer ADMIN
 - Response 200 (formato paginado estandar):
-- items minimos por fila para desplegable "Registrar reclutadores": company_id, commercial_name (y opcionalmente legal_name, rut).
+- items minimos por fila para desplegable "Registrar reclutadores": company_id, commercial_name, corporate_email (y opcionalmente legal_name, rut).
 
 
 2.3) Alta reclutador (administrador del sistema) — Flujo web MVP
@@ -275,6 +268,16 @@ ENDPOINTS DE AUTENTICACION
   }
 }
 - El campo user.role puede ser CANDIDATE, ADMIN o RECRUITER. El cliente web usa este valor para redirigir a portal administrador o a dashboard reclutador.
+- Para role RECRUITER, el objeto user incluye ademas (snake_case, tomados de recruiter_profiles): first_name, last_name_paternal, last_name_maternal. En roles ADMIN y CANDIDATE esos campos se omiten en JSON si no aplican (no romper id, role, email minimos).
+- Ejemplo user en login RECRUITER:
+{
+  "id": 301,
+  "role": "RECRUITER",
+  "email": "reclutador@dominio.cl",
+  "first_name": "Ana",
+  "last_name_paternal": "Rojas",
+  "last_name_maternal": "Soto"
+}
 - Reglas:
   - al 4to intento fallido: bloqueo.
   - retornar BUSINESS_RULE_VIOLATION con code de bloqueo.
@@ -365,6 +368,33 @@ Recuperacion de contraseña — regla de producto MVP (móvil CANDIDATE y web AD
 }
 
 
+7.2) Perfil empresa del reclutador (lectura)
+- GET /api/v1/company/profile
+- Auth: RECRUITER
+- Response 200:
+{
+  "company_id": 201,
+  "commercial_name": "Empresa Demo SPA",
+  "corporate_email": "contacto@empresademo.cl",
+  "external_image_url": "https://cdn.ejemplo.cl/logo.png",
+  "has_protected_image": false
+}
+- Reglas:
+  - commercial_name corresponde a companies.commercial_name de la empresa vinculada al reclutador (recruiter_profiles.company_id).
+  - corporate_email corresponde a companies.corporate_email (correo corporativo de contacto de la ficha empresa dado de alta por ADMIN).
+  - Si companies.image_url es URL absoluta http o https, va en external_image_url y has_protected_image es false (el cliente puede usar esa URL directamente).
+  - Si companies.image_url es ruta de archivo bajo el directorio configurado worksi.storage.company-images (caso tipico tras alta empresa con imagen por POST /api/v1/admin/companies), external_image_url es null y has_protected_image es true; el binario se obtiene con GET /api/v1/company/profile/image (misma sesion, Authorization Bearer).
+  - Si no hay imagen configurada: external_image_url null y has_protected_image false.
+
+
+7.3) Imagen de empresa almacenada en disco (lectura binaria)
+- GET /api/v1/company/profile/image
+- Auth: RECRUITER
+- Response 200: cuerpo binario; Content-Type image/png o image/jpeg segun extension del archivo.
+- Reglas:
+  - Solo cuando la imagen de la empresa del reclutador es archivo local permitido bajo worksi.storage.company-images (ruta resuelta debe quedar bajo ese directorio en el servidor).
+  - Si la empresa solo tiene URL externa en image_url, este endpoint no sustituye a un proxy de terceros: responder error de negocio (p. ej. 400) o 404 segun implementacion; el cliente debe usar external_image_url de GET /api/v1/company/profile.
+  - Si no hay archivo valido: 404.
 
 
 CATALOGOS (AMBOS FRONTENDS)
@@ -491,12 +521,15 @@ OFERTAS (EMPRESA)
 - POST /api/v1/company/jobs
 - Auth: RECRUITER
 - Recruiter: solo puede crear ofertas para su company_id asociado (derivada de recruiter_profiles o regla equivalente en backend).
-- Request:
+- Content-Type: multipart/form-data
+- Form-data:
+  - data (string JSON, application/json en la parte): cuerpo logico de la oferta (mismos campos que antes en JSON monolitico). obligatorio.
+  - image (binario, PNG o JPEG): imagen de la oferta. opcional (misma idea que imagen opcional en POST /api/v1/admin/companies).
+- Ejemplo de JSON en parte data:
 {
   "company_commercial_name": "Empresa X",
   "title": "Desarrollador Backend Java",
   "description": "Descripcion completa (unico texto largo; no hay campo requirements separado)",
-  "city": "Santiago",
   "region_id": 7,
   "commune_id": 77,
   "salary_offered": 1400000,
@@ -506,8 +539,12 @@ OFERTAS (EMPRESA)
   "skills_ids": [1,2,3],
   "image_url": null
 }
-- Validaciones:
-  - company_commercial_name, title, description, city, region_id, commune_id, salary_offered, years_experience_required, modality, workload obligatorios; image_url opcional.
+- Reglas imagen:
+  - Si parte image viene con archivo no vacio: debe ser PNG o JPEG; el backend guarda bajo worksi.storage.job-images (por defecto bajo el mismo arbol que WORKSI_CV_STORAGE_DIR en Docker: subcarpeta job-images) y persiste en jobs.image_url la ruta absoluta del archivo (mismo criterio operativo que imagen de empresa en alta admin).
+  - Si no hay parte image: opcionalmente image_url en el JSON puede ser URL http(s) u omitirse/null sin imagen.
+  - Si hay parte image, esta tiene prioridad sobre image_url del JSON para lo que quede guardado en jobs.image_url.
+- Validaciones (sobre JSON data):
+  - company_commercial_name, title, description, region_id, commune_id, salary_offered, years_experience_required, modality, workload obligatorios; image_url en JSON opcional si no hay archivo.
   - skills_ids entre 3 y 8 (y minimo 3, alineado a Flujo Pantallas App Web).
 - No enviar ni persistir requirements.
 - Regla estado:
@@ -528,6 +565,48 @@ OFERTAS (EMPRESA)
 - Auth: RECRUITER
 - Regla autorizacion:
   - solo accede al job_id si la oferta fue publicada por ese mismo reclutador (titular RECRUITER de la sesion).
+- Response 200 (ejemplo; alineado a creacion multipart seccion 17 cuando hay imagen de archivo en disco):
+{
+  "id": 5001,
+  "company_commercial_name": "Empresa X",
+  "title": "Desarrollador Backend Java",
+  "description": "Texto completo de la oferta",
+  "region_id": 7,
+  "commune_id": 77,
+  "region_name": "Metropolitana de Santiago",
+  "commune_name": "Maipu",
+  "salary_offered": 1400000,
+  "years_experience_required": 2,
+  "modality": "HYBRID",
+  "workload": "FULL_TIME",
+  "image_url": "/ruta/absoluta/job-images/5001_uuid.jpg",
+  "external_image_url": null,
+  "has_protected_image": true,
+  "status": "ACTIVE",
+  "published_at": "2026-04-25T03:40:00Z",
+  "skills_ids": [79, 77, 83],
+  "skills": [
+    { "id": 79, "name": "Desarrollo de software" },
+    { "id": 77, "name": "Integracion de APIs REST" },
+    { "id": 83, "name": "Bases de datos relacionales" }
+  ]
+}
+- Notas:
+  - region_name y commune_name: nombres legibles desde catalogos; si no hubiera fila asociada pueden ser cadena vacia.
+  - skills: lista con id y name por skill de la oferta (orden alfabetico por nombre); skills_ids se mantiene por compatibilidad.
+  - Imagen: image_url es el valor persistido (URL http(s) o ruta absoluta bajo worksi.storage.job-images). external_image_url y has_protected_image siguen la misma idea que GET /api/v1/company/profile (seccion 7.2): URL externa en external_image_url y has_protected_image false; archivo en disco con has_protected_image true y external_image_url null; en ese caso el cliente obtiene el binario con GET /api/v1/company/jobs/{job_id}/image (Authorization Bearer).
+
+
+19.1) Imagen de oferta almacenada en disco (lectura binaria)
+- GET /api/v1/company/jobs/{job_id}/image
+- Auth: RECRUITER
+- Reglas:
+  - Misma titularidad que GET /api/v1/company/jobs/{job_id}: solo el reclutador publicador de la oferta.
+  - Solo cuando jobs.image_url apunta a archivo local permitido bajo worksi.storage.job-images (ruta normalizada debe quedar bajo ese directorio).
+  - Si jobs.image_url es solo URL http(s) externa: no se sirve aqui; el cliente usa external_image_url del detalle.
+- Response 200: cuerpo binario; Content-Type image/png o image/jpeg segun extension del archivo.
+- Si no hay archivo valido o no aplica: 404 (o error de negocio acorde a implementacion).
+
 
 OFERTAS (CANDIDATO)
 
@@ -736,10 +815,13 @@ MATRIZ DE AUTORIZACION
   - GET /api/v1/candidate/applications/{application_id}
 - RECRUITER (Bearer access_token rol RECRUITER):
   - GET /api/v1/auth/me
+  - GET /api/v1/company/profile
+  - GET /api/v1/company/profile/image
   - PATCH /api/v1/company/profile/image
   - POST /api/v1/company/jobs
   - GET /api/v1/company/jobs
   - GET /api/v1/company/jobs/{job_id}
+  - GET /api/v1/company/jobs/{job_id}/image
   - GET /api/v1/company/jobs/{job_id}/applications
   - PATCH /api/v1/company/applications/{application_id}/viewed
 
@@ -749,10 +831,12 @@ MATRIZ DE AUTORIZACION
 CHECKLIST DE INTEGRACION FINAL
 - Login candidato, reclutador y administrador operativos con JWT y POST /api/v1/auth/login (roles CANDIDATE, RECRUITER, ADMIN; sin usuario empresa ni rol COMPANY).
 - Registro candidato: un solo POST /api/v1/auth/register/candidate (multipart: data JSON + file PDF) con consent_given=true y todos los datos de identidad, perfil, skills y preferencias; consentimiento en "Uso de datos"; JWT CANDIDATE en la respuesta.
-- Web MVP empresa: alta empresa (solo datos negocio company_id, sin login empresa) POST /api/v1/admin/companies (multipart) con ADMIN; listado GET /api/v1/admin/companies; alta reclutador POST /api/v1/admin/recruiters con company_id; login reclutador con mismo POST /api/v1/auth/login que admin.
+- Web MVP empresa: alta empresa (datos negocio company_id, corporate_email obligatorio en ficha; sin login empresa) POST /api/v1/admin/companies (multipart) con ADMIN; listado GET /api/v1/admin/companies; alta reclutador POST /api/v1/admin/recruiters con company_id; login reclutador con mismo POST /api/v1/auth/login que admin (respuesta user con nombres para RECRUITER segun contrato).
+- Lectura ficha empresa en sesion reclutador: GET /api/v1/company/profile (incluye commercial_name y corporate_email); imagen en disco: GET /api/v1/company/profile/image cuando has_protected_image.
 - Endpoint historico POST /api/v1/auth/register/company fuera del contrato MVP (ver seccion registro empresa no MVP).
 - CV PDF <= 1MB validado y almacenado.
-- Oferta creada con company_commercial_name, sin requirements, salary_offered y years_experience_required obligatorios, skills 3..8.
+- Oferta creada con POST /api/v1/company/jobs multipart (data JSON + image opcional PNG/JPEG), company_commercial_name, sin requirements, salary_offered y years_experience_required obligatorios, skills 3..8.
+- Detalle oferta reclutador GET /api/v1/company/jobs/{job_id} con region_name, commune_name, skills (id y name) y campos de imagen external_image_url / has_protected_image; imagen en disco con GET /api/v1/company/jobs/{job_id}/image cuando has_protected_image.
 - Feed candidato sin repeticion de ofertas.
 - Swipe PASS/APPLY funcionando.
 - Postulacion APPLIED creada solo al confirmar.

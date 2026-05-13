@@ -10,7 +10,7 @@ export default function RecoveryConfirm() {
       <div className="recovery-panel">
         <div className="recovery-inner" style={{ textAlign: "center" }}>
           <h1 className="recovery-logo">
-            Work<span>Sy</span>
+            Work<span>Sí</span>
           </h1>
           <h2 className="recovery-title">Confirma en tu bandeja</h2>
           <p className="recovery-text">

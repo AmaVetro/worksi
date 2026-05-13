@@ -36,6 +36,9 @@ public class Company {
   @Column(nullable = false, length = 280)
   private String address;
 
+  @Column(name = "corporate_email", nullable = false, length = 254)
+  private String corporateEmail;
+
   @Column(name = "sector_id", nullable = false)
   private Long sectorId;
 
@@ -85,6 +88,10 @@ public class Company {
     this.address = address;
   }
 
+  public void setCorporateEmail(String corporateEmail) {
+    this.corporateEmail = corporateEmail;
+  }
+
   public void setSectorId(Long sectorId) {
     this.sectorId = sectorId;
   }
@@ -123,6 +130,10 @@ public class Company {
 
   public String getAddress() {
     return address;
+  }
+
+  public String getCorporateEmail() {
+    return corporateEmail;
   }
 
   public Long getSectorId() {

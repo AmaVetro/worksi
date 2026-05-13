@@ -167,7 +167,7 @@ fun JobOfferCard(offer: JobOffer) {
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "${offer.location} · ${offer.modality}",
+                        text = "${offer.communeName} · ${offer.modality}",
                         fontSize = 16.sp,
                         color = Color.Gray
                     )

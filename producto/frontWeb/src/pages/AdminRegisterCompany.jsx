@@ -15,6 +15,7 @@ function emptyErrors() {
     commercial_name: "",
     legal_name: "",
     phone: "",
+    corporate_email: "",
     address: "",
     region_id: "",
     commune_id: "",
@@ -34,6 +35,7 @@ export default function AdminRegisterCompany() {
     commercial_name: "",
     legal_name: "",
     phone: "",
+    corporate_email: "",
     address: "",
     commune_id: "",
     sector_id: "",
@@ -82,6 +84,12 @@ export default function AdminRegisterCompany() {
     check("commercial_name");
     check("legal_name");
     check("phone");
+    check("corporate_email");
+    const ce = String(form.corporate_email ?? "").trim();
+    if (ce && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ce)) {
+      e.corporate_email = "Correo no válido";
+      ok = false;
+    }
     check("address");
     if (!regionId) {
       e.region_id = "Completa este campo";
@@ -108,6 +116,7 @@ export default function AdminRegisterCompany() {
         commercial_name: form.commercial_name.trim(),
         legal_name: form.legal_name.trim(),
         phone: form.phone.trim(),
+        corporate_email: form.corporate_email.trim(),
         address: form.address.trim(),
         rut: form.rut.trim(),
         region_id: Number(regionId),
@@ -181,6 +190,18 @@ export default function AdminRegisterCompany() {
                 />
                 {fieldErrors.phone && (
                   <span className="error-field">{fieldErrors.phone}</span>
+                )}
+              </label>
+              <label className="full">
+                Correo corporativo
+                <input
+                  type="email"
+                  autoComplete="email"
+                  value={form.corporate_email}
+                  onChange={(e) => setField("corporate_email", e.target.value)}
+                />
+                {fieldErrors.corporate_email && (
+                  <span className="error-field">{fieldErrors.corporate_email}</span>
                 )}
               </label>
               <label className="full">

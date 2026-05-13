@@ -42,18 +42,18 @@ Pantalla "Portal administración sistema":
 Pantalla "Registrar empresa" (desde el portal del administrador):
 - Quien usa el formulario debe haber iniciado sesión como administrador del sistema.
 - La empresa queda registrada solo como dato de negocio (ficha empresa) para poder vincular reclutadores; no se crea un usuario con rol de empresa ni credenciales de acceso para la empresa.
-- Campos obligatorios: rut (formato sin puntos con guión), nombre comercial, razón social, teléfono de contacto, dirección, región (desplegable alimentado con GET /api/v1/catalogs/regions), comuna (desplegable alimentado con GET /api/v1/catalogs/regions/{region_id}/communes, solo comunas de la región elegida), sector o ámbito (GET /api/v1/catalogs/sectors), N° de trabajadores (aprox).
+- Campos obligatorios: rut (formato sin puntos con guión), nombre comercial, razón social, teléfono de contacto, correo corporativo de la empresa (contacto de la ficha; no es credencial de login), dirección, región (desplegable alimentado con GET /api/v1/catalogs/regions), comuna (desplegable alimentado con GET /api/v1/catalogs/regions/{region_id}/communes, solo comunas de la región elegida), sector o ámbito (GET /api/v1/catalogs/sectors), N° de trabajadores (aprox).
 - Campo opcional: imagen de empresa (archivo, por ejemplo PNG).
 - Si falta un obligatorio: no avanzar; mensaje rojo por campo "Completa este campo".
 - Botón "Registrar" → POST /api/v1/admin/companies (si hay imagen adjunta, incluirla en el mismo envío que defina ese endpoint). Tras éxito: mensaje "Registro de empresa exitoso" con OK → vuelta a "Portal administración sistema".
 - Roles de cuenta en el sistema (para login JWT): solo CANDIDATE, ADMIN y RECRUITER.
-- Cambio de imagen de empresa con sesión de reclutador: PATCH /api/v1/company/profile/image
+- Cambio de imagen de empresa con sesión de reclutador: PATCH /api/v1/company/profile/image. Lectura de nombre comercial, correo corporativo de la ficha e indicadores de imagen de la empresa vinculada al reclutador: GET /api/v1/company/profile; si aplica archivo local bajo almacen company-images, obtencion del binario: GET /api/v1/company/profile/image (Authorization Bearer).
 
 
 
 Pantalla "Registrar reclutadores" (desde el portal del administrador):
 - Quien usa el formulario debe haber iniciado sesión como administrador del sistema.
-- Campos obligatorios: nombre, apellido paterno, apellido materno, rut (formato sin puntos con guión), correo de acceso, contraseña (política obligatoria del sistema; mismo criterio que en pantalla “Nueva contraseña” de recuperación), celular, empresa (desplegable de empresas ya dadas de alta; listado con GET /api/v1/admin/companies?page=1&size=20 u otros valores de página y tamaño que use el listado), fecha de nacimiento.
+- Campos obligatorios: nombre, apellido paterno, apellido materno, rut (formato sin puntos con guión), correo de acceso, contraseña (política obligatoria del sistema; mismo criterio que en pantalla “Nueva contraseña” de recuperación), celular, empresa (desplegable de empresas ya dadas de alta; listado con GET /api/v1/admin/companies?page=1&size=20 u otros valores de página y tamaño que use el listado; items incluyen commercial_name y corporate_email según Contrato), fecha de nacimiento.
 - Campo opcional: teléfono.
 - Si falta un obligatorio: mensaje rojo "Completa este campo".
 - Botón "Registrar" → POST /api/v1/admin/recruiters. Tras éxito: "Registro de reclutador exitoso" con OK → "Portal administración sistema".
@@ -61,10 +61,10 @@ Pantalla "Registrar reclutadores" (desde el portal del administrador):
 
 
 Pantalla "Inicio" (sesión de reclutador de empresa):
-- Dashboard. Menú de usuario arriba a la derecha con “Cerrar sesión”.
+- Dashboard. Menú de usuario arriba a la derecha con “Cerrar sesión”; en la cabecera se muestra el rol y el nombre completo del reclutador (nombre y dos apellidos) obtenidos de la respuesta de POST /api/v1/auth/login en el objeto user (first_name, last_name_paternal, last_name_maternal) cuando existan; si no hubiera esos datos persistidos, puede usarse el correo como respaldo de UX.
 - Comprobar sesión activa: GET /api/v1/auth/me
 - Cabecera navegable: Inicio / Reclutamiento.
-- Bloque con imagen y nombre de la empresa y el rol del usuario (reclutador de esa empresa).
+- Bloque con imagen y nombre comercial de la empresa vinculada al reclutador: GET /api/v1/company/profile (commercial_name, corporate_email, external_image_url, has_protected_image); si has_protected_image es true, cargar la imagen con GET /api/v1/company/profile/image (misma sesión, Authorization Bearer); si external_image_url no es null, puede mostrarse esa URL directamente. Complemento: datos del usuario reclutador (correo y rol) en el mismo bloque o debajo según diseño.
 - Bloque “Ofertas publicadas” con número y botón “Ir a ver” → pantalla “Ofertas publicadas”. Carga: GET /api/v1/company/jobs?page=1&size=20&sort=created_at,desc
 - Bloque “Postulaciones” con número y botón “Ver postulaciones” → pantalla “Postulaciones de postulantes”. Carga por oferta: GET /api/v1/company/jobs/{job_id}/applications?page=1&size=20&sort=match_score,desc
 
@@ -82,7 +82,7 @@ Pantalla “Ofertas Publicadas”:
 
 
 Pantalla “Vista Oferta”:
-- Detalle de la oferta: GET /api/v1/company/jobs/{job_id}
+- Detalle de la oferta: GET /api/v1/company/jobs/{job_id}. La respuesta incluye nombres legibles region_name y commune_name, lista skills con id y name, y para la imagen de la oferta los mismos criterios que la ficha empresa: external_image_url si la imagen es URL http(s), o has_protected_image true si esta guardada como archivo en servidor; en ese ultimo caso el cliente debe cargar el binario con GET /api/v1/company/jobs/{job_id}/image (Authorization Bearer) para mostrarla (por ejemplo debajo del titulo en la UI). Si no hay imagen, no se muestra bloque de imagen.
 - Listado de postulantes de esa oferta con información básica y porcentaje de emparejamiento, orden de mayor a menor porcentaje: GET /api/v1/company/jobs/{job_id}/applications?page=1&size=20&sort=match_score,desc
 - Por fila, “Ver Postulante” → pantalla “Perfil postulantes” (mismos datos del listado anterior).
 
@@ -93,15 +93,15 @@ Pantalla “Crear Oferta”:
 - Nombre comercial de la empresa (obligatorio; puede precargarse con el nombre comercial de la empresa en sesión; no puede quedar vacío al publicar).
 - Título de la oferta (obligatorio).
 - Descripción de la oferta (obligatorio; único recuadro de texto largo para describir la oferta; no hay un segundo recuadro solo para “requisitos”).
-- Ciudad y comuna (obligatorios).
+- Región y comuna del catálogo (obligatorios).
 - Sueldo ofrecido (obligatorio).
 - Años de experiencia solicitados (obligatorio).
 - Skills (obligatorio; elegir al menos 3).
 - Modalidad: Remoto, Híbrido o Presencial (obligatorio).
 - Carga horaria: Full Time, Part Time u Otro (obligatorio).
-- Imagen de la oferta (opcional).
+- Imagen de la oferta (opcional; archivo PNG o JPEG desde el equipo, no URL pegada en MVP web).
 - Todo lo anterior es obligatorio salvo la imagen. Si falta algo, mismo criterio de mensajes rojos "Completa este campo" donde corresponda.
-- Botón “Publicar” → confirmación; al confirmar → POST /api/v1/company/jobs
+- Botón “Publicar” → confirmación; al confirmar → POST /api/v1/company/jobs en multipart/form-data (parte data JSON con los campos de la oferta y parte image opcional con el archivo), alineado al Contrato Unificado API.
 
 
 

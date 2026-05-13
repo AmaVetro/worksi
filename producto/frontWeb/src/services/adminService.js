@@ -30,6 +30,7 @@ export async function listCompanies(page = 1, size = 50) {
       const name = c.commercial_name ?? c.commercialName ?? "";
       const legal = c.legal_name ?? c.legalName ?? "";
       const rut = c.rut ?? "";
+      const corp = c.corporate_email ?? c.corporateEmail ?? "";
       if (id == null || id === "") return null;
       const n = Number(id);
       if (Number.isNaN(n)) return null;
@@ -38,6 +39,7 @@ export async function listCompanies(page = 1, size = 50) {
         commercial_name: String(name),
         legal_name: legal,
         rut,
+        corporate_email: String(corp),
       };
     })
     .filter(Boolean);

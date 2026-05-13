@@ -16,8 +16,6 @@ public class CompanyJobCreateRequest {
 
   @NotBlank private String description;
 
-  @NotBlank private String city;
-
   @JsonProperty("region_id")
   @NotNull
   private Long regionId;
@@ -56,10 +54,6 @@ public class CompanyJobCreateRequest {
 
   public String getDescription() {
     return description;
-  }
-
-  public String getCity() {
-    return city;
   }
 
   public Long getRegionId() {

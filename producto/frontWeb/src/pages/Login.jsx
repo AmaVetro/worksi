@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { login, parseLoginBlockedDerivation } from "../services/authService";
+import { login, parseLoginBlockedDerivation, deriveSessionFromLoginBody } from "../services/authService";
 import "../styles/Login.css";
 import loginImage from "../assets/images/login-bg.jpg";
 
@@ -26,15 +26,19 @@ function Login() {
 
         const data = await login(email, password);
 
-        const token = data?.access_token ?? data?.accessToken;
-        if (!token || typeof token !== "string" || !token.trim()) {
+        const { token, user } = deriveSessionFromLoginBody(data);
+        if (!token) {
           setError("Respuesta de login invalida");
           return;
         }
-        localStorage.setItem("token", token.trim());
-        localStorage.setItem("user", JSON.stringify(data.user));
+        if (!user || !user.role) {
+          setError("Respuesta de login invalida");
+          return;
+        }
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(user));
 
-        const r = data.user?.role;
+        const r = user.role;
         if (r === "ADMIN") {
           navigate("/home");
         } else if (r === "RECRUITER") {
@@ -74,7 +78,7 @@ function Login() {
             <h4 className="welcome-text">Bienvenido a</h4>
 
             <h1 className="logo">
-                Work<span>Sy</span>
+                Work<span>Sí</span>
             </h1>
 
             <p className="subtitle">Empresas</p>

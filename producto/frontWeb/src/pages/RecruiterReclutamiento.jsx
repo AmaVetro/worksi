@@ -9,9 +9,11 @@ export default function RecruiterReclutamiento() {
       <Navbar />
       <div className="home-container">
         <div className="home-content">
-          <div className="actions-container" style={{ flexWrap: "wrap" }}>
-            <div className="action-card" style={{ minWidth: 200 }}>
-              <p>Ofertas publicadas</p>
+          <div className="actions-container recruiter-reclutamiento-actions">
+            <div className="action-card recruiter-reclutamiento-card">
+              <p className="recruiter-reclutamiento-card-title">
+                Ofertas publicadas
+              </p>
               <button
                 type="button"
                 className="secondary-btn"
@@ -20,8 +22,12 @@ export default function RecruiterReclutamiento() {
                 Ir
               </button>
             </div>
-            <div className="action-card" style={{ minWidth: 200 }}>
-              <p>Crear oferta</p>
+            <div className="action-card recruiter-reclutamiento-card">
+              <p className="recruiter-reclutamiento-card-title">
+                Crear
+                <br />
+                oferta
+              </p>
               <button
                 type="button"
                 className="secondary-btn"
@@ -30,8 +36,10 @@ export default function RecruiterReclutamiento() {
                 Ir
               </button>
             </div>
-            <div className="action-card" style={{ minWidth: 200 }}>
-              <p>Postulaciones de postulantes</p>
+            <div className="action-card recruiter-reclutamiento-card">
+              <p className="recruiter-reclutamiento-card-title">
+                Postulaciones de candidatos
+              </p>
               <button
                 type="button"
                 className="secondary-btn"

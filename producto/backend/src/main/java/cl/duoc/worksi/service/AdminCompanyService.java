@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -34,6 +35,9 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class AdminCompanyService {
   private static final Set<String> ALLOWED_IMAGE_TYPES = Set.of("image/png", "image/jpeg");
+  private static final Pattern CORPORATE_EMAIL =
+      Pattern.compile(
+          "^[\\w.!#$%&'*+/=?^`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$");
 
   private final CompanyRepository companyRepository;
   private final RegionRepository regionRepository;
@@ -91,6 +95,7 @@ public class AdminCompanyService {
     c.setLegalName(data.getLegalName().trim());
     c.setPhone(data.getPhone().trim());
     c.setAddress(data.getAddress().trim());
+    c.setCorporateEmail(data.getCorporateEmail().trim());
     c.setRut(rutNorm);
     c.setRegionId(data.getRegionId());
     c.setCommuneId(data.getCommuneId());
@@ -130,7 +135,11 @@ public class AdminCompanyService {
             .map(
                 c ->
                     new AdminCompanyListItem(
-                        c.getId(), c.getCommercialName(), c.getLegalName(), c.getRut()))
+                        c.getId(),
+                        c.getCommercialName(),
+                        c.getLegalName(),
+                        c.getRut(),
+                        c.getCorporateEmail()))
             .toList();
     PageResponse<AdminCompanyListItem> body =
         new PageResponse<>(
@@ -150,6 +159,13 @@ public class AdminCompanyService {
     }
     if (data.getAddress() == null || data.getAddress().isBlank()) {
       return error(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "address obligatorio");
+    }
+    if (data.getCorporateEmail() == null || data.getCorporateEmail().isBlank()) {
+      return error(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "corporate_email obligatorio");
+    }
+    String corp = data.getCorporateEmail().trim();
+    if (corp.length() > 254 || !CORPORATE_EMAIL.matcher(corp).matches()) {
+      return error(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "corporate_email invalido");
     }
     if (data.getRut() == null || data.getRut().isBlank()) {
       return error(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "rut obligatorio");

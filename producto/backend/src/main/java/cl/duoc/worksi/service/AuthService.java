@@ -4,6 +4,8 @@ import cl.duoc.worksi.dto.auth.LockInfoResponse;
 import cl.duoc.worksi.dto.auth.LoginResponse;
 import cl.duoc.worksi.dto.auth.UserInfoResponse;
 import cl.duoc.worksi.entity.User;
+import cl.duoc.worksi.entity.enums.UserRole;
+import cl.duoc.worksi.repository.RecruiterProfileRepository;
 import cl.duoc.worksi.repository.UserRepository;
 import cl.duoc.worksi.security.JwtService;
 import java.time.LocalDateTime;
@@ -20,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AuthService {
   private final UserRepository userRepository;
+  private final RecruiterProfileRepository recruiterProfileRepository;
   private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
 
@@ -33,8 +36,12 @@ public class AuthService {
   private int lockDurationMinutes;
 
   public AuthService(
-      UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+      UserRepository userRepository,
+      RecruiterProfileRepository recruiterProfileRepository,
+      PasswordEncoder passwordEncoder,
+      JwtService jwtService) {
     this.userRepository = userRepository;
+    this.recruiterProfileRepository = recruiterProfileRepository;
     this.passwordEncoder = passwordEncoder;
     this.jwtService = jwtService;
   }
@@ -121,13 +128,30 @@ public class AuthService {
       userRepository.save(user);
       String token = jwtService.createToken(user);
       LockInfoResponse lockInfo = buildLockInfo(user, maxFailedAttempts, now);
+      String firstName = null;
+      String lastNamePaternal = null;
+      String lastNameMaternal = null;
+      if (user.getRole() == UserRole.RECRUITER) {
+        var profileOpt = recruiterProfileRepository.findById(user.getId());
+        if (profileOpt.isPresent()) {
+          var p = profileOpt.get();
+          firstName = p.getFirstName();
+          lastNamePaternal = p.getLastNamePaternal();
+          lastNameMaternal = p.getLastNameMaternal();
+        }
+      }
       LoginResponse body =
           new LoginResponse(
               token,
               "Bearer",
               expirationSeconds,
               new UserInfoResponse(
-                  user.getId(), user.getRole().name(), user.getEmail()),
+                  user.getId(),
+                  user.getRole().name(),
+                  user.getEmail(),
+                  firstName,
+                  lastNamePaternal,
+                  lastNameMaternal),
               lockInfo);
       return ResponseEntity.ok(body);
     }

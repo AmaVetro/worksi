@@ -36,8 +36,8 @@ Como administrador del sistema (rol ADMIN autenticado)
 * Para que existan companies en BD sin usuario “empresa”, y personas con rol RECRUITER que publiquen ofertas
 Criterios de aceptación (alineados a Flujo Pantallas App Web y Contrato Unificado API):
 * No hay registro público de empresa en la landing web MVP; no existe cuenta con rol COMPANY.
-* Alta empresa: POST /api/v1/admin/companies (multipart; JSON en parte "data" con datos negocio: nombre comercial, razón social, teléfono, dirección, RUT, región, comuna, sector, N° trabajadores aprox.; sin email ni contraseña de empresa); imagen de organización opcional en parte "image".
-* Listado de empresas: GET /api/v1/admin/companies para desplegable al dar de alta reclutadores (items con company_id, commercial_name, etc.).
+* Alta empresa: POST /api/v1/admin/companies (multipart; JSON en parte "data" con datos negocio: nombre comercial, razón social, teléfono, correo corporativo corporate_email, dirección, RUT, región, comuna, sector, N° trabajadores aprox.; sin contraseña ni cuenta de login para la empresa); imagen de organización opcional en parte "image".
+* Listado de empresas: GET /api/v1/admin/companies para desplegable al dar de alta reclutadores (items con company_id, commercial_name, corporate_email, etc.).
 * Alta reclutador: POST /api/v1/admin/recruiters con email, password (política del contrato), datos personales y company_id existente.
 * Si falta un obligatorio no avanza y muestra “Completa este campo” donde corresponda.
 * Con sesión RECRUITER activa en portal empresa: PATCH /api/v1/company/profile/image permite subir/cambiar/eliminar imagen en la ficha company (distincta de imagen por oferta).
@@ -236,7 +236,6 @@ Criterios de aceptación (Flujo Pantallas App Web + Contrato Unificado API):
 company_commercial_name (nombre comercial a mostrar; puede igualar datos de companies)
 title
 description (único texto largo del puesto; no existe campo persistence separado requirements; texto tipo requisitos del puesto va dentro de description)
-city
 region_id y commune_id coherentes con catálogo
 salary_offered (obligatorio en API y modelo)
 years_experience_required (obligatorio en API y modelo)

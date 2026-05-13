@@ -12,13 +12,18 @@ public class CompanyJobDetailResponse {
 
   private final String title;
   private final String description;
-  private final String city;
 
   @JsonProperty("region_id")
   private final long regionId;
 
   @JsonProperty("commune_id")
   private final long communeId;
+
+  @JsonProperty("region_name")
+  private final String regionName;
+
+  @JsonProperty("commune_name")
+  private final String communeName;
 
   @JsonProperty("salary_offered")
   private final int salaryOffered;
@@ -32,6 +37,12 @@ public class CompanyJobDetailResponse {
   @JsonProperty("image_url")
   private final String imageUrl;
 
+  @JsonProperty("external_image_url")
+  private final String externalImageUrl;
+
+  @JsonProperty("has_protected_image")
+  private final boolean hasProtectedImage;
+
   private final String status;
 
   @JsonProperty("published_at")
@@ -40,37 +51,47 @@ public class CompanyJobDetailResponse {
   @JsonProperty("skills_ids")
   private final List<Long> skillsIds;
 
+  private final List<CompanyJobSkillItemResponse> skills;
+
   public CompanyJobDetailResponse(
       long id,
       String companyCommercialName,
       String title,
       String description,
-      String city,
       long regionId,
       long communeId,
+      String regionName,
+      String communeName,
       int salaryOffered,
       int yearsExperienceRequired,
       String modality,
       String workload,
       String imageUrl,
+      String externalImageUrl,
+      boolean hasProtectedImage,
       String status,
       Instant publishedAt,
-      List<Long> skillsIds) {
+      List<Long> skillsIds,
+      List<CompanyJobSkillItemResponse> skills) {
     this.id = id;
     this.companyCommercialName = companyCommercialName;
     this.title = title;
     this.description = description;
-    this.city = city;
     this.regionId = regionId;
     this.communeId = communeId;
+    this.regionName = regionName;
+    this.communeName = communeName;
     this.salaryOffered = salaryOffered;
     this.yearsExperienceRequired = yearsExperienceRequired;
     this.modality = modality;
     this.workload = workload;
     this.imageUrl = imageUrl;
+    this.externalImageUrl = externalImageUrl;
+    this.hasProtectedImage = hasProtectedImage;
     this.status = status;
     this.publishedAt = publishedAt;
     this.skillsIds = skillsIds;
+    this.skills = skills;
   }
 
   public long getId() {
@@ -89,16 +110,20 @@ public class CompanyJobDetailResponse {
     return description;
   }
 
-  public String getCity() {
-    return city;
-  }
-
   public long getRegionId() {
     return regionId;
   }
 
   public long getCommuneId() {
     return communeId;
+  }
+
+  public String getRegionName() {
+    return regionName;
+  }
+
+  public String getCommuneName() {
+    return communeName;
   }
 
   public int getSalaryOffered() {
@@ -121,6 +146,15 @@ public class CompanyJobDetailResponse {
     return imageUrl;
   }
 
+  public String getExternalImageUrl() {
+    return externalImageUrl;
+  }
+
+  @JsonProperty("has_protected_image")
+  public boolean isHasProtectedImage() {
+    return hasProtectedImage;
+  }
+
   public String getStatus() {
     return status;
   }
@@ -131,5 +165,9 @@ public class CompanyJobDetailResponse {
 
   public List<Long> getSkillsIds() {
     return skillsIds;
+  }
+
+  public List<CompanyJobSkillItemResponse> getSkills() {
+    return skills;
   }
 }

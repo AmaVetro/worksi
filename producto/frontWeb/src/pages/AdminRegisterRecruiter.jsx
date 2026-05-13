@@ -267,7 +267,7 @@ export default function AdminRegisterRecruiter() {
                   <option value="">Seleccione empresa</option>
                   {companies.map((c) => (
                     <option key={c.company_id} value={c.company_id}>
-                      {c.commercial_name} — {c.rut}
+                      {c.commercial_name} — {c.corporate_email || "—"} — {c.rut}
                     </option>
                   ))}
                 </select>

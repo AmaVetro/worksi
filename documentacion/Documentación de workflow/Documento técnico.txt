@@ -34,7 +34,7 @@ Visualización de porcentaje de compatibilidad
 Postulación rápida
 Gestión de perfil
 4.2 Aplicación web (ADMIN y RECRUITER)
-Portal administrador: alta de ficha empresa (datos de negocio, sin credencial de empresa) y alta de reclutadores vinculados a company_id; listado de empresas.
+Portal administrador: alta de ficha empresa (datos de negocio incluido correo corporativo de contacto; sin credencial de login para la empresa) y alta de reclutadores vinculados a company_id; listado de empresas.
 Portal reclutador: creación y gestión de ofertas bajo /api/v1/company/*, visualización de postulantes, orden por compatibilidad, marcado manual VIEWED (ver Flujo Pantallas App Web y Contrato Unificado API).
 5. USUARIOS OBJETIVO
 Candidatos
@@ -86,7 +86,7 @@ Tablas principales (conjunto efectivo definido por migraciones Flyway y Contrato
 
 users (roles CANDIDATE | ADMIN | RECRUITER)
 
-companies (ficha empresa sin cuenta de login)
+companies (ficha empresa sin cuenta de login; incluye corporate_email de contacto corporativo)
 
 jobs (company_id)
 

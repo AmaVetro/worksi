@@ -17,7 +17,8 @@
     /* LOGO */
     .logo {
     font-weight: bold;
-    font-size: 20px;
+    font-size: 26px;
+    line-height: 1.2;
     }
 
     .logo span {

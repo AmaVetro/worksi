@@ -31,17 +31,21 @@
     }
 
     /* TEXTOS */
-    .welcome-text {
+    .login-box .welcome-text {
     margin: 0;
     font-weight: 300;
+    font-size: 1.50rem;
+    line-height: 1.2;
     }
 
-    .logo {
-    font-size: 40px;
+    .login-box h1.logo {
+    font-size: 50px;
+    line-height: 1.1;
     margin: 10px 0;
+    font-weight: 700;
     }
 
-    .logo span {
+    .login-box .logo span {
     color: #f4a261;
     }
 

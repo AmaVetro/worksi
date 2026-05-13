@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import { createJob, listMyJobs } from "../services/companyService";
+import { createJob, getRecruiterCompanyProfile } from "../services/companyService";
 import {
   fetchRegions,
   fetchCommunes,
@@ -15,7 +15,6 @@ function emptyErrors() {
     company_commercial_name: "",
     title: "",
     description: "",
-    city: "",
     region_id: "",
     commune_id: "",
     salary_offered: "",
@@ -24,7 +23,7 @@ function emptyErrors() {
     workload: "",
     skills: "",
     sector_skills: "",
-    image_url: "",
+    image_file: "",
   };
 }
 
@@ -41,14 +40,13 @@ export default function RecruiterJobCreate() {
     company_commercial_name: "",
     title: "",
     description: "",
-    city: "",
     commune_id: "",
     salary_offered: "",
     years_experience_required: "",
     modality: "REMOTE",
     workload: "FULL_TIME",
-    image_url: "",
   });
+  const [jobImageFile, setJobImageFile] = useState(null);
   const [fieldErrors, setFieldErrors] = useState(emptyErrors());
   const [apiError, setApiError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -56,14 +54,14 @@ export default function RecruiterJobCreate() {
   useEffect(() => {
     fetchRegions().then(setRegions).catch(() => setRegions([]));
     fetchSectors().then(setSectors).catch(() => setSectors([]));
-    listMyJobs(1, 1)
-      .then((data) => {
-        const first = (data.items || [])[0];
-        if (first && first.company_commercial_name) {
-          setForm((f) => ({
-            ...f,
-            company_commercial_name: first.company_commercial_name,
-          }));
+    getRecruiterCompanyProfile()
+      .then((profile) => {
+        const name =
+          typeof profile.commercial_name === "string"
+            ? profile.commercial_name.trim()
+            : "";
+        if (name) {
+          setForm((f) => ({ ...f, company_commercial_name: name }));
         }
       })
       .catch(() => {});
@@ -134,7 +132,6 @@ export default function RecruiterJobCreate() {
     req("company_commercial_name");
     req("title");
     req("description");
-    req("city");
     if (!regionId) {
       e.region_id = "Completa este campo";
       ok = false;
@@ -151,6 +148,13 @@ export default function RecruiterJobCreate() {
     if (selectedSkillIds.size < 3 || selectedSkillIds.size > 8) {
       e.skills = "Elija entre 3 y 8 skills";
       ok = false;
+    }
+    if (jobImageFile) {
+      const t = jobImageFile.type || "";
+      if (t !== "image/png" && t !== "image/jpeg") {
+        e.image_file = "Solo PNG o JPEG";
+        ok = false;
+      }
     }
     setFieldErrors(e);
     return ok;
@@ -173,7 +177,6 @@ export default function RecruiterJobCreate() {
         company_commercial_name: form.company_commercial_name.trim(),
         title: form.title.trim(),
         description: form.description.trim(),
-        city: form.city.trim(),
         region_id: Number(regionId),
         commune_id: Number(form.commune_id),
         salary_offered: Number(form.salary_offered),
@@ -182,11 +185,7 @@ export default function RecruiterJobCreate() {
         workload: form.workload,
         skills_ids: Array.from(selectedSkillIds),
       };
-      const url = form.image_url.trim();
-      if (url) {
-        payload.image_url = url;
-      }
-      await createJob(payload);
+      await createJob(payload, jobImageFile);
       window.alert("Oferta publicada correctamente");
       navigate("/recruiter/ofertas");
     } catch (err) {
@@ -203,9 +202,18 @@ export default function RecruiterJobCreate() {
       <Navbar />
       <div className="admin-form-page">
         <div className="admin-form-inner" style={{ maxWidth: 800 }}>
+          <button
+            type="button"
+            className="secondary-btn"
+            style={{ marginTop: 0, marginBottom: 12 }}
+            onClick={() => navigate("/recruiter/reclutamiento")}
+          >
+            Volver
+          </button>
           <h2>Crear oferta</h2>
           <p className="hint">
-            Un solo texto de descripción. Skills 3 a 8. POST /api/v1/company/jobs
+            Un solo texto de descripción. Skills 3 a 8. Imagen opcional (PNG/JPEG). POST
+            /api/v1/company/jobs multipart
           </p>
           <form onSubmit={handleSubmit}>
             <div className="admin-form-grid">
@@ -213,9 +221,7 @@ export default function RecruiterJobCreate() {
                 Nombre comercial de la empresa
                 <input
                   value={form.company_commercial_name}
-                  onChange={(e) =>
-                    setField("company_commercial_name", e.target.value)
-                  }
+                  disabled
                 />
                 {fieldErrors.company_commercial_name && (
                   <span className="error-field">
@@ -241,16 +247,6 @@ export default function RecruiterJobCreate() {
                 />
                 {fieldErrors.description && (
                   <span className="error-field">{fieldErrors.description}</span>
-                )}
-              </label>
-              <label>
-                Ciudad
-                <input
-                  value={form.city}
-                  onChange={(e) => setField("city", e.target.value)}
-                />
-                {fieldErrors.city && (
-                  <span className="error-field">{fieldErrors.city}</span>
                 )}
               </label>
               <label>
@@ -380,11 +376,20 @@ export default function RecruiterJobCreate() {
                 )}
               </label>
               <label className="full">
-                Imagen de la oferta (opcional, URL)
+                Imagen de la oferta (opcional, PNG o JPEG)
                 <input
-                  value={form.image_url}
-                  onChange={(e) => setField("image_url", e.target.value)}
+                  type="file"
+                  accept="image/png,image/jpeg"
+                  onChange={(e) => {
+                    const f = e.target.files && e.target.files[0];
+                    setJobImageFile(f || null);
+                    setFieldErrors((er) => ({ ...er, image_file: "" }));
+                    setApiError("");
+                  }}
                 />
+                {fieldErrors.image_file && (
+                  <span className="error-field">{fieldErrors.image_file}</span>
+                )}
               </label>
             </div>
             {apiError && <p className="api-error">{apiError}</p>}

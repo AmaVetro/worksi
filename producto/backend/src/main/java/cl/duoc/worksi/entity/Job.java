@@ -37,9 +37,6 @@ public class Job {
   @Column(nullable = false, columnDefinition = "TEXT")
   private String description;
 
-  @Column(nullable = false, length = 120)
-  private String city;
-
   @Column(name = "region_id", nullable = false)
   private Long regionId;
 
@@ -101,10 +98,6 @@ public class Job {
 
   public String getDescription() {
     return description;
-  }
-
-  public String getCity() {
-    return city;
   }
 
   public Long getRegionId() {
@@ -169,10 +162,6 @@ public class Job {
 
   public void setDescription(String description) {
     this.description = description;
-  }
-
-  public void setCity(String city) {
-    this.city = city;
   }
 
   public void setRegionId(Long regionId) {

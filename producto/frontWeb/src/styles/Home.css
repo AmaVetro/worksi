@@ -32,6 +32,166 @@
     font-weight: bold;
     }
 
+    .user-logo-img {
+    width: 96px;
+    height: 96px;
+    object-fit: contain;
+    background: #f3f4f6;
+    flex-shrink: 0;
+    }
+
+    .recruiter-job-detail-image-wrap {
+    margin: 12px 0 16px;
+    display: flex;
+    justify-content: center;
+    }
+
+    .recruiter-job-detail-image {
+    display: block;
+    width: 100%;
+    max-width: 480px;
+    min-width: 160px;
+    min-height: 160px;
+    max-height: 340px;
+    object-fit: contain;
+    background: #f3f4f6;
+    border-radius: 12px;
+    }
+
+    .recruiter-job-detail-shell {
+    max-width: 720px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    }
+
+    .recruiter-job-detail-back {
+    align-self: flex-start;
+    margin-top: 0;
+    margin-bottom: 8px;
+    }
+
+    .recruiter-job-detail-header {
+    margin-bottom: 4px;
+    }
+
+    .recruiter-job-detail-title {
+    margin: 0 0 12px;
+    font-size: 1.55rem;
+    font-weight: 700;
+    line-height: 1.25;
+    color: #0f766e;
+    letter-spacing: -0.02em;
+    }
+
+    .recruiter-job-detail-company {
+    margin: 0 0 16px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #128f8b;
+    }
+
+    .recruiter-job-detail-body {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 4px;
+    }
+
+    .recruiter-job-detail-description {
+    margin: 0;
+    color: #334155;
+    line-height: 1.65;
+    font-size: 0.95rem;
+    white-space: pre-wrap;
+    }
+
+    .recruiter-job-detail-meta {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 16px 0 4px;
+    border-top: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+    }
+
+    @media (min-width: 560px) {
+    .recruiter-job-detail-meta {
+        grid-template-columns: 1fr 1fr;
+        gap: 14px 24px;
+    }
+    }
+
+    .recruiter-job-detail-meta-block {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    }
+
+    .recruiter-job-detail-meta-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #128f8b;
+    }
+
+    .recruiter-job-detail-meta-value {
+    font-size: 0.95rem;
+    color: #334155;
+    line-height: 1.45;
+    }
+
+    .recruiter-job-detail-skills-section {
+    margin-top: 4px;
+    }
+
+    .recruiter-job-detail-skills-title {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #128f8b;
+    margin-bottom: 10px;
+    }
+
+    .recruiter-job-detail-skills-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    }
+
+    .recruiter-job-detail-skill-pill {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    background: rgba(249, 115, 22, 0.1);
+    color: #c2410c;
+    border: 1px solid rgba(249, 115, 22, 0.35);
+    }
+
+    .recruiter-job-detail-skills-empty {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.95rem;
+    }
+
+    .recruiter-job-detail-error {
+    color: #b91c1c;
+    margin: 8px 0 0;
+    padding: 12px 16px;
+    background: #fef2f2;
+    border-radius: 10px;
+    border: 1px solid #fecaca;
+    }
+
     /* 🔹 GRID PRINCIPAL */
     .home-grid {
     display: flex;
@@ -46,6 +206,17 @@
     padding: 25px;
     flex: 2; /* ocupa más espacio */
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .recruitment-card.recruiter-job-detail-card {
+    flex: none;
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 28px 32px 32px;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(15, 118, 110, 0.08), 0 4px 12px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(18, 143, 139, 0.12);
     }
 
     /* HEADER CARD */
@@ -109,4 +280,40 @@
     border-radius: 8px;
     cursor: pointer;
     margin-top: 15px;
+    }
+
+    .actions-container.recruiter-reclutamiento-actions {
+    align-items: stretch;
+    flex-wrap: wrap;
+    }
+
+    .action-card.recruiter-reclutamiento-card {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    flex: 1 1 200px;
+    max-width: 280px;
+    min-width: 200px;
+    width: auto;
+    box-sizing: border-box;
+    min-height: 200px;
+    }
+
+    .recruiter-reclutamiento-card-title {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0 8px 12px;
+    line-height: 1.35;
+    text-align: center;
+    }
+
+    .action-card.recruiter-reclutamiento-card .secondary-btn {
+    margin-top: auto;
+    width: 100%;
+    min-height: 44px;
+    box-sizing: border-box;
+    align-self: stretch;
 }

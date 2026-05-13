@@ -1,4 +1,5 @@
 import { Navigate } from "react-router-dom";
+import { normalizeRole } from "../services/authService";
 
 function readUser() {
   try {
@@ -16,11 +17,15 @@ export function PrivateRoute({ children, roles }) {
   if (!token || !user) {
     return <Navigate to="/" replace />;
   }
-  if (roles && roles.length > 0 && !roles.includes(user.role)) {
-    if (user.role === "RECRUITER") {
+  const role = normalizeRole(user.role);
+  if (!role) {
+    return <Navigate to="/" replace />;
+  }
+  if (roles && roles.length > 0 && !roles.includes(role)) {
+    if (role === "RECRUITER") {
       return <Navigate to="/recruiter/home" replace />;
     }
-    if (user.role === "ADMIN") {
+    if (role === "ADMIN") {
       return <Navigate to="/home" replace />;
     }
     return <Navigate to="/" replace />;

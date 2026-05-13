@@ -59,7 +59,7 @@ export default function RecoveryNewPassword() {
         </button>
         <div className="recovery-inner">
           <h1 className="recovery-logo">
-            Work<span>Sy</span>
+            Work<span>Sí</span>
           </h1>
           <h2 className="recovery-title">Nueva contraseña</h2>
           <form className="recovery-form" onSubmit={submit}>
