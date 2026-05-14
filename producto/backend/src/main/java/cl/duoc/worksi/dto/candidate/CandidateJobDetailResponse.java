@@ -27,6 +27,11 @@ public class CandidateJobDetailResponse {
   private final String workload;
   private final List<CandidateJobSkillPreviewResponse> skills;
 
+  @JsonProperty("external_image_url")
+  private final String externalImageUrl;
+
+  private final boolean hasProtectedJobImage;
+
   private final CandidateJobDetailMatchResponse match;
 
   public CandidateJobDetailResponse(
@@ -40,6 +45,8 @@ public class CandidateJobDetailResponse {
       String description,
       String workload,
       List<CandidateJobSkillPreviewResponse> skills,
+      String externalImageUrl,
+      boolean hasProtectedJobImage,
       CandidateJobDetailMatchResponse match) {
     this.jobId = jobId;
     this.title = title;
@@ -51,6 +58,8 @@ public class CandidateJobDetailResponse {
     this.description = description;
     this.workload = workload;
     this.skills = skills;
+    this.externalImageUrl = externalImageUrl;
+    this.hasProtectedJobImage = hasProtectedJobImage;
     this.match = match;
   }
 
@@ -92,6 +101,15 @@ public class CandidateJobDetailResponse {
 
   public List<CandidateJobSkillPreviewResponse> getSkills() {
     return skills;
+  }
+
+  public String getExternalImageUrl() {
+    return externalImageUrl;
+  }
+
+  @JsonProperty("has_protected_job_image")
+  public boolean getHasProtectedJobImage() {
+    return hasProtectedJobImage;
   }
 
   public CandidateJobDetailMatchResponse getMatch() {

@@ -7,6 +7,7 @@ import {
   fetchCommunes,
   fetchSectors,
 } from "../services/catalogService";
+import { isValidChileRut, normalizeRut } from "../utils/rutRules";
 import "../styles/AdminForms.css";
 
 function emptyErrors() {
@@ -81,6 +82,10 @@ export default function AdminRegisterCompany() {
       }
     };
     check("rut");
+    if (String(form.rut ?? "").trim() && !isValidChileRut(form.rut)) {
+      e.rut = "RUT invalido (sin puntos, con guion y digito verificador)";
+      ok = false;
+    }
     check("commercial_name");
     check("legal_name");
     check("phone");
@@ -118,7 +123,7 @@ export default function AdminRegisterCompany() {
         phone: form.phone.trim(),
         corporate_email: form.corporate_email.trim(),
         address: form.address.trim(),
-        rut: form.rut.trim(),
+        rut: normalizeRut(form.rut),
         region_id: Number(regionId),
         commune_id: Number(form.commune_id),
         sector_id: Number(form.sector_id),

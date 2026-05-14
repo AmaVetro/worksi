@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "../pages/Login";
-import Register from "../pages/Register";
 import Home from "../pages/Home";
 import RecoveryLocked from "../pages/recovery/RecoveryLocked";
 import RecoveryForgot from "../pages/recovery/RecoveryForgot";
@@ -23,7 +22,6 @@ function AppRoutes() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Login />} />
-        <Route path="/register" element={<Register />} />
         <Route path="/recovery/locked" element={<RecoveryLocked />} />
         <Route path="/recovery/forgot" element={<RecoveryForgot />} />
         <Route path="/recovery/code" element={<RecoveryCode />} />

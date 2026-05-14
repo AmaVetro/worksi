@@ -34,8 +34,9 @@ Pantalla "Confirmar en bandeja" → Mensaje **simulado** sobre correo; contrase�
 
 Pantalla "Portal administración sistema":
 - Solo para quien inició sesión como administrador del sistema.
-- Botones: "Registrar empresa", "Registrar reclutadores", "Log out".
-- "Log out" cierra la sesión en el navegador y vuelve a la pantalla "al abrir sitio web".
+- En la implementación web actual la navegación del administrador usa una barra superior (navbar) con accesos: Inicio, Empresas, Reclutadores, Configuración, y control de "Cerrar sesión" (equivalente a "Log out") que limpia la sesión en el navegador y vuelve a la pantalla "al abrir sitio web".
+- Desde Inicio el administrador ve un panel con accesos a las acciones principales (incluye tarjetas o bloques para ir a registrar empresa y registrar reclutadores, coherentes con las rutas Empresas y Reclutadores). Puede existir además un bloque de resumen tipo "Reclutamiento" u ofertas con valor fijo o de maquetación hasta que se conecte a datos reales de negocio para ese rol; no sustituye las pantallas de alta de empresa y reclutadores descritas más abajo.
+- Las altas de ficha empresa y de reclutadores se realizan desde las vistas enlazadas a Empresas y Reclutadores (formularios según secciones "Registrar empresa" y "Registrar reclutadores" de este documento).
 
 
 

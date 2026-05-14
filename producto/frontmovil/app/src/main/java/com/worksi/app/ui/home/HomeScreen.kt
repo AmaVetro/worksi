@@ -14,25 +14,37 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import com.worksi.app.data.api.RetrofitClient
+import com.worksi.app.data.local.SecureTokenStore
+import okhttp3.Headers
 import com.worksi.app.data.model.JobOffer
 import com.worksi.app.ui.theme.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
     onNavigateToProfile: () -> Unit = {},
     onNavigateToMenu: () -> Unit = {},
     onSettings: () -> Unit = {},
-    onLogout: () -> Unit = {}
+    onLogout: () -> Unit = {},
+    onOpenJobDetail: (Long) -> Unit = {}
 ) {
     val offer by viewModel.offer.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val empty by viewModel.empty.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+    val actionBusy by viewModel.actionBusy.collectAsState()
+    val errText = errorMessage
+    val currentOffer = offer
     var showMenu by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -106,45 +118,85 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
                 .background(Color(0xFFF5F5F5))
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            JobOfferCard(offer)
-            Spacer(modifier = Modifier.height(8.dp))
-            ActionButtons(
-                onPostular = viewModel::onPostular,
-                onGuardar = viewModel::onGuardar,
-                onPasar = viewModel::onPasar
-            )
+            if (errText != null) {
+                Text(
+                    text = errText,
+                    color = Color(0xFFB00020),
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                if (currentOffer == null) {
+                    Button(onClick = { viewModel.retry() }) {
+                        Text("Reintentar")
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+            when {
+                isLoading && currentOffer == null ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = CyanPrimary)
+                    }
+                empty && currentOffer == null && !isLoading ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("No hay ofertas por ahora.", color = Color.Gray, fontSize = 16.sp)
+                    }
+                currentOffer != null ->
+                    Box(
+                        modifier = Modifier.fillMaxWidth().weight(1f),
+                        contentAlignment = Alignment.TopStart) {
+                        Column(
+                            modifier =
+                                Modifier.fillMaxWidth()
+                                    .verticalScroll(rememberScrollState())) {
+                            JobOfferCard(currentOffer, onVerDetalles = { onOpenJobDetail(currentOffer.id) })
+                            Spacer(modifier = Modifier.height(8.dp))
+                            ActionButtons(
+                                onPostular = viewModel::onPostular,
+                                onGuardar = viewModel::onGuardar,
+                                onPasar = viewModel::onPasar,
+                                enabled = !actionBusy)
+                        }
+                    }
+                else ->
+                    Spacer(modifier = Modifier.height(0.dp))
+            }
         }
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun JobOfferCard(offer: JobOffer) {
+fun JobOfferCard(offer: JobOffer, onVerDetalles: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().wrapContentHeight(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = White),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(modifier = Modifier.padding(10.dp)) {
-            // Imagen proporcional (16:9)
-            AsyncImage(
-                model = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8aW5mb3JtYXRpY2F8ZW58MHx8MHx8fDA%3D",
-                contentDescription = "Logo de la empresa",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(16f / 9f)
-                    .clip(RoundedCornerShape(12.dp)),
-                contentScale = ContentScale.Crop
-            )
+        Column(modifier = Modifier.padding(10.dp).wrapContentHeight()) {
+            OfferHeroImage(
+                jobId = offer.id,
+                externalImageUrl = offer.externalImageUrl,
+                hasProtectedJobImage = offer.hasProtectedJobImage,
+                modifier = Modifier.fillMaxWidth())
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Título de la oferta
             Text(
                 text = offer.title,
                 fontSize = 22.sp,
@@ -154,7 +206,6 @@ fun JobOfferCard(offer: JobOffer) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Fila principal: izquierda (empresa + ubicación) | derecha (renta + años)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -191,7 +242,6 @@ fun JobOfferCard(offer: JobOffer) {
 
             Spacer(modifier = Modifier.height(6.dp))
 
-            // Descripción
             Text(
                 text = offer.description,
                 fontSize = 14.sp,
@@ -201,9 +251,8 @@ fun JobOfferCard(offer: JobOffer) {
             )
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Ver detalles centrado y subrayado
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                TextButton(onClick = { /* TODO: ver detalles */ }) {
+                TextButton(onClick = onVerDetalles) {
                     Text(
                         "Ver detalles",
                         color = CyanPrimary,
@@ -215,12 +264,12 @@ fun JobOfferCard(offer: JobOffer) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Skills centradas
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxWidth()
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                offer.skills.forEachIndexed { index, skill ->
+                offer.skills.forEach { skill ->
                     Surface(
                         shape = RoundedCornerShape(16.dp),
                         color = Color(0xFFE3F2FD),
@@ -234,46 +283,45 @@ fun JobOfferCard(offer: JobOffer) {
                             fontWeight = FontWeight.Medium
                         )
                     }
-                    if (index != offer.skills.lastIndex) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // Porcentaje de matching con número dentro de la barra
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Porcentaje de matching",
-                    fontSize = 14.sp,
-                    color = CyanPrimary,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.Center
+            val pct = offer.matchPercentage
+            if (pct != null) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().wrapContentHeight(),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    LinearProgressIndicator(
-                        progress = { offer.matchPercentage / 100f },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(24.dp)
-                            .clip(RoundedCornerShape(12.dp)),
-                        color = CyanPrimary,
-                        trackColor = Color(0xFFE0E0E0),
-                    )
                     Text(
-                        text = "${offer.matchPercentage.toInt()}%",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        text = "Porcentaje de matching",
+                        fontSize = 14.sp,
+                        color = CyanPrimary,
+                        fontWeight = FontWeight.Bold
                     )
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        LinearProgressIndicator(
+                            progress = { pct / 100f },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(24.dp)
+                                .clip(RoundedCornerShape(12.dp)),
+                            color = CyanPrimary,
+                            trackColor = Color(0xFFE0E0E0),
+                        )
+                        Text(
+                            text = "${pct.toInt()}%",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
                 }
             }
         }
@@ -281,13 +329,19 @@ fun JobOfferCard(offer: JobOffer) {
 }
 
 @Composable
-fun ActionButtons(onPostular: () -> Unit, onGuardar: () -> Unit, onPasar: () -> Unit) {
+fun ActionButtons(
+    onPostular: () -> Unit,
+    onGuardar: () -> Unit,
+    onPasar: () -> Unit,
+    enabled: Boolean = true
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         Button(
             onClick = onPostular,
+            enabled = enabled,
             colors = ButtonDefaults.buttonColors(
                 containerColor = OrangeAccent,
                 contentColor = White
@@ -305,6 +359,7 @@ fun ActionButtons(onPostular: () -> Unit, onGuardar: () -> Unit, onPasar: () -> 
 
         Button(
             onClick = onGuardar,
+            enabled = enabled,
             colors = ButtonDefaults.buttonColors(
                 containerColor = CyanPrimary,
                 contentColor = White
@@ -322,6 +377,7 @@ fun ActionButtons(onPostular: () -> Unit, onGuardar: () -> Unit, onPasar: () -> 
 
         Button(
             onClick = onPasar,
+            enabled = enabled,
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFFD32F2F),
                 contentColor = White
@@ -335,6 +391,61 @@ fun ActionButtons(onPostular: () -> Unit, onGuardar: () -> Unit, onPasar: () -> 
             Icon(Icons.Filled.Close, contentDescription = null, tint = White, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(2.dp))
             Text("Pasar", color = White, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+    }
+}
+
+@Composable
+fun OfferHeroImage(
+    jobId: Long,
+    externalImageUrl: String?,
+    hasProtectedJobImage: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val url: String? =
+        when {
+            !externalImageUrl.isNullOrBlank() -> externalImageUrl
+            hasProtectedJobImage -> RetrofitClient.candidateJobImageUrl(jobId)
+            else -> null
+        }
+    val imageRequest =
+        remember(context, url, hasProtectedJobImage, jobId) {
+            if (url == null) {
+                null
+            } else {
+                val b = ImageRequest.Builder(context).data(url).crossfade(true)
+                if (hasProtectedJobImage) {
+                    val t = SecureTokenStore.getAccessToken()
+                    if (!t.isNullOrBlank()) {
+                        b.headers(Headers.headersOf("Authorization", "Bearer $t"))
+                    }
+                }
+                b.build()
+            }
+        }
+    BoxWithConstraints(
+        modifier = modifier.clip(RoundedCornerShape(12.dp)).background(Color(0xFFE0F7FA)),
+        contentAlignment = Alignment.Center) {
+        val byWidth = maxWidth * 9f / 16f
+        val h = if (constraints.hasBoundedHeight) minOf(byWidth, maxHeight) else byWidth
+        Box(
+            Modifier.fillMaxWidth().height(h),
+            contentAlignment = Alignment.Center) {
+            if (imageRequest != null) {
+                AsyncImage(
+                    model = imageRequest,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                )
+            } else {
+                Icon(
+                    Icons.Filled.Business,
+                    contentDescription = null,
+                    tint = CyanPrimary,
+                    modifier = Modifier.size(48.dp))
+            }
         }
     }
 }

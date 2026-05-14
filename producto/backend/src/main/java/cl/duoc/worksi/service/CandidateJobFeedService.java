@@ -18,6 +18,7 @@ import cl.duoc.worksi.repository.JobSkillRepository;
 import cl.duoc.worksi.repository.SkillRepository;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -30,27 +31,26 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class CandidateJobFeedService {
-  private static final String MATCH_STUB_EXPLANATION =
-      "Matching semantico no disponible hasta Sprint 6 (IA).";
-  private static final String MATCH_STUB_EXPLANATION_SHORT = "Matching pendiente (Sprint 6).";
-
   private final JobRepository jobRepository;
   private final JobSkillRepository jobSkillRepository;
   private final SkillRepository skillRepository;
   private final CandidateJobSwipeRepository candidateJobSwipeRepository;
   private final CommuneRepository communeRepository;
+  private final ProductMatchService productMatchService;
 
   public CandidateJobFeedService(
       JobRepository jobRepository,
       JobSkillRepository jobSkillRepository,
       SkillRepository skillRepository,
       CandidateJobSwipeRepository candidateJobSwipeRepository,
-      CommuneRepository communeRepository) {
+      CommuneRepository communeRepository,
+      ProductMatchService productMatchService) {
     this.jobRepository = jobRepository;
     this.jobSkillRepository = jobSkillRepository;
     this.skillRepository = skillRepository;
     this.candidateJobSwipeRepository = candidateJobSwipeRepository;
     this.communeRepository = communeRepository;
+    this.productMatchService = productMatchService;
   }
 
   public ResponseEntity<PageResponse<CandidateJobFeedItemResponse>> feed(
@@ -65,7 +65,8 @@ public class CandidateJobFeedService {
     } else {
       result = jobRepository.findByStatusAndIdNotIn(JobStatus.ACTIVE, swiped, pageable);
     }
-    List<CandidateJobFeedItemResponse> items = result.getContent().stream().map(this::toFeedItem).toList();
+    List<CandidateJobFeedItemResponse> items =
+        result.getContent().stream().map(j -> toFeedItem(j, candidateUserId)).toList();
     PageResponse<CandidateJobFeedItemResponse> body =
         new PageResponse<>(
             items, p, result.getSize(), result.getTotalElements(), result.getTotalPages());
@@ -78,12 +79,13 @@ public class CandidateJobFeedService {
       return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
     }
     Job job = opt.get();
-    return ResponseEntity.ok(toDetailItem(job));
+    return ResponseEntity.ok(toDetailItem(job, candidateUserId));
   }
 
-  private CandidateJobFeedItemResponse toFeedItem(Job job) {
+  private CandidateJobFeedItemResponse toFeedItem(Job job, long candidateUserId) {
     List<CandidateJobSkillPreviewResponse> skills = skillPreviews(job.getId(), 4);
     String communeName = communeName(job.getCommuneId(), job.getRegionId());
+    ProductMatchService.ProductMatchResult m = productMatchService.compute(candidateUserId, job);
     return new CandidateJobFeedItemResponse(
         job.getId(),
         job.getTitle(),
@@ -94,10 +96,12 @@ public class CandidateJobFeedService {
         job.getYearsExperienceRequired(),
         preview(job.getDescription(), 200),
         skills,
-        new CandidateJobMatchResponse(null, MATCH_STUB_EXPLANATION_SHORT));
+        externalJobImageUrl(job),
+        hasProtectedJobImage(job),
+        new CandidateJobMatchResponse(m.score(), m.explanationShort()));
   }
 
-  private CandidateJobDetailResponse toDetailItem(Job job) {
+  private CandidateJobDetailResponse toDetailItem(Job job, long candidateUserId) {
     List<JobSkill> links = jobSkillRepository.findAllByJobIdOrderBySkillName(job.getId());
     List<CandidateJobSkillPreviewResponse> skills = new ArrayList<>();
     for (JobSkill js : links) {
@@ -110,6 +114,7 @@ public class CandidateJobFeedService {
           .ifPresent(sk -> skills.add(new CandidateJobSkillPreviewResponse(sk.getId(), sk.getName())));
     }
     String communeName = communeName(job.getCommuneId(), job.getRegionId());
+    ProductMatchService.ProductMatchResult m = productMatchService.compute(candidateUserId, job);
     return new CandidateJobDetailResponse(
         job.getId(),
         job.getTitle(),
@@ -121,7 +126,9 @@ public class CandidateJobFeedService {
         job.getDescription(),
         job.getWorkload().name(),
         skills,
-        new CandidateJobDetailMatchResponse(null, MATCH_STUB_EXPLANATION));
+        externalJobImageUrl(job),
+        hasProtectedJobImage(job),
+        new CandidateJobDetailMatchResponse(m.score(), m.explanationFull()));
   }
 
   private List<CandidateJobSkillPreviewResponse> skillPreviews(long jobId, int max) {
@@ -156,6 +163,29 @@ public class CandidateJobFeedService {
       return t;
     }
     return t.substring(0, maxChars) + "…";
+  }
+
+  private static String externalJobImageUrl(Job job) {
+    String raw = job.getImageUrl();
+    if (raw == null || raw.isBlank()) {
+      return null;
+    }
+    String t = raw.trim();
+    String lower = t.toLowerCase(Locale.ROOT);
+    if (lower.startsWith("http://") || lower.startsWith("https://")) {
+      return t;
+    }
+    return null;
+  }
+
+  private static boolean hasProtectedJobImage(Job job) {
+    String raw = job.getImageUrl();
+    if (raw == null || raw.isBlank()) {
+      return false;
+    }
+    String t = raw.trim();
+    String lower = t.toLowerCase(Locale.ROOT);
+    return !lower.startsWith("http://") && !lower.startsWith("https://");
   }
 
   private static ResponseEntity<Map<String, Object>> err(

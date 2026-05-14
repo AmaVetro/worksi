@@ -10,5 +10,7 @@ data class JobOffer(
     val experienceYears: Int,
     val description: String,
     val skills: List<String>,
-    val matchPercentage: Float
+    val matchPercentage: Float?,
+    val externalImageUrl: String?,
+    val hasProtectedJobImage: Boolean
 )

@@ -33,6 +33,14 @@ public class CandidateJobSwipe {
 
   protected CandidateJobSwipe() {}
 
+  public static CandidateJobSwipe create(long candidateUserId, long jobId, SwipeAction action) {
+    CandidateJobSwipe s = new CandidateJobSwipe();
+    s.candidateUserId = candidateUserId;
+    s.jobId = jobId;
+    s.action = action;
+    return s;
+  }
+
   public Long getId() {
     return id;
   }

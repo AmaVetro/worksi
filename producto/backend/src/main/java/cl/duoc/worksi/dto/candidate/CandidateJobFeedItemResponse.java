@@ -29,6 +29,11 @@ public class CandidateJobFeedItemResponse {
   @JsonProperty("skills_preview")
   private final List<CandidateJobSkillPreviewResponse> skillsPreview;
 
+  @JsonProperty("external_image_url")
+  private final String externalImageUrl;
+
+  private final boolean hasProtectedJobImage;
+
   private final CandidateJobMatchResponse match;
 
   public CandidateJobFeedItemResponse(
@@ -41,6 +46,8 @@ public class CandidateJobFeedItemResponse {
       int yearsExperienceRequired,
       String descriptionPreview,
       List<CandidateJobSkillPreviewResponse> skillsPreview,
+      String externalImageUrl,
+      boolean hasProtectedJobImage,
       CandidateJobMatchResponse match) {
     this.jobId = jobId;
     this.title = title;
@@ -51,6 +58,8 @@ public class CandidateJobFeedItemResponse {
     this.yearsExperienceRequired = yearsExperienceRequired;
     this.descriptionPreview = descriptionPreview;
     this.skillsPreview = skillsPreview;
+    this.externalImageUrl = externalImageUrl;
+    this.hasProtectedJobImage = hasProtectedJobImage;
     this.match = match;
   }
 
@@ -88,6 +97,15 @@ public class CandidateJobFeedItemResponse {
 
   public List<CandidateJobSkillPreviewResponse> getSkillsPreview() {
     return skillsPreview;
+  }
+
+  public String getExternalImageUrl() {
+    return externalImageUrl;
+  }
+
+  @JsonProperty("has_protected_job_image")
+  public boolean getHasProtectedJobImage() {
+    return hasProtectedJobImage;
   }
 
   public CandidateJobMatchResponse getMatch() {

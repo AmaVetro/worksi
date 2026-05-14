@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -44,6 +46,7 @@ fun RegisterConsentScreen(
 ) {
     val state by viewModel.ui.collectAsState()
     val d = state.draft
+    val scroll = rememberScrollState()
 
     Box(
         modifier = Modifier
@@ -54,17 +57,19 @@ fun RegisterConsentScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(start = 24.dp, top = RegisterBackButtonRowHeight, end = 24.dp, bottom = 24.dp)
+                .verticalScroll(scroll)
         ) {
             Text("Uso de datos", style = MaterialTheme.typography.headlineSmall, color = White)
             Spacer(Modifier.height(16.dp))
             Text(
-                "Al marcar la casilla confirmas que leiste y aceptas el tratamiento de tus datos personales segun la politica de WorkSi. " +
-                    "Al pulsar Completar se creara tu cuenta en el servidor con el CV y datos ingresados.",
-                color = White.copy(alpha = 0.9f)
+                "En esta pantalla hay un escrito acerca de información para el usuario de qué cosas está aceptando, como serán usados sus datos y qué nivel de privacidad tiene.\n\n" +
+                    "Esta es la última pantalla antes de crear la cuenta oficialmente y se accede a ella desde \"Últimas preferencias\".",
+                color = White.copy(alpha = 0.9f),
+                style = MaterialTheme.typography.bodyMedium
             )
             Spacer(Modifier.height(24.dp))
             Row(
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.Top,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Checkbox(
@@ -72,12 +77,23 @@ fun RegisterConsentScreen(
                     onCheckedChange = { v -> viewModel.updateDraft { it.copy(consentAccepted = v) } },
                     colors = worksiOnCyanCheckboxColors()
                 )
-                Text("Acepto el uso de mis datos", color = White, modifier = Modifier.weight(1f))
+                Text(
+                    "He leído y acepto el uso de mis datos personales conforme a la Política de Privacidad",
+                    color = White,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
             if (state.registerError != null) {
                 Spacer(Modifier.height(8.dp))
                 Text(state.registerError!!, color = White)
             }
+            Spacer(Modifier.height(16.dp))
+            Text(
+                "Al pulsar Completar se enviará el registro con el CV y los datos ingresados.",
+                color = White.copy(alpha = 0.85f),
+                style = MaterialTheme.typography.bodySmall
+            )
             Spacer(Modifier.height(24.dp))
             Button(
                 onClick = {

@@ -24,12 +24,15 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      ai:
+        condition: service_started
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-worksi}?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=utf8
       SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-worksi}
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-worksi}
       WORKSI_CV_STORAGE_DIR: /data/cv
       WORKSI_SECURITY_PASSWORD_RECOVERY_MVP_SKIP_CODE_CHECK: "true"
+      WORKSI_AI_BASE_URL: http://ai:8000
     ports:
       - "8080:8080"
     volumes:

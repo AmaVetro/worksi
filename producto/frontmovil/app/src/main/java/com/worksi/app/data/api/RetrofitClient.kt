@@ -9,7 +9,6 @@ import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
-    // Cambia la URL base a la IP/dominio de tu backend (10.0.2.2 es el localhost del emulador)
     private const val BASE_URL = "http://10.0.2.2:8080/"
 
     val moshi: Moshi = Moshi.Builder()
@@ -21,9 +20,10 @@ object RetrofitClient {
     }
 
     val okHttpClient: OkHttpClient = OkHttpClient.Builder()
+        .addInterceptor(AuthInterceptor())
         .addInterceptor(loggingInterceptor)
         .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(120, TimeUnit.SECONDS)
         .build()
 
     val retrofit: Retrofit = Retrofit.Builder()
@@ -35,4 +35,11 @@ object RetrofitClient {
     val authService: AuthService = retrofit.create(AuthService::class.java)
 
     val catalogApi: CatalogApi = retrofit.create(CatalogApi::class.java)
+
+    val candidateJobsApi: CandidateJobsApi = retrofit.create(CandidateJobsApi::class.java)
+
+    fun candidateJobImageUrl(jobId: Long): String {
+        val base = BASE_URL.trimEnd('/')
+        return "$base/api/v1/candidate/jobs/$jobId/image"
+    }
 }

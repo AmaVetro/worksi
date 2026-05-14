@@ -300,6 +300,18 @@ public class CompanyJobService {
     if (job.getPublishedByUserId() == null || !job.getPublishedByUserId().equals(recruiterUserId)) {
       return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
     }
+    return serveStoredJobImageBytes(job);
+  }
+
+  public ResponseEntity<?> getActiveJobImageForCandidate(long jobId) {
+    Optional<Job> opt = jobRepository.findById(jobId);
+    if (opt.isEmpty() || opt.get().getStatus() != JobStatus.ACTIVE) {
+      return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
+    }
+    return serveStoredJobImageBytes(opt.get());
+  }
+
+  private ResponseEntity<?> serveStoredJobImageBytes(Job job) {
     String raw = job.getImageUrl();
     if (raw == null || raw.isBlank()) {
       return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Imagen no disponible");

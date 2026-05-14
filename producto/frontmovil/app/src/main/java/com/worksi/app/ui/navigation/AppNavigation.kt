@@ -2,13 +2,20 @@ package com.worksi.app.ui.navigation
 
 import android.app.Application
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.worksi.app.ui.jobdetail.JobDetailScreen
 import com.worksi.app.data.local.SecureTokenStore
 import com.worksi.app.ui.home.HomeScreen
 import com.worksi.app.ui.home.HomeViewModel
@@ -45,6 +52,8 @@ sealed class Screen(val route: String) {
     object RecoveryNewPassword : Screen("recovery_new_password")
     object RecoverySuccess : Screen("recovery_success")
 }
+
+private const val JobDetailRoute = "job_detail/{jobId}"
 
 @Composable
 fun AppNavigation() {
@@ -95,18 +104,30 @@ fun AppNavigation() {
             val homeViewModel: HomeViewModel = viewModel()
             HomeScreen(
                 viewModel = homeViewModel,
-                onNavigateToProfile = { /* TODO: navegar a perfil */ },
-                onNavigateToMenu = { /* TODO: navegar a menú */ },
-                onSettings = { /* TODO: pantalla de configuración */ },
+                onNavigateToProfile = { },
+                onNavigateToMenu = { },
+                onSettings = { },
                 onLogout = {
                     SecureTokenStore.clear()
                     navController.navigate(Screen.Welcome.route) {
                         popUpTo(0) { inclusive = true }
                         launchSingleTop = true
                     }
-                }
-            )
+                },
+                onOpenJobDetail = { jobId -> navController.navigate("job_detail/$jobId") })
         }
+
+        composable(
+            route = JobDetailRoute,
+            arguments = listOf(navArgument("jobId") { type = NavType.LongType })) { entry ->
+              val jobId = entry.arguments?.getLong("jobId") ?: 0L
+              if (jobId <= 0L) {
+                LaunchedEffect(Unit) { navController.popBackStack() }
+                Box(modifier = Modifier.fillMaxSize())
+              } else {
+                JobDetailScreen(jobId = jobId, onBack = { navController.popBackStack() })
+              }
+            }
 
         composable(Screen.RegisterPersonal.route) {
             RegisterPersonalScreen(

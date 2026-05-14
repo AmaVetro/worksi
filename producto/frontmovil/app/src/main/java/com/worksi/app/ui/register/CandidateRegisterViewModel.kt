@@ -8,6 +8,7 @@ import com.worksi.app.data.api.RetrofitClient
 import com.worksi.app.data.local.SecureTokenStore
 import com.worksi.app.data.model.CandidateRegisterPayload
 import com.worksi.app.data.model.CatalogItemDto
+import com.worksi.app.validation.PdfCvTextRules
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -253,6 +254,28 @@ class CandidateRegisterViewModel(application: Application) : AndroidViewModel(ap
 
     fun clearCv() {
         updateDraft { it.copy(cvUri = null, cvDisplayName = null) }
+    }
+
+    suspend fun validateCvPdfSelectable(uriString: String): String? {
+        return withContext(Dispatchers.IO) {
+            val app = getApplication<Application>()
+            val uri = Uri.parse(uriString)
+            val bytes =
+                app.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                    ?: return@withContext "No se pudo leer el archivo"
+            if (bytes.size > 1_048_576) {
+                return@withContext "El PDF supera 1 MB"
+            }
+            if (bytes.size < 4 ||
+                bytes[0] != '%'.code.toByte() ||
+                bytes[1] != 'P'.code.toByte() ||
+                bytes[2] != 'D'.code.toByte() ||
+                bytes[3] != 'F'.code.toByte()
+            ) {
+                return@withContext "El archivo debe ser un PDF válido"
+            }
+            PdfCvTextRules.validatePdfBytes(bytes)
+        }
     }
 
     fun clearCatalogError() {
