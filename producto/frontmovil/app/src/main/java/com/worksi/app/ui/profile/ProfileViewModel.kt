@@ -1,0 +1,150 @@
+package com.worksi.app.ui.profile
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.worksi.app.data.api.ApiErrorParser
+import com.worksi.app.data.api.RetrofitClient
+import com.worksi.app.data.model.CandidateProfileJson
+import com.worksi.app.data.model.CandidateProfileSkillJson
+import com.worksi.app.data.model.CatalogItemDto
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.text.NumberFormat
+import java.util.Locale
+
+data class ProfileUiState(
+    val isLoading: Boolean = true,
+    val errorMessage: String? = null,
+    val fullName: String = "",
+    val sectorLine: String = "",
+    val locationLine: String = "",
+    val email: String = "",
+    val phone: String = "",
+    val description: String = "",
+    val salaryLine: String = "",
+    val modalities: List<String> = emptyList(),
+    val workloads: List<String> = emptyList(),
+    val skills: List<CandidateProfileSkillJson> = emptyList()
+)
+
+class ProfileViewModel : ViewModel() {
+    private val profileApi = RetrofitClient.candidateProfileApi
+    private val catalogApi = RetrofitClient.catalogApi
+
+    private val _ui = MutableStateFlow(ProfileUiState())
+    val ui: StateFlow<ProfileUiState> = _ui.asStateFlow()
+
+    init {
+        reload()
+    }
+
+    fun reload() {
+        viewModelScope.launch {
+            _ui.value = _ui.value.copy(isLoading = true, errorMessage = null)
+            val err =
+                withContext(Dispatchers.IO) {
+                    try {
+                        val response = profileApi.getProfile()
+                        if (!response.isSuccessful) {
+                            ApiErrorParser.message(response)
+                        } else {
+                            val body = response.body()
+                            if (body == null) {
+                                "Respuesta vacía"
+                            } else {
+                                mapProfile(body)
+                                null
+                            }
+                        }
+                    } catch (e: Exception) {
+                        e.message ?: "Error de red"
+                    }
+                }
+            _ui.value = _ui.value.copy(isLoading = false, errorMessage = err)
+        }
+    }
+
+    private suspend fun mapProfile(p: CandidateProfileJson) {
+        val regionName = resolveName({ catalogApi.regions() }) { it.id == p.regionId }
+        val communeName = resolveName({ catalogApi.communes(p.regionId) }) { it.id == p.communeId }
+        val sectorName =
+            p.sectorId?.let { sid -> resolveName({ catalogApi.sectors() }) { it.id == sid } }.orEmpty()
+        val location =
+            when {
+                regionName.isNotBlank() && communeName.isNotBlank() -> "$regionName · $communeName"
+                regionName.isNotBlank() -> regionName
+                communeName.isNotBlank() -> communeName
+                else -> "—"
+            }
+        val middle = p.middleName?.trim().orEmpty()
+        val maternal = p.lastNameMaternal?.trim().orEmpty()
+        val fullName = buildString {
+            append(p.firstName.trim())
+            if (middle.isNotEmpty()) {
+                append(' ')
+                append(middle)
+            }
+            append(' ')
+            append(p.lastNamePaternal.trim())
+            if (maternal.isNotEmpty()) {
+                append(' ')
+                append(maternal)
+            }
+        }
+        _ui.value =
+            ProfileUiState(
+                isLoading = false,
+                errorMessage = null,
+                fullName = fullName.trim(),
+                sectorLine = if (sectorName.isBlank()) "—" else sectorName,
+                locationLine = location,
+                email = p.email.trim(),
+                phone = p.phone?.trim().orEmpty().ifBlank { "—" },
+                description = p.profileSummary?.trim().orEmpty().ifBlank { "Sin descripción personal." },
+                salaryLine = formatSalaryRange(p.salaryExpectedMin, p.salaryExpectedMax),
+                modalities = p.preferredModalities.map { modalityLabel(it) },
+                workloads = p.preferredWorkloads.map { workloadLabel(it) },
+                skills = p.skills)
+    }
+
+    private suspend fun resolveName(
+        fetch: suspend () -> retrofit2.Response<com.worksi.app.data.model.CatalogListDto>,
+        match: (CatalogItemDto) -> Boolean
+    ): String {
+        val response = fetch()
+        if (!response.isSuccessful) return ""
+        return response.body()?.items?.firstOrNull(match)?.name?.trim().orEmpty()
+    }
+
+    private fun formatSalaryRange(min: Int?, max: Int?): String {
+        val fmt = NumberFormat.getNumberInstance(Locale("es", "CL"))
+        val minStr = min?.let { "Mín: $${fmt.format(it.toLong())}" }
+        val maxStr = max?.let { "Máx: $${fmt.format(it.toLong())}" }
+        return when {
+            minStr != null && maxStr != null -> "$minStr  $maxStr"
+            minStr != null -> minStr
+            maxStr != null -> maxStr
+            else -> "—"
+        }
+    }
+
+    private fun modalityLabel(code: String): String =
+        when (code.uppercase(Locale.ROOT)) {
+            "REMOTE" -> "Remoto"
+            "HYBRID" -> "Híbrido"
+            "ONSITE" -> "Presencial"
+            else -> code
+        }
+
+    private fun workloadLabel(code: String): String =
+        when (code.uppercase(Locale.ROOT)) {
+            "FULL_TIME" -> "Full Time"
+            "PART_TIME" -> "Part Time"
+            "OTHER" -> "Otro"
+            else -> code
+        }
+}

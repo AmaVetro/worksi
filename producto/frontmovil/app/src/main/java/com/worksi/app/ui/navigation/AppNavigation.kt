@@ -19,6 +19,8 @@ import com.worksi.app.ui.jobdetail.JobDetailScreen
 import com.worksi.app.data.local.SecureTokenStore
 import com.worksi.app.ui.home.HomeScreen
 import com.worksi.app.ui.home.HomeViewModel
+import com.worksi.app.ui.profile.ProfileScreen
+import com.worksi.app.ui.profile.ProfileViewModel
 import com.worksi.app.ui.login.LoginScreen
 import com.worksi.app.ui.login.LoginViewModel
 import com.worksi.app.ui.recovery.RecoveryCodeScreen
@@ -41,6 +43,7 @@ sealed class Screen(val route: String) {
     object Welcome : Screen("welcome")
     object Login : Screen("login")
     object Session : Screen("session")
+    object Profile : Screen("profile")
     object RegisterPersonal : Screen("register_personal")
     object RegisterCv : Screen("register_cv")
     object RegisterSkills : Screen("register_skills")
@@ -104,7 +107,7 @@ fun AppNavigation() {
             val homeViewModel: HomeViewModel = viewModel()
             HomeScreen(
                 viewModel = homeViewModel,
-                onNavigateToProfile = { },
+                onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
                 onNavigateToMenu = { },
                 onSettings = { },
                 onLogout = {
@@ -115,6 +118,24 @@ fun AppNavigation() {
                     }
                 },
                 onOpenJobDetail = { jobId -> navController.navigate("job_detail/$jobId") })
+        }
+
+        composable(Screen.Profile.route) {
+            val profileViewModel: ProfileViewModel = viewModel()
+            ProfileScreen(
+                viewModel = profileViewModel,
+                onBack = { navController.popBackStack() },
+                onNavigateToHome = {
+                    navController.popBackStack(Screen.Session.route, inclusive = false)
+                },
+                onNavigateToMenu = { },
+                onLogout = {
+                    SecureTokenStore.clear()
+                    navController.navigate(Screen.Welcome.route) {
+                        popUpTo(0) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                })
         }
 
         composable(
