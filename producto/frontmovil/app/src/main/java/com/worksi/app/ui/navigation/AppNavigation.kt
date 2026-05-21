@@ -2,16 +2,25 @@ package com.worksi.app.ui.navigation
 
 import android.app.Application
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.worksi.app.ui.jobdetail.JobDetailScreen
 import com.worksi.app.data.local.SecureTokenStore
 import com.worksi.app.ui.home.HomeScreen
 import com.worksi.app.ui.home.HomeViewModel
+import com.worksi.app.ui.profile.ProfileScreen
+import com.worksi.app.ui.profile.ProfileViewModel
 import com.worksi.app.ui.login.LoginScreen
 import com.worksi.app.ui.login.LoginViewModel
 import com.worksi.app.ui.recovery.RecoveryCodeScreen
@@ -34,6 +43,7 @@ sealed class Screen(val route: String) {
     object Welcome : Screen("welcome")
     object Login : Screen("login")
     object Session : Screen("session")
+    object Profile : Screen("profile")
     object RegisterPersonal : Screen("register_personal")
     object RegisterCv : Screen("register_cv")
     object RegisterSkills : Screen("register_skills")
@@ -45,6 +55,8 @@ sealed class Screen(val route: String) {
     object RecoveryNewPassword : Screen("recovery_new_password")
     object RecoverySuccess : Screen("recovery_success")
 }
+
+private const val JobDetailRoute = "job_detail/{jobId}"
 
 @Composable
 fun AppNavigation() {
@@ -95,18 +107,48 @@ fun AppNavigation() {
             val homeViewModel: HomeViewModel = viewModel()
             HomeScreen(
                 viewModel = homeViewModel,
-                onNavigateToProfile = { /* TODO: navegar a perfil */ },
-                onNavigateToMenu = { /* TODO: navegar a menú */ },
-                onSettings = { /* TODO: pantalla de configuración */ },
+                onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
+                onNavigateToMenu = { /* implementar si es necesario */ },
                 onLogout = {
                     SecureTokenStore.clear()
                     navController.navigate(Screen.Welcome.route) {
                         popUpTo(0) { inclusive = true }
                         launchSingleTop = true
                     }
-                }
+                },
+                onOpenJobDetail = { jobId -> navController.navigate("job_detail/$jobId") }
             )
         }
+
+        composable(Screen.Profile.route) {
+            val profileViewModel: ProfileViewModel = viewModel()
+            ProfileScreen(
+                viewModel = profileViewModel,
+                onBack = { navController.popBackStack() },
+                onNavigateToHome = {
+                    navController.popBackStack(Screen.Session.route, inclusive = false)
+                },
+                onNavigateToMenu = { },
+                onLogout = {
+                    SecureTokenStore.clear()
+                    navController.navigate(Screen.Welcome.route) {
+                        popUpTo(0) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                })
+        }
+
+        composable(
+            route = JobDetailRoute,
+            arguments = listOf(navArgument("jobId") { type = NavType.LongType })) { entry ->
+              val jobId = entry.arguments?.getLong("jobId") ?: 0L
+              if (jobId <= 0L) {
+                LaunchedEffect(Unit) { navController.popBackStack() }
+                Box(modifier = Modifier.fillMaxSize())
+              } else {
+                JobDetailScreen(jobId = jobId, onBack = { navController.popBackStack() })
+              }
+            }
 
         composable(Screen.RegisterPersonal.route) {
             RegisterPersonalScreen(
