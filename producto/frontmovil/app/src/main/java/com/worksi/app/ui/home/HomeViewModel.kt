@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.worksi.app.data.api.ApiErrorParser
 import com.worksi.app.data.api.RetrofitClient
+import com.worksi.app.data.model.CandidateApplicationBody
 import com.worksi.app.data.model.CandidateJobFeedItemJson
 import com.worksi.app.data.model.CandidateSwipeBody
 import com.worksi.app.data.model.JobOffer
@@ -33,6 +34,9 @@ class HomeViewModel : ViewModel() {
 
   private val _actionBusy = MutableStateFlow(false)
   val actionBusy: StateFlow<Boolean> = _actionBusy.asStateFlow()
+
+  private val _showApplyConfirm = MutableStateFlow(false)
+  val showApplyConfirm: StateFlow<Boolean> = _showApplyConfirm.asStateFlow()
 
   init {
     viewModelScope.launch {
@@ -89,26 +93,26 @@ class HomeViewModel : ViewModel() {
     _empty.value = queue.isEmpty() && _errorMessage.value == null
   }
 
-  fun onPostular() {
-    swipeAndAdvance("APPLY")
+  fun onSwipeToApply() {
+    if (queue.firstOrNull() == null || _actionBusy.value) return
+    _showApplyConfirm.value = true
   }
 
-  fun onGuardar() {}
-
-  fun onPasar() {
-    swipeAndAdvance("PASS")
+  fun onDismissApplyConfirm() {
+    _showApplyConfirm.value = false
   }
 
-  private fun swipeAndAdvance(action: String) {
+  fun onConfirmApply() {
     val head = queue.firstOrNull() ?: return
     if (_actionBusy.value) return
     viewModelScope.launch {
       _actionBusy.value = true
+      _showApplyConfirm.value = false
       _errorMessage.value = null
       val err =
           withContext(Dispatchers.IO) {
             try {
-              val r = api.postSwipe(CandidateSwipeBody(head.jobId, action))
+              val r = api.postApplication(CandidateApplicationBody(head.jobId))
               if (!r.isSuccessful) {
                 ApiErrorParser.message(r)
               } else {
@@ -123,37 +127,74 @@ class HomeViewModel : ViewModel() {
         _actionBusy.value = false
         return@launch
       }
-      queue.removeFirst()
-      syncFromQueue()
-      if (queue.isEmpty()) {
-        _isLoading.value = true
-        val refillErr =
-            withContext(Dispatchers.IO) {
-              try {
-                val response = api.getFeed(page = 1, size = 20)
-                if (!response.isSuccessful) {
-                  ApiErrorParser.message(response)
-                } else {
-                  val body = response.body()
-                  if (body == null) {
-                    "Respuesta vacía"
-                  } else {
-                    body.items.forEach { queue.addLast(it) }
-                    null
-                  }
-                }
-              } catch (e: Exception) {
-                e.message ?: "Error de red"
-              }
-            }
-        _isLoading.value = false
-        if (refillErr != null) {
-          _errorMessage.value = refillErr
-        }
-      }
-      syncFromQueue()
+      advanceQueue()
       _actionBusy.value = false
     }
+  }
+
+  fun onSwipeToPass() {
+    swipePassAndAdvance()
+  }
+
+  private fun swipePassAndAdvance() {
+    val head = queue.firstOrNull() ?: return
+    if (_actionBusy.value) return
+    viewModelScope.launch {
+      _actionBusy.value = true
+      _errorMessage.value = null
+      val err =
+          withContext(Dispatchers.IO) {
+            try {
+              val r = api.postSwipe(CandidateSwipeBody(head.jobId, "PASS"))
+              if (!r.isSuccessful) {
+                ApiErrorParser.message(r)
+              } else {
+                null
+              }
+            } catch (e: Exception) {
+              e.message ?: "Error de red"
+            }
+          }
+      if (err != null) {
+        _errorMessage.value = err
+        _actionBusy.value = false
+        return@launch
+      }
+      advanceQueue()
+      _actionBusy.value = false
+    }
+  }
+
+  private suspend fun advanceQueue() {
+    queue.removeFirst()
+    syncFromQueue()
+    if (queue.isEmpty()) {
+      _isLoading.value = true
+      val refillErr =
+          withContext(Dispatchers.IO) {
+            try {
+              val response = api.getFeed(page = 1, size = 20)
+              if (!response.isSuccessful) {
+                ApiErrorParser.message(response)
+              } else {
+                val body = response.body()
+                if (body == null) {
+                  "Respuesta vacía"
+                } else {
+                  body.items.forEach { queue.addLast(it) }
+                  null
+                }
+              }
+            } catch (e: Exception) {
+              e.message ?: "Error de red"
+            }
+          }
+      _isLoading.value = false
+      if (refillErr != null) {
+        _errorMessage.value = refillErr
+      }
+    }
+    syncFromQueue()
   }
 
   private fun CandidateJobFeedItemJson.toJobOffer(): JobOffer =

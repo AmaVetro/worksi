@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar";
 import { listCompanies, createRecruiter } from "../services/adminService";
 import { passwordMatches } from "../utils/passwordPolicy";
 import { isValidChileRut, normalizeRut } from "../utils/rutRules";
+import { goBack } from "../utils/goBack";
 import "../styles/AdminForms.css";
 
 function emptyErrors() {
@@ -150,10 +151,7 @@ export default function AdminRegisterRecruiter() {
       <div className="admin-form-page">
         <div className="admin-form-inner">
           <h2>Registrar reclutadores</h2>
-          <p className="hint">
-            Listado de empresas desde GET /api/v1/admin/companies. Contraseña
-            con la misma política del sistema.
-          </p>
+          
           {companiesLoadError && (
             <p className="api-error">{companiesLoadError}</p>
           )}
@@ -284,7 +282,7 @@ export default function AdminRegisterRecruiter() {
               <button
                 type="button"
                 className="secondary-btn"
-                onClick={() => navigate("/home")}
+                onClick={() => goBack(navigate)}
               >
                 Volver
               </button>

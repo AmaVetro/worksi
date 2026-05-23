@@ -78,8 +78,8 @@ fun LoginScreen(
         ) {
             Text(
                 text = buildAnnotatedString {
-                    withStyle(SpanStyle(color = White, fontWeight = FontWeight.Bold, fontSize = 36.sp)) { append("Work") }
-                    withStyle(SpanStyle(color = OrangeAccent, fontWeight = FontWeight.Bold, fontSize = 36.sp)) { append("SÍ") }
+                    withStyle(SpanStyle(color = White, fontWeight = FontWeight.Bold, fontSize = 42.sp)) { append("Work") }
+                    withStyle(SpanStyle(color = OrangeAccent, fontWeight = FontWeight.Bold, fontSize = 42.sp)) { append("SÍ") }
                 }
             )
 

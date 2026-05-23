@@ -11,6 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @Entity
 @Table(name = "applications")
@@ -54,6 +55,25 @@ public class Application {
   private LocalDateTime updatedAt;
 
   protected Application() {}
+
+  public static Application createApplied(
+      long candidateUserId,
+      long jobId,
+      BigDecimal matchScore,
+      String matchExplanation) {
+    Application a = new Application();
+    a.candidateUserId = candidateUserId;
+    a.jobId = jobId;
+    a.status = ApplicationStatus.APPLIED;
+    a.matchScore = matchScore;
+    if (matchExplanation != null && matchExplanation.length() > 500) {
+      a.matchExplanation = matchExplanation.substring(0, 500);
+    } else {
+      a.matchExplanation = matchExplanation;
+    }
+    a.matchedAt = LocalDateTime.now(ZoneOffset.UTC);
+    return a;
+  }
 
   public Long getId() {
     return id;

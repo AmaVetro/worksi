@@ -1,5 +1,7 @@
 package com.worksi.app.data.api
 
+import com.worksi.app.data.model.CandidateApplicationBody
+import com.worksi.app.data.model.CandidateApplicationCreatedJson
 import com.worksi.app.data.model.CandidateFeedPageJson
 import com.worksi.app.data.model.CandidateJobDetailJson
 import com.worksi.app.data.model.CandidateSwipeBody
@@ -22,4 +24,9 @@ interface CandidateJobsApi {
 
   @POST("api/v1/candidate/swipes")
   suspend fun postSwipe(@Body body: CandidateSwipeBody): Response<Unit>
+
+  @POST("api/v1/candidate/applications")
+  suspend fun postApplication(
+      @Body body: CandidateApplicationBody
+  ): Response<CandidateApplicationCreatedJson>
 }

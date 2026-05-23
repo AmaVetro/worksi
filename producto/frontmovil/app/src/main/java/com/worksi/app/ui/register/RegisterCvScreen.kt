@@ -3,7 +3,6 @@ package com.worksi.app.ui.register
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,7 +22,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -42,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import com.worksi.app.ui.theme.CyanPrimary
 import com.worksi.app.ui.theme.OrangeAccent
 import com.worksi.app.ui.theme.White
+import com.worksi.app.ui.theme.worksiRegisterSecondaryButtonColors
 import com.worksi.app.validation.PdfCvTextRules
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -61,6 +60,7 @@ fun RegisterCvScreen(
     val d = state.draft
     val context = LocalContext.current
     var localError by remember { mutableStateOf<String?>(null) }
+    var showValidationErrors by remember { mutableStateOf(false) }
     var isCvChecking by remember { mutableStateOf(false) }
     var pickValidating by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -75,15 +75,18 @@ fun RegisterCvScreen(
         val mime = resolver.getType(uri)
         if (mime != null && mime != "application/pdf") {
             localError = "Solo se permite PDF"
+            showValidationErrors = true
             return@rememberLauncherForActivityResult
         }
         val size = resolver.openFileDescriptor(uri, "r")?.use { it.statSize } ?: 0L
         if (size <= 0L) {
             localError = "No se pudo leer el archivo"
+            showValidationErrors = true
             return@rememberLauncherForActivityResult
         }
         if (size > MAX_CV_BYTES) {
             localError = "El PDF supera 1 MB"
+            showValidationErrors = true
             return@rememberLauncherForActivityResult
         }
         var display: String? = null
@@ -108,8 +111,10 @@ fun RegisterCvScreen(
             pickValidating = false
             if (err != null) {
                 localError = err
+                showValidationErrors = true
             } else {
                 viewModel.setCv(uri.toString(), display)
+                showValidationErrors = false
             }
         }
     }
@@ -132,12 +137,11 @@ fun RegisterCvScreen(
                 fontSize = 14.sp
             )
             Spacer(Modifier.height(24.dp))
-            OutlinedButton(
+            Button(
                 onClick = { launcher.launch(arrayOf("application/pdf")) },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !busy,
-                border = BorderStroke(1.dp, White),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = White),
+                colors = worksiRegisterSecondaryButtonColors(),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text("Elegir PDF")
@@ -145,12 +149,11 @@ fun RegisterCvScreen(
             Spacer(Modifier.height(12.dp))
             if (d.cvUri != null) {
                 Text("Archivo: ${d.cvDisplayName ?: "CV.pdf"}", color = White)
-                OutlinedButton(
+                Button(
                     onClick = { viewModel.clearCv(); localError = null },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !busy,
-                    border = BorderStroke(1.dp, White),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = White),
+                    colors = worksiRegisterSecondaryButtonColors(),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text("Quitar")
@@ -182,8 +185,12 @@ fun RegisterCvScreen(
                 Text(it, color = OrangeAccent, fontSize = 14.sp)
             }
             Spacer(Modifier.height(24.dp))
+            RegisterRequiredFieldsHint(
+                showValidationErrors && (d.cvUri == null || localError != null)
+            )
             Button(
                 onClick = {
+                    showValidationErrors = true
                     if (d.cvUri == null) {
                         localError = "Debes seleccionar un PDF"
                         return@Button
@@ -196,6 +203,7 @@ fun RegisterCvScreen(
                         if (err != null) {
                             localError = err
                         } else {
+                            showValidationErrors = false
                             onNext()
                         }
                     }

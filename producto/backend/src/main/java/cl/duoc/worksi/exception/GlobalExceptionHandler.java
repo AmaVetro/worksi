@@ -54,6 +54,7 @@ public class GlobalExceptionHandler {
     String code =
         switch (status) {
           case CONFLICT -> "CONFLICT";
+          case NOT_FOUND -> "NOT_FOUND";
           case BAD_REQUEST -> "VALIDATION_ERROR";
           case PAYLOAD_TOO_LARGE -> "PAYLOAD_TOO_LARGE";
           case UNSUPPORTED_MEDIA_TYPE -> "UNSUPPORTED_MEDIA_TYPE";

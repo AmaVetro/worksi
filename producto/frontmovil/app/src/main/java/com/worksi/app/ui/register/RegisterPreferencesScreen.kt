@@ -24,7 +24,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
@@ -45,7 +44,6 @@ import com.worksi.app.ui.theme.CyanPrimary
 import com.worksi.app.ui.theme.OrangeAccent
 import com.worksi.app.ui.theme.White
 import com.worksi.app.ui.theme.worksiOnCyanFilterChipColors
-import com.worksi.app.ui.theme.worksiOnCyanOutlinedFieldColors
 import java.text.NumberFormat
 import java.util.Locale
 import kotlin.math.min
@@ -88,8 +86,6 @@ fun RegisterPreferencesScreen(
     val state by viewModel.ui.collectAsState()
     val d = state.draft
     var showErrors by remember { mutableStateOf(false) }
-    val fieldColors = worksiOnCyanOutlinedFieldColors()
-    val fieldShape = RoundedCornerShape(12.dp)
     val chipColors = worksiOnCyanFilterChipColors()
 
     var sliderRange by remember { mutableStateOf(SALARY_SLIDER_DEFAULT) }
@@ -120,14 +116,13 @@ fun RegisterPreferencesScreen(
         ) {
             Text("Preferencias", style = MaterialTheme.typography.headlineSmall, color = White)
             Spacer(Modifier.height(12.dp))
-            OutlinedTextField(
+            RegisterOutlinedTextField(
                 value = d.profileSummary,
                 onValueChange = { s -> viewModel.updateDraft { it.copy(profileSummary = s) } },
-                label = { Text("Presentacion personal (opcional)", color = White.copy(alpha = 0.8f)) },
+                label = { Text("Presentacion personal (opcional)") },
                 modifier = Modifier.fillMaxWidth(),
-                minLines = 3,
-                shape = fieldShape,
-                colors = fieldColors
+                singleLine = false,
+                minLines = 3
             )
             Spacer(Modifier.height(16.dp))
             Text("Renta esperada (opcional)", color = White.copy(alpha = 0.9f))
@@ -234,14 +229,11 @@ fun RegisterPreferencesScreen(
                 }
             }
             Spacer(Modifier.height(24.dp))
+            RegisterRequiredFieldsHint(showErrors && !d.isPreferencesStepValid())
             Button(
                 onClick = {
                     showErrors = true
-                    val minOk = d.salaryMin.isEmpty() || d.salaryMax.isEmpty() ||
-                        (d.salaryMin.toLongOrNull() != null && d.salaryMax.toLongOrNull() != null &&
-                            d.salaryMin.toLong()!! <= d.salaryMax.toLong()!!)
-                    val modOk = d.modalities.isNotEmpty() && d.workloads.isNotEmpty()
-                    if (minOk && modOk) onNext()
+                    if (d.isPreferencesStepValid()) onNext()
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -253,10 +245,6 @@ fun RegisterPreferencesScreen(
                 Text("Siguiente", fontWeight = FontWeight.Bold)
             }
             if (showErrors) {
-                if (d.modalities.isEmpty() || d.workloads.isEmpty()) {
-                    Spacer(Modifier.height(8.dp))
-                    Text("Selecciona al menos una modalidad y una carga horaria.", color = OrangeAccent)
-                }
                 val minV = d.salaryMin.toLongOrNull()
                 val maxV = d.salaryMax.toLongOrNull()
                 if (d.salaryMin.isNotEmpty() && d.salaryMax.isNotEmpty() && minV != null && maxV != null && minV > maxV) {
@@ -274,4 +262,11 @@ fun RegisterPreferencesScreen(
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = White)
         }
     }
+}
+
+private fun RegisterDraft.isPreferencesStepValid(): Boolean {
+    val salaryOk = salaryMin.isEmpty() || salaryMax.isEmpty() ||
+        (salaryMin.toLongOrNull() != null && salaryMax.toLongOrNull() != null &&
+            salaryMin.toLong()!! <= salaryMax.toLong()!!)
+    return salaryOk && modalities.isNotEmpty() && workloads.isNotEmpty()
 }

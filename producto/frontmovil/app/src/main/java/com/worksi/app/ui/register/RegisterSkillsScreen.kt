@@ -28,7 +28,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,7 +45,6 @@ import com.worksi.app.ui.theme.CyanPrimary
 import com.worksi.app.ui.theme.OrangeAccent
 import com.worksi.app.ui.theme.White
 import com.worksi.app.ui.theme.worksiOnCyanFilterChipColors
-import com.worksi.app.ui.theme.worksiOnCyanOutlinedFieldColors
 
 private val RegisterBackButtonRowHeight = 56.dp
 
@@ -61,8 +59,6 @@ fun RegisterSkillsScreen(
     val d = state.draft
     var sectorMenu by remember { mutableStateOf(false) }
     var showErrors by remember { mutableStateOf(false) }
-    val fieldColors = worksiOnCyanOutlinedFieldColors()
-    val fieldShape = RoundedCornerShape(12.dp)
     val chipColors = worksiOnCyanFilterChipColors()
 
     LaunchedEffect(Unit) {
@@ -98,18 +94,14 @@ fun RegisterSkillsScreen(
                 expanded = sectorMenu,
                 onExpandedChange = { sectorMenu = !sectorMenu }
             ) {
-                OutlinedTextField(
-                    modifier = Modifier
-                        .menuAnchor()
-                        .fillMaxWidth(),
+                RegisterOutlinedTextField(
+                    modifier = Modifier.menuAnchor().fillMaxWidth(),
                     readOnly = true,
                     value = state.sectors.find { it.id == d.sectorId }?.name ?: "",
                     onValueChange = {},
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = sectorMenu) },
                     isError = showErrors && d.sectorId == null,
-                    label = { Text("Sector", color = White.copy(alpha = 0.8f)) },
-                    shape = fieldShape,
-                    colors = fieldColors
+                    label = { Text("Sector") }
                 )
                 DropdownMenu(
                     expanded = sectorMenu,
@@ -152,12 +144,12 @@ fun RegisterSkillsScreen(
             }
 
             Spacer(Modifier.height(24.dp))
+            RegisterRequiredFieldsHint(showErrors && !d.isSkillsStepValid())
             Button(
                 onClick = {
                     showErrors = true
                     viewModel.clearCatalogError()
-                    val n = d.skillIds.size
-                    if (d.sectorId != null && n in 3..12) onNext()
+                    if (d.isSkillsStepValid()) onNext()
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -167,10 +159,6 @@ fun RegisterSkillsScreen(
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text("Siguiente", fontWeight = FontWeight.Bold)
-            }
-            if (showErrors && (d.sectorId == null || d.skillIds.size !in 3..12)) {
-                Spacer(Modifier.height(8.dp))
-                Text("Selecciona rubro y entre 3 y 12 skills.", color = OrangeAccent)
             }
         }
         IconButton(
@@ -182,4 +170,9 @@ fun RegisterSkillsScreen(
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = White)
         }
     }
+}
+
+private fun RegisterDraft.isSkillsStepValid(): Boolean {
+    val n = skillIds.size
+    return sectorId != null && n in 3..12
 }

@@ -1,9 +1,35 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import { getActiveJobsTotal } from "../services/adminService";
 import "../styles/Home.css";
 
 function Home() {
     const navigate = useNavigate();
+    const [jobsTotal, setJobsTotal] = useState(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            try {
+                const total = await getActiveJobsTotal();
+                if (!cancelled) {
+                    setJobsTotal(total);
+                }
+            } catch {
+                if (!cancelled) {
+                    setJobsTotal(0);
+                }
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    const jobsLabel =
+        jobsTotal === null ? "…" : String(jobsTotal);
+
     return (
         <div>
         <Navbar />
@@ -11,28 +37,24 @@ function Home() {
         <div className="home-container">
             <div className="home-content">
 
-            {/* 🔹 GRID PRINCIPAL */}
             <div className="home-grid">
 
-                {/* 🔹 RECLUTAMIENTO */}
                 <div className="recruitment-card">
                 <div className="card-header">
                     <h3>Reclutamiento</h3>
-                    <span>Gestionar avisos</span>
                 </div>
 
                 <div className="card-content">
                     <p>
                     Ofertas Publicadas
                     <span className="dots"></span>
-                    <strong>16</strong>
+                    <strong>{jobsLabel}</strong>
                     </p>
                 </div>
 
-                <button type="button" className="primary-btn">Publicar aviso</button>
+                <button type="button" className="primary-btn">Gestionar Ofertas</button>
                 </div>
 
-                {/* 🔹 ACCIONES */}
                 <div className="actions-container">
 
                 <div className="action-card">

@@ -10,6 +10,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface JobRepository extends JpaRepository<Job, Long> {
+  long countByStatus(JobStatus status);
+
   Page<Job> findByStatusAndPublishedByUserId(
       JobStatus status, Long publishedByUserId, Pageable pageable);
 

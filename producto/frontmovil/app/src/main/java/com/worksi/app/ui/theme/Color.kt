@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 
 // Paleta principal
 val CyanPrimary = Color(0xFF128F8B)
+val CyanDark = Color(0xFF0A5C59)
 val OrangeAccent = Color(0xFFFF914D)
 val DarkGreen = Color(0xFF2E7D32)
 val White = Color(0xFFFFFFFF)

@@ -118,7 +118,7 @@ fun ProfileScreen(
                     selected = false,
                     onClick = onNavigateToMenu,
                     icon = { Icon(Icons.Filled.Menu, contentDescription = null, tint = White) },
-                    label = { Text("Menú", color = White, fontSize = 12.sp) },
+                    label = { Text("Postulaciones", color = White, fontSize = 12.sp) },
                     colors = profileNavColors())
             }
         }) { innerPadding ->

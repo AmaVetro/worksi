@@ -2,8 +2,10 @@ package cl.duoc.worksi.controller;
 
 import cl.duoc.worksi.dto.PageResponse;
 import cl.duoc.worksi.dto.admin.AdminCompanyListItem;
+import cl.duoc.worksi.dto.admin.AdminJobsStatsResponse;
 import cl.duoc.worksi.dto.admin.AdminRecruiterRequest;
 import cl.duoc.worksi.service.AdminCompanyService;
+import cl.duoc.worksi.service.AdminJobsStatsService;
 import cl.duoc.worksi.service.AdminRecruiterService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -21,11 +23,15 @@ import org.springframework.web.multipart.MultipartFile;
 public class AdminController {
   private final AdminCompanyService adminCompanyService;
   private final AdminRecruiterService adminRecruiterService;
+  private final AdminJobsStatsService adminJobsStatsService;
 
   public AdminController(
-      AdminCompanyService adminCompanyService, AdminRecruiterService adminRecruiterService) {
+      AdminCompanyService adminCompanyService,
+      AdminRecruiterService adminRecruiterService,
+      AdminJobsStatsService adminJobsStatsService) {
     this.adminCompanyService = adminCompanyService;
     this.adminRecruiterService = adminRecruiterService;
+    this.adminJobsStatsService = adminJobsStatsService;
   }
 
   @PostMapping(value = "/companies", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -46,5 +52,10 @@ public class AdminController {
   @PostMapping(value = "/recruiters", consumes = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<?> createRecruiter(@RequestBody AdminRecruiterRequest body) {
     return adminRecruiterService.createRecruiter(body);
+  }
+
+  @GetMapping("/jobs/stats")
+  public ResponseEntity<AdminJobsStatsResponse> jobsStats() {
+    return ResponseEntity.ok(adminJobsStatsService.activeJobsTotal());
   }
 }

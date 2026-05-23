@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import { goBack } from "../utils/goBack";
 import "../styles/Home.css";
 
 export default function RecruiterPostulacionesPlaceholder() {
@@ -14,7 +15,7 @@ export default function RecruiterPostulacionesPlaceholder() {
               type="button"
               className="secondary-btn"
               style={{ marginTop: 0, marginBottom: 16 }}
-              onClick={() => navigate("/recruiter/reclutamiento")}
+              onClick={() => goBack(navigate)}
             >
               Volver
             </button>

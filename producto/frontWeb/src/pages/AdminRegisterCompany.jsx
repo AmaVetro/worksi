@@ -8,6 +8,7 @@ import {
   fetchSectors,
 } from "../services/catalogService";
 import { isValidChileRut, normalizeRut } from "../utils/rutRules";
+import { goBack } from "../utils/goBack";
 import "../styles/AdminForms.css";
 
 function emptyErrors() {
@@ -147,10 +148,7 @@ export default function AdminRegisterCompany() {
       <div className="admin-form-page">
         <div className="admin-form-inner">
           <h2>Registrar empresa</h2>
-          <p className="hint">
-            Ficha empresa sin credencial de login. Campos obligatorios según
-            flujo oficial.
-          </p>
+
           <form onSubmit={handleSubmit}>
             <div className="admin-form-grid">
               <label className="full">
@@ -308,7 +306,7 @@ export default function AdminRegisterCompany() {
               <button
                 type="button"
                 className="secondary-btn"
-                onClick={() => navigate("/home")}
+                onClick={() => goBack(navigate)}
               >
                 Volver
               </button>

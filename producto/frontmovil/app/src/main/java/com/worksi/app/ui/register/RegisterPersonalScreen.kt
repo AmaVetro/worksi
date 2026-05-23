@@ -24,9 +24,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -43,11 +41,11 @@ import androidx.compose.ui.unit.dp
 import com.worksi.app.ui.theme.CyanPrimary
 import com.worksi.app.ui.theme.OrangeAccent
 import com.worksi.app.ui.theme.White
-import com.worksi.app.ui.theme.worksiOnCyanOutlinedFieldColors
 import com.worksi.app.validation.PasswordPolicy
 import com.worksi.app.validation.RutRules
 
 private val EMAIL_REGEX = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
+private val RegisterBackButtonRowHeight = 56.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,9 +59,6 @@ fun RegisterPersonalScreen(
     var showErrors by remember { mutableStateOf(false) }
     var regionMenu by remember { mutableStateOf(false) }
     var communeMenu by remember { mutableStateOf(false) }
-    val fieldColors = worksiOnCyanOutlinedFieldColors()
-    val fieldShape = RoundedCornerShape(12.dp)
-
     LaunchedEffect(Unit) {
         viewModel.loadRegions()
     }
@@ -77,7 +72,7 @@ fun RegisterPersonalScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 40.dp)
+                .padding(start = 24.dp, top = RegisterBackButtonRowHeight, end = 24.dp, bottom = 24.dp)
         ) {
             Text("Crear cuenta", style = MaterialTheme.typography.headlineSmall, color = White)
             Spacer(Modifier.height(16.dp))
@@ -95,27 +90,24 @@ fun RegisterPersonalScreen(
                 Spacer(Modifier.height(8.dp))
             }
 
-            regField(fieldColors, fieldShape, "Nombre (*)", d.firstName, { s -> viewModel.updateDraft { it.copy(firstName = s) } }, showErrors && d.firstName.isBlank())
-            regField(fieldColors, fieldShape, "Segundo nombre", d.middleName, { s -> viewModel.updateDraft { it.copy(middleName = s) } }, false)
-            regField(fieldColors, fieldShape, "Apellido paterno (*)", d.lastNamePaternal, { s -> viewModel.updateDraft { it.copy(lastNamePaternal = s) } }, showErrors && d.lastNamePaternal.isBlank())
-            regField(fieldColors, fieldShape, "Apellido materno (*)", d.lastNameMaternal, { s -> viewModel.updateDraft { it.copy(lastNameMaternal = s) } }, showErrors && d.lastNameMaternal.isBlank())
-            regField(fieldColors, fieldShape, "Correo (*)", d.email, { s -> viewModel.updateDraft { it.copy(email = s) } }, showErrors && (d.email.isBlank() || !EMAIL_REGEX.matches(d.email.trim())))
-            OutlinedTextField(
+            regField("Nombre (*)", d.firstName, { s -> viewModel.updateDraft { it.copy(firstName = s) } }, showErrors && d.firstName.isBlank())
+            regField("Segundo nombre", d.middleName, { s -> viewModel.updateDraft { it.copy(middleName = s) } }, false)
+            regField("Apellido paterno (*)", d.lastNamePaternal, { s -> viewModel.updateDraft { it.copy(lastNamePaternal = s) } }, showErrors && d.lastNamePaternal.isBlank())
+            regField("Apellido materno (*)", d.lastNameMaternal, { s -> viewModel.updateDraft { it.copy(lastNameMaternal = s) } }, showErrors && d.lastNameMaternal.isBlank())
+            regField("Correo (*)", d.email, { s -> viewModel.updateDraft { it.copy(email = s) } }, showErrors && (d.email.isBlank() || !EMAIL_REGEX.matches(d.email.trim())))
+            RegisterOutlinedTextField(
                 value = d.password,
                 onValueChange = { s -> viewModel.updateDraft { it.copy(password = s) } },
-                label = { Text("Contrasena (*)", color = White.copy(alpha = 0.8f)) },
+                label = { Text("Contrasena (*)") },
                 visualTransformation = PasswordVisualTransformation(),
                 isError = showErrors && !PasswordPolicy.matches(d.password),
-                modifier = Modifier.fillMaxWidth(),
-                shape = fieldShape,
-                colors = fieldColors,
-                singleLine = true
+                modifier = Modifier.fillMaxWidth()
             )
             Spacer(Modifier.height(8.dp))
-            regField(fieldColors, fieldShape, "Celular (*)", d.phone, { s -> viewModel.updateDraft { it.copy(phone = s) } }, showErrors && d.phone.isBlank())
-            regField(fieldColors, fieldShape, "RUT (*)", d.rut, { s -> viewModel.updateDraft { it.copy(rut = s) } }, showErrors && !RutRules.isValidChileRut(d.rut))
-            regField(fieldColors, fieldShape, "Nro. documento (*)", d.documentNumber, { s -> viewModel.updateDraft { it.copy(documentNumber = s) } }, showErrors && d.documentNumber.isBlank())
-            regField(fieldColors, fieldShape, "Calle (opcional)", d.street, { s -> viewModel.updateDraft { it.copy(street = s) } }, false)
+            regField("Celular (*)", d.phone, { s -> viewModel.updateDraft { it.copy(phone = s) } }, showErrors && d.phone.isBlank())
+            regField("RUT (*)", d.rut, { s -> viewModel.updateDraft { it.copy(rut = s) } }, showErrors && !RutRules.isValidChileRut(d.rut))
+            regField("Nro. documento (*)", d.documentNumber, { s -> viewModel.updateDraft { it.copy(documentNumber = s) } }, showErrors && d.documentNumber.isBlank())
+            regField("Calle (opcional)", d.street, { s -> viewModel.updateDraft { it.copy(street = s) } }, false, singleLine = false)
 
             Spacer(Modifier.height(8.dp))
             Text("Region (*)", color = White.copy(alpha = 0.9f))
@@ -123,18 +115,14 @@ fun RegisterPersonalScreen(
                 expanded = regionMenu,
                 onExpandedChange = { regionMenu = !regionMenu }
             ) {
-                OutlinedTextField(
-                    modifier = Modifier
-                        .menuAnchor()
-                        .fillMaxWidth(),
+                RegisterOutlinedTextField(
+                    modifier = Modifier.menuAnchor().fillMaxWidth(),
                     readOnly = true,
                     value = state.regions.find { it.id == d.regionId }?.name ?: "",
                     onValueChange = {},
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = regionMenu) },
                     isError = showErrors && d.regionId == null,
-                    label = { Text("Selecciona region", color = White.copy(alpha = 0.8f)) },
-                    shape = fieldShape,
-                    colors = fieldColors
+                    label = { Text("Selecciona region") }
                 )
                 DropdownMenu(
                     expanded = regionMenu,
@@ -158,19 +146,15 @@ fun RegisterPersonalScreen(
                 expanded = communeMenu,
                 onExpandedChange = { if (d.regionId != null) communeMenu = !communeMenu }
             ) {
-                OutlinedTextField(
-                    modifier = Modifier
-                        .menuAnchor()
-                        .fillMaxWidth(),
+                RegisterOutlinedTextField(
+                    modifier = Modifier.menuAnchor().fillMaxWidth(),
                     readOnly = true,
                     enabled = d.regionId != null,
                     value = state.communes.find { it.id == d.communeId }?.name ?: "",
                     onValueChange = {},
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = communeMenu) },
                     isError = showErrors && d.communeId == null,
-                    label = { Text("Selecciona comuna", color = White.copy(alpha = 0.8f)) },
-                    shape = fieldShape,
-                    colors = fieldColors
+                    label = { Text("Selecciona comuna") }
                 )
                 DropdownMenu(
                     expanded = communeMenu,
@@ -189,22 +173,12 @@ fun RegisterPersonalScreen(
             }
 
             Spacer(Modifier.height(24.dp))
+            RegisterRequiredFieldsHint(showErrors && !d.isPersonalStepValid())
             Button(
                 onClick = {
                     showErrors = true
                     viewModel.clearCatalogError()
-                    val ok = d.firstName.isNotBlank() &&
-                        d.lastNamePaternal.isNotBlank() &&
-                        d.lastNameMaternal.isNotBlank() &&
-                        d.email.isNotBlank() &&
-                        EMAIL_REGEX.matches(d.email.trim()) &&
-                        PasswordPolicy.matches(d.password) &&
-                        d.phone.isNotBlank() &&
-                        RutRules.isValidChileRut(d.rut) &&
-                        d.documentNumber.isNotBlank() &&
-                        d.regionId != null &&
-                        d.communeId != null
-                    if (ok) onNext()
+                    if (d.isPersonalStepValid()) onNext()
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -230,24 +204,34 @@ fun RegisterPersonalScreen(
 
 @Composable
 private fun regField(
-    colors: TextFieldColors,
-    shape: RoundedCornerShape,
     label: String,
     value: String,
     onChange: (String) -> Unit,
-    isError: Boolean
+    isError: Boolean,
+    singleLine: Boolean = true
 ) {
     Column {
-        OutlinedTextField(
+        RegisterOutlinedTextField(
             value = value,
             onValueChange = onChange,
-            label = { Text(label, color = White.copy(alpha = 0.8f)) },
+            label = { Text(label) },
             isError = isError,
             modifier = Modifier.fillMaxWidth(),
-            shape = shape,
-            colors = colors,
-            singleLine = label != "Calle (opcional)"
+            singleLine = singleLine
         )
         Spacer(Modifier.height(8.dp))
     }
 }
+
+private fun RegisterDraft.isPersonalStepValid(): Boolean =
+    firstName.isNotBlank() &&
+        lastNamePaternal.isNotBlank() &&
+        lastNameMaternal.isNotBlank() &&
+        email.isNotBlank() &&
+        EMAIL_REGEX.matches(email.trim()) &&
+        PasswordPolicy.matches(password) &&
+        phone.isNotBlank() &&
+        RutRules.isValidChileRut(rut) &&
+        documentNumber.isNotBlank() &&
+        regionId != null &&
+        communeId != null

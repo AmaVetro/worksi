@@ -8,6 +8,7 @@ import {
   fetchSectors,
   fetchSkillsBySector,
 } from "../services/catalogService";
+import { goBack } from "../utils/goBack";
 import "../styles/AdminForms.css";
 
 function emptyErrors() {
@@ -206,7 +207,7 @@ export default function RecruiterJobCreate() {
             type="button"
             className="secondary-btn"
             style={{ marginTop: 0, marginBottom: 12 }}
-            onClick={() => navigate("/recruiter/reclutamiento")}
+            onClick={() => goBack(navigate)}
           >
             Volver
           </button>

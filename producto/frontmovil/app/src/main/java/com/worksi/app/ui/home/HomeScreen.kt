@@ -1,6 +1,7 @@
 package com.worksi.app.ui.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,8 +14,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.IntOffset
+import kotlin.math.roundToInt
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -43,9 +47,31 @@ fun HomeScreen(
     val empty by viewModel.empty.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val actionBusy by viewModel.actionBusy.collectAsState()
+    val showApplyConfirm by viewModel.showApplyConfirm.collectAsState()
     val errText = errorMessage
     val currentOffer = offer
     var showMenu by remember { mutableStateOf(false) }
+
+    if (showApplyConfirm) {
+        AlertDialog(
+            onDismissRequest = { viewModel.onDismissApplyConfirm() },
+            title = { Text("Confirmar postulación") },
+            text = { Text("¿Seguro de postular?") },
+            confirmButton = {
+                TextButton(
+                    onClick = { viewModel.onConfirmApply() },
+                    enabled = !actionBusy
+                ) {
+                    Text("Postular")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.onDismissApplyConfirm() }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -89,7 +115,7 @@ fun HomeScreen(
                     selected = true,
                     onClick = { },
                     icon = { Icon(Icons.Filled.Home, contentDescription = "Home", tint = White) },
-                    label = { Text("Home", color = White, fontSize = 12.sp) },
+                    label = { Text("Ofertas", color = White, fontSize = 12.sp) },
                     colors = NavigationBarItemDefaults.colors(
                         unselectedIconColor = White,
                         unselectedTextColor = White,
@@ -102,7 +128,7 @@ fun HomeScreen(
                     selected = false,
                     onClick = onNavigateToMenu,
                     icon = { Icon(Icons.Filled.Menu, contentDescription = "Menú principal", tint = White) },
-                    label = { Text("Menú", color = White, fontSize = 12.sp) },
+                    label = { Text("Postulaciones", color = White, fontSize = 12.sp) },
                     colors = NavigationBarItemDefaults.colors(
                         unselectedIconColor = White,
                         unselectedTextColor = White,
@@ -163,12 +189,16 @@ fun HomeScreen(
                             modifier =
                                 Modifier.fillMaxWidth()
                                     .verticalScroll(rememberScrollState())) {
-                            JobOfferCard(currentOffer, onVerDetalles = { onOpenJobDetail(currentOffer.id) })
+                            SwipeableJobOfferCard(
+                                offer = currentOffer,
+                                enabled = !actionBusy,
+                                onSwipeRight = viewModel::onSwipeToApply,
+                                onSwipeLeft = viewModel::onSwipeToPass,
+                                onVerDetalles = { onOpenJobDetail(currentOffer.id) })
                             Spacer(modifier = Modifier.height(8.dp))
                             ActionButtons(
-                                onPostular = viewModel::onPostular,
-                                onGuardar = viewModel::onGuardar,
-                                onPasar = viewModel::onPasar,
+                                onPostular = viewModel::onSwipeToApply,
+                                onPasar = viewModel::onSwipeToPass,
                                 enabled = !actionBusy)
                         }
                     }
@@ -179,11 +209,40 @@ fun HomeScreen(
     }
 }
 
+@Composable
+fun SwipeableJobOfferCard(
+    offer: JobOffer,
+    enabled: Boolean,
+    onSwipeRight: () -> Unit,
+    onSwipeLeft: () -> Unit,
+    onVerDetalles: () -> Unit
+) {
+    var offsetX by remember(offer.id) { mutableFloatStateOf(0f) }
+    val threshold = 120f
+    JobOfferCard(
+        offer = offer,
+        onVerDetalles = onVerDetalles,
+        modifier =
+            Modifier.offset { IntOffset(offsetX.roundToInt(), 0) }
+                .pointerInput(offer.id, enabled) {
+                    if (!enabled) return@pointerInput
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            when {
+                                offsetX > threshold -> onSwipeRight()
+                                offsetX < -threshold -> onSwipeLeft()
+                            }
+                            offsetX = 0f
+                        },
+                        onHorizontalDrag = { _, dragAmount -> offsetX += dragAmount })
+                })
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun JobOfferCard(offer: JobOffer, onVerDetalles: () -> Unit) {
+fun JobOfferCard(offer: JobOffer, onVerDetalles: () -> Unit, modifier: Modifier = Modifier) {
     Card(
-        modifier = Modifier.fillMaxWidth().wrapContentHeight(),
+        modifier = modifier.fillMaxWidth().wrapContentHeight(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = White),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -329,15 +388,10 @@ fun JobOfferCard(offer: JobOffer, onVerDetalles: () -> Unit) {
 }
 
 @Composable
-fun ActionButtons(
-    onPostular: () -> Unit,
-    onGuardar: () -> Unit,
-    onPasar: () -> Unit,
-    enabled: Boolean = true
-) {
+fun ActionButtons(onPostular: () -> Unit, onPasar: () -> Unit, enabled: Boolean = true) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly
+        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
     ) {
         Button(
             onClick = onPostular,
@@ -350,29 +404,10 @@ fun ActionButtons(
             modifier = Modifier
                 .weight(1f)
                 .height(44.dp)
-                .padding(horizontal = 2.dp)
         ) {
             Icon(Icons.Filled.Send, contentDescription = null, tint = White, modifier = Modifier.size(16.dp))
-            Spacer(modifier = Modifier.width(2.dp))
+            Spacer(modifier = Modifier.width(4.dp))
             Text("Postular", color = White, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
-
-        Button(
-            onClick = onGuardar,
-            enabled = enabled,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = CyanPrimary,
-                contentColor = White
-            ),
-            shape = RoundedCornerShape(8.dp),
-            modifier = Modifier
-                .weight(1f)
-                .height(44.dp)
-                .padding(horizontal = 2.dp)
-        ) {
-            Icon(Icons.Filled.Bookmark, contentDescription = null, tint = White, modifier = Modifier.size(16.dp))
-            Spacer(modifier = Modifier.width(2.dp))
-            Text("Guardar", color = White, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
 
         Button(
@@ -386,10 +421,9 @@ fun ActionButtons(
             modifier = Modifier
                 .weight(1f)
                 .height(44.dp)
-                .padding(horizontal = 2.dp)
         ) {
             Icon(Icons.Filled.Close, contentDescription = null, tint = White, modifier = Modifier.size(16.dp))
-            Spacer(modifier = Modifier.width(2.dp))
+            Spacer(modifier = Modifier.width(4.dp))
             Text("Pasar", color = White, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }

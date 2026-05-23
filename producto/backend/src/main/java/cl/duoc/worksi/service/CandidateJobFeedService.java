@@ -11,16 +11,19 @@ import cl.duoc.worksi.entity.Job;
 import cl.duoc.worksi.entity.JobSkill;
 import cl.duoc.worksi.entity.Skill;
 import cl.duoc.worksi.entity.enums.JobStatus;
+import cl.duoc.worksi.repository.ApplicationRepository;
 import cl.duoc.worksi.repository.CandidateJobSwipeRepository;
 import cl.duoc.worksi.repository.CommuneRepository;
 import cl.duoc.worksi.repository.JobRepository;
 import cl.duoc.worksi.repository.JobSkillRepository;
 import cl.duoc.worksi.repository.SkillRepository;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -35,6 +38,7 @@ public class CandidateJobFeedService {
   private final JobSkillRepository jobSkillRepository;
   private final SkillRepository skillRepository;
   private final CandidateJobSwipeRepository candidateJobSwipeRepository;
+  private final ApplicationRepository applicationRepository;
   private final CommuneRepository communeRepository;
   private final ProductMatchService productMatchService;
 
@@ -43,12 +47,14 @@ public class CandidateJobFeedService {
       JobSkillRepository jobSkillRepository,
       SkillRepository skillRepository,
       CandidateJobSwipeRepository candidateJobSwipeRepository,
+      ApplicationRepository applicationRepository,
       CommuneRepository communeRepository,
       ProductMatchService productMatchService) {
     this.jobRepository = jobRepository;
     this.jobSkillRepository = jobSkillRepository;
     this.skillRepository = skillRepository;
     this.candidateJobSwipeRepository = candidateJobSwipeRepository;
+    this.applicationRepository = applicationRepository;
     this.communeRepository = communeRepository;
     this.productMatchService = productMatchService;
   }
@@ -58,12 +64,14 @@ public class CandidateJobFeedService {
     int p = Math.max(1, page);
     int sz = Math.min(100, Math.max(1, size));
     Pageable pageable = PageRequest.of(p - 1, sz, Sort.by(Sort.Direction.DESC, "createdAt"));
-    List<Long> swiped = candidateJobSwipeRepository.findJobIdsByCandidateUserId(candidateUserId);
+    Set<Long> excluded = new HashSet<>();
+    excluded.addAll(candidateJobSwipeRepository.findJobIdsByCandidateUserId(candidateUserId));
+    excluded.addAll(applicationRepository.findJobIdsByCandidateUserId(candidateUserId));
     Page<Job> result;
-    if (swiped.isEmpty()) {
+    if (excluded.isEmpty()) {
       result = jobRepository.findByStatusOrderByCreatedAtDesc(JobStatus.ACTIVE, pageable);
     } else {
-      result = jobRepository.findByStatusAndIdNotIn(JobStatus.ACTIVE, swiped, pageable);
+      result = jobRepository.findByStatusAndIdNotIn(JobStatus.ACTIVE, excluded, pageable);
     }
     List<CandidateJobFeedItemResponse> items =
         result.getContent().stream().map(j -> toFeedItem(j, candidateUserId)).toList();

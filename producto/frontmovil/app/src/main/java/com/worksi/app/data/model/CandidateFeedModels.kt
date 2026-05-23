@@ -34,6 +34,14 @@ data class CandidateJobMatchJson(
 
 data class CandidateSwipeBody(@Json(name = "job_id") val jobId: Long, val action: String)
 
+data class CandidateApplicationBody(@Json(name = "job_id") val jobId: Long)
+
+data class CandidateApplicationCreatedJson(
+    @Json(name = "application_id") val applicationId: Long,
+    val status: String,
+    @Json(name = "applied_at") val appliedAt: String?
+)
+
 data class CandidateJobDetailJson(
     @Json(name = "job_id") val jobId: Long,
     val title: String,

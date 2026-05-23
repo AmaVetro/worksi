@@ -50,3 +50,10 @@ export async function createRecruiter(payload) {
   const { data } = await api.post("/api/v1/admin/recruiters", payload);
   return data;
 }
+
+export async function getActiveJobsTotal() {
+  const { data } = await api.get("/api/v1/admin/jobs/stats");
+  const raw = data?.active_jobs_total ?? data?.activeJobsTotal;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : 0;
+}
