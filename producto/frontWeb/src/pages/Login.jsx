@@ -15,54 +15,47 @@ function Login() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
-
         if (!email || !password) {
-        setError("Todos los campos son obligatorios");
-        return;
+          setError("Todos los campos son obligatorios");
+          return;
         }
-
         try {
-        setLoading(true);
-
-        const data = await login(email, password);
-
-        const { token, user } = deriveSessionFromLoginBody(data);
-        if (!token) {
-          setError("Respuesta de login invalida");
-          return;
-        }
-        if (!user || !user.role) {
-          setError("Respuesta de login invalida");
-          return;
-        }
-        localStorage.setItem("token", token);
-        localStorage.setItem("user", JSON.stringify(user));
-
-        const r = user.role;
-        if (r === "ADMIN") {
-          navigate("/home");
-        } else if (r === "RECRUITER") {
-          navigate("/recruiter/home");
-        } else {
-          navigate("/home");
-        }
-
+          setLoading(true);
+          const data = await login(email, password);
+          const { token, user } = deriveSessionFromLoginBody(data);
+          if (!token) {
+            setError("Respuesta de login invalida");
+            return;
+          }
+          if (!user || !user.role) {
+            setError("Respuesta de login invalida");
+            return;
+          }
+          localStorage.setItem("token", token);
+          localStorage.setItem("user", JSON.stringify(user));
+          const r = user.role;
+          if (r === "ADMIN") {
+            navigate("/home");
+          } else if (r === "RECRUITER") {
+            navigate("/recruiter/home");
+          } else {
+            navigate("/home");
+          }
         } catch (err) {
-        const blocked = parseLoginBlockedDerivation(err);
-        if (blocked) {
-          navigate("/recovery/locked", {
-            state: {
-              email: email.trim(),
-              lockReason: blocked.lockReason,
-            },
-          });
-          return;
-        }
-        const message =
-            err.response?.data?.error?.message ||
-            "Error al iniciar sesión";
-
-        setError(message);
+          const blocked = parseLoginBlockedDerivation(err);
+          if (blocked) {
+            navigate("/recovery/locked", {
+              state: {
+                email: email.trim(),
+                lockReason: blocked.lockReason,
+              },
+            });
+            return;
+          }
+          const message =
+              err.response?.data?.error?.message ||
+              "Error al iniciar sesión";
+          setError(message);
 
         } finally {
         setLoading(false);

@@ -214,7 +214,7 @@ Criterios de aceptación:
 
 
 
-HU-14 — Cancelar postulación (SÓLO SI SOBRA TIEMPO)
+HU-14 — Cancelar postulación (SÓLO SI SOBRA TIEMPO, DE LAS MENOS IMPORTANTES)
 Como candidato
 * Quiero cancelar una postulación
 * Para retractarme si es necesario
@@ -253,7 +253,7 @@ skills_ids entre 3 y 8 asociadas a la oferta
 
 
 
-HU-16 — Editar oferta (SÓLO SI SOBRA TIEMPO)
+HU-16 — Editar oferta (SÓLO SI SOBRA TIEMPO, DE LAS MENOS IMPORTANTES)
 Como reclutador (RECRUITER)
 * Quiero editar una oferta
 * Para actualizar información
@@ -266,7 +266,7 @@ Criterios de aceptación:
 
 
 
-HU-17 — Eliminar oferta (SÓLO SI SOBRA TIEMPO, descartada del diseño actual por estado único ACTIVE)
+HU-17 — Eliminar oferta (Se había descartado del diseño actual por estado único ACTIVE, pero ahora se agregará, por lo que ya no habrá solo estado ACTIVE)
 Como reclutador (RECRUITER)
 * Quiero eliminar una oferta
 * Para retirar publicaciones
@@ -331,7 +331,7 @@ Criterios de aceptación:
 
 
 
-HU-22 — Eliminación de cuenta (SÓLO SI SOBRA TIEMPO)
+HU-22 — Eliminación de cuenta (SÓLO SI SOBRA TIEMPO, DE LAS MENOS IMPORTANTES)
 Como usuario
 * Quiero eliminar mi cuenta
 * Para borrar mis datos del sistema
@@ -358,7 +358,7 @@ Criterios de aceptación:
 
 
 
-HU-24 — Guardar oferta (SÓLO SI SOBRA TIEMPO)
+HU-24 — Guardar oferta
 Como candidato
 * Quiero guardar ofertas laborales
 * Para revisarlas más tarde antes de decidir si postulo o no
@@ -368,3 +368,72 @@ Criterios de aceptación:
 * El usuario puede acceder a una sección “Guardadas”
 * El usuario puede quitar una oferta de guardadas
 * No se duplica una oferta si se guarda más de una vez
+
+
+
+
+
+
+HU-25 — Ver empresas registradas (Nueva, importante)
+Como administrador
+* Quiero visualizar el listado de empresas registradas
+* Para gestionar y revisar las empresas existentes en la plataforma
+Criterios de aceptación (alineados a portal administrador y Contrato Unificado API):
+* Existe una vista de listado de empresas accesible desde sesión ADMIN
+* El listado consume GET /api/v1/admin/companies
+* Se muestran empresas registradas sin errores de carga
+* La información visible incluye como mínimo:
+- nombre comercial
+- correo corporativo
+- teléfono
+- región
+- comuna
+- sector
+* Si no existen empresas registradas, se muestra mensaje informativo
+* Manejo de errores visible si falla validación o servidor
+* La carga del listado funciona correctamente con datos persistidos en BD
+
+
+
+
+
+
+HU-26 — Ver reclutadores registrados (Nueva, importante)
+Como administrador
+* Quiero visualizar el listado de reclutadores registrados
+* Para gestionar y revisar los usuarios reclutadores existentes en la plataforma
+Criterios de aceptación (alineados a portal administrador y Contrato Unificado API):
+* Existe una vista de listado de reclutadores accesible desde sesión ADMIN
+* El listado obtiene reclutadores registrados desde backend
+* Se muestran reclutadores registrados sin errores de carga
+* La información visible incluye como mínimo:
+- nombre
+- apellido
+- email
+- empresa asociada
+- rol
+* Cada reclutador muestra claramente la empresa (company) a la que pertenece
+* Si no existen reclutadores registrados, se muestra mensaje informativo
+* Manejo de errores visible si falla validación o servidor
+* La carga del listado funciona correctamente con datos persistidos en BD
+
+
+
+
+
+
+HU-27 — Eliminar empresas y reclutadores registrados (Nueva, importante)
+Como administrador
+* Quiero eliminar empresas y reclutadores registrados desde sus listados
+* Para mantener la plataforma administrada y depurar registros cuando sea necesario
+Criterios de aceptación (alineados a portal administrador y Contrato Unificado API):
+* En el listado de empresas existe acción para eliminar empresa registrada
+* En el listado de reclutadores existe acción para eliminar reclutador registrado
+* La eliminación requiere confirmación previa
+* Solo usuarios con sesión ADMIN pueden ejecutar esta acción
+* Si se confirma la eliminación, el registro deja de aparecer en el listado correspondiente
+* El sistema muestra feedback visual de eliminación exitosa o fallida
+* Manejo de errores visible si falla validación o servidor
+* La eliminación de un reclutador no afecta otros reclutadores ni empresas no seleccionadas
+* La eliminación de una empresa respeta las reglas de integridad definidas por backend respecto a reclutadores asociados y datos relacionados
+* No se elimina ningún registro sin confirmación explícita del administrador

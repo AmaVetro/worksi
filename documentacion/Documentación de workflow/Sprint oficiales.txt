@@ -1,6 +1,6 @@
 PLAN DE SPRINTS — WorkSí
 
-(Reordenado por lógica de desarrollo · Product Backlog como insumo · 11 semanas · equipo de 3 · carga más equilibrada por esfuerzo real · total MVP estimado 102 h de equipo)
+(Reordenado por lógica de desarrollo · Product Backlog como insumo · 13 semanas · equipo de 3 · carga más equilibrada por esfuerzo real · total MVP estimado 102 h de equipo)
 
 Fuentes alineadas: Contrato Unificado API, Flujo Pantallas App Web / Móvil, HU sin épicas, Reglas del Proyecto, migraciones Flyway en producto/backend/src/main/resources/db/migration/
 
@@ -23,8 +23,6 @@ PARÁMETROS DEL PLAN (EXPLÍCITOS)
 
 ●    Equipo: 3 integrantes. Las horas por sprint son el esfuerzo total del equipo sumado en esa semana (no horas por persona).
 
-●    Calendario: 11 sprints. Primera semana: semana del 20 de abril de 2026. Última semana obligatoria: semana del 29 de junio de 2026 (29 junio – 5 julio 2026).
-
 ●    Carga similar entre sprints por esfuerzo real: estimación variable entre 8 h y 10 h según complejidad de actividades de cada semana. El total del MVP se mantiene en el rango 83–110 h.
 
 ●    Criterio de ordenación: lógica de desarrollo (dependencias, pipeline de IA) y entregas de valor continuas. Cada sprint puede atravesar BD, frontend y backend a la vez.
@@ -44,11 +42,7 @@ SOLO SI SOBRA TIEMPO (FUERA DEL PLAN DE SPRINTS)
 
 Estas HU no forman parte del compromiso del MVP ni consumen las semanas numeradas. Implementarlas solo si sobra tiempo antes de la entrega o en paralelo no crítico.
 
-●    HU-24 — Guardar oferta (Favoritos del candidato).
-
 ●    HU-16 — Editar oferta (Reclutador / portal empresa).
-
-●    HU-17 — Eliminar oferta (descartada del diseño actual por estado único ACTIVE).
 
 ●    HU-14 — Cancelar postulación (candidato).
 
@@ -58,10 +52,10 @@ Estas HU no forman parte del compromiso del MVP ni consumen las semanas numerada
 
 
 ═══════════════════════════════════════════════════════════
-CALENDARIO (11 SEMANAS)
+CALENDARIO (13 SEMANAS)
 ═══════════════════════════════════════════════════════════
 
-Sprint 1 (Sprint pesado):   20–26 abril 2026
+Sprint 1 (Sprint pesado):   6 - 12 Abril 2026
 
 Esfuerzo total estimado del equipo: 10 h.
 Contenido:
@@ -72,7 +66,7 @@ Contenido:
 Equilibrio: prioridad absoluta es esquema y Flyway ejecutable antes de historia web empresa antigua; sin confundir con login empresa inexistente.
 
 
-Sprint 2:   27 abril – 3 mayo 2026
+Sprint 2:   13 - 19 Abril 2026
 
 Esfuerzo total estimado del equipo: 10 h.
 Contenido:
@@ -83,7 +77,7 @@ Contenido:
 Equilibrio: antes de crear ofertas deben existir companies y usuarios RECRUITER; antes de HU-15 en backlog funcional debe existir autenticación multirol.
 
 
-Sprint 3:   4–10 mayo 2026
+Sprint 3:   20 - 26 Abril 2026
 
 Esfuerzo total estimado del equipo: 9 h.
 Contenido:
@@ -93,7 +87,7 @@ Contenido:
 Equilibrio: flujo móvil paralelo sin depender ya de modelo antiguo “empresa se registra sola desde web público”.
 
 
-Sprint 4:   11–17 mayo 2026
+Sprint 4:   27 Abril - 3 Mayo 2026
 
 Esfuerzo total estimado del equipo: 10 h.
 Contenido:
@@ -103,7 +97,7 @@ Contenido:
 Equilibrio: candidato navegable dentro de perfil sólo después de ciclo contractual correcto.
 
 
-Sprint 5 (Sprint pesado):   18–24 mayo 2026
+Sprint 5 (Sprint pesado):   4 - 10 Mayo 2026
 
 Esfuerzo total estimado del equipo: 10 h.
 Contenido:
@@ -115,7 +109,7 @@ Equilibrio: insumos listos para fairness + IA semana siguiente.
 
 
 
-Sprint 6 (Sprint pesado):   25–31 mayo 2026
+Sprint 6 (Sprint pesado):   11 - 17 Mayo 2026
 
 Esfuerzo total estimado del equipo: 10 h.
 Contenido:
@@ -127,7 +121,7 @@ Equilibrio: núcleo IA cerrado después de tener ambos extremos contenido candid
 
 
 
-Sprint 7 (Sprint pesado):   1–7 junio 2026
+Sprint 7 (Sprint pesado):   18 - 24 Mayo 2026
 
 Esfuerzo total estimado del equipo: 10 h.
 Contenido:
@@ -141,7 +135,7 @@ Equilibrio: experiencia swipe depende del score Sprint 6; web admin garantiza on
 
 
 
-Sprint 8:   8–14 junio 2026
+Sprint 8:   25 - 31 Mayo 2026
 
 Esfuerzo total estimado del equipo: 9 h.
 Contenido:
@@ -153,31 +147,36 @@ Equilibrio: candidato tiene seguimiento; empresa puede operar ciclo medio sin de
 
 
 
-Sprint 9:   15–21 junio 2026
+Sprint 9:   1 - 7 Junio 2026
 
-Esfuerzo total estimado del equipo: 9 h.
+Esfuerzo total estimado del equipo: 18 h.
 Contenido:
 ●    HU-19 — Ver postulantes (sesión RECRUITER) por job.
 ●    HU-23 — Marcar VIEWED sólo manual reclutador; sin automatismos servidor.
 ●    Pulimiento navegaciones web segunda mitad HU panel (mensajes errores campo “Completa este campo”).
-Equilibrio: operación empresa coherente con manualidad estados vista.
+●    HU-17 — Eliminar oferta (RECRUITER; confirmación previa; deja de ser visible para candidatos; no rompe postulaciones previas según HU sin épicas).
+●    HU-25 — Ver empresas registradas (ADMIN; vista listado con GET /api/v1/admin/companies; datos mínimos comercial, corporate_email, teléfono, región, comuna, sector; vacío y errores manejados).
+●    HU-26 — Ver reclutadores registrados (ADMIN; vista listado desde backend; nombre, apellidos, email, empresa asociada, rol; vacío y errores manejados).
+Equilibrio: operación empresa coherente con manualidad estados vista; portal administrador con listados de empresas y reclutadores listos para gestión en Sprint 10.
 
 
 
 
 
-Sprint 10:  22–28 junio 2026
+Sprint 10:  8 - 14 Junio 2026
 
-Esfuerzo total estimado del equipo: 7 h.
+Esfuerzo total estimado del equipo: 16 h.
 Contenido:
 ●    HU-20 — Orden descendente compatibilidad en listados API/UI reclutador.
 ●    HU-05 — Editar perfil candidato (skills/perfil siguen fuera ponderación IA).
 ●    Afinar textos seguridad/consentimiento y revisiones menor copy web/móvil.
-Equilibrio: iteración sobre módulos existentes menor carga tras picos IA + web.
+●    HU-24 — Guardar oferta (candidato; acción guardar, sección Guardadas, quitar de guardadas, sin duplicar; almacenamiento correcto según HU sin épicas).
+●    HU-27 — Eliminar empresas y reclutadores registrados (ADMIN; acción en cada listado HU-25/HU-26; confirmación previa; solo ADMIN; feedback éxito/error; integridad BD con reclutadores y datos relacionados según HU sin épicas).
+Equilibrio: iteración sobre módulos existentes y cierre de gestión admin (bajas) y favoritos candidato; depende de listados HU-25 y HU-26 del Sprint 9.
 
 
 
-Sprint 11 (Sprint pesado):  29 junio – 5 julio 2026   (semana que comienza el 29 de junio de 2026)
+Sprint 11 (Sprint pesado):  15 - 21 Junio 2026   
 
 Esfuerzo total estimado del equipo: 8 h.
 Contenido:
@@ -193,7 +192,19 @@ Equilibrio semana puerto cierre oficial plan.
 
 
 
-Nota: cada sprint arranca lunes; primera semana 20–26 abril 2026; última obligatoria 29 junio–5 julio 2026.
+Sprint 12 en semana 22 - 28 Junio 2026
+(Por definir, aún no se sabe qué se hará en este sprint: si acaso se harán las HU opcionales, o sistema de mensajes al
+ correo, o agregar CI/CD, o agregar Match real tipo tinder, o 
+agregar despliegue tipo demo en render, vercel, railway, etc)
+
+
+
+Sprint 13 en semana 29 Junio - 5 Julio 2026
+(Por definir, aún no se sabe qué se hará en este sprint: si acaso se harán las HU opcionales, o agregar CI/CD, o agregar Match real tipo tinder o 
+agregar despliegue tipo demo en render, vercel, railway, etc)
+
+
+
 
 
 
@@ -215,16 +226,18 @@ LÓGICA DE DESARROLLO (RESUMEN)
 
 ●    Swipe/post Sprint 7 apoyados score; paralelo primera entrega navegable web ADMIN/RECRUITER.
 
-●    HU-13 Sprint 8; refinamiento web Sprint 8–9; orden HU-20 Sprint 10; cierre Sprint 11 E2E + demo.
+●    HU-13 Sprint 8; refinamiento web Sprint 8–9; Sprint 9 suma HU-17 HU-25 HU-26 (portal reclutador y listados ADMIN); Sprint 10 suma HU-20 HU-05 HU-24 HU-27 (HU-27 requiere listados HU-25/HU-26 del Sprint 9); cierre Sprint 11 E2E + demo.
 
-●    HU opcionales backlog no bloquean ruta crítica.
+●    HU-17, HU-24, HU-25, HU-26 y HU-27 pasan a plan obligatorio en Sprints 9–10 (ya no backlog opcional).
+
+●    HU opcionales backlog restante no bloquean ruta crítica.
 
 
 ═══════════════════════════════════════════════════════════
 RESUMEN NUMÉRICO
 ═══════════════════════════════════════════════════════════
 
-●    Número de sprints: 11
+●    Número de sprints: 13
 
 ●    Duración de cada sprint: 1 semana calendario
 
@@ -232,26 +245,7 @@ RESUMEN NUMÉRICO
 
 ●    Ajuste fino: ±1 h redistribuible dentro rango MVP 83–110 h manteniendo calendario
 
-●    Primera semana del plan: semana del 20 de abril de 2026
 
-●    Última semana del plan (obligatoria): semana del 29 de junio de 2026 (29 junio – 5 julio 2026)
-
-
-Tabla de estimación (horas totales del equipo por sprint):
-
-Sprint 1  (20–26 abr):    10 h
-Sprint 2  (27 abr–3 may):  10 h
-Sprint 3  (4–10 may):      9 h
-Sprint 4  (11–17 may):    10 h
-Sprint 5  (18–24 may):    10 h
-Sprint 6  (25–31 may):    10 h
-Sprint 7  (1–7 jun):      10 h
-Sprint 8  (8–14 jun):      9 h
-Sprint 9  (15–21 jun):     9 h
-Sprint 10 (22–28 jun):     7 h
-Sprint 11 (29 jun–5 jul):  8 h
-                        ─────
-Total estimado:          102 h
 
 Total MVP según documentación técnica previa: mínimo ~83 h, más probable ~100–110 h; esta línea base 102 h se mantiene equilibrada y admite micro ajustes por sprint sin mover fechas.
 

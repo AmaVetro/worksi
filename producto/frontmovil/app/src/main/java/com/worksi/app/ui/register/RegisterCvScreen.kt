@@ -65,7 +65,6 @@ fun RegisterCvScreen(
     var pickValidating by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val busy = isCvChecking || pickValidating
-
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
