@@ -5,6 +5,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "candidate_profiles")
@@ -54,6 +56,10 @@ public class CandidateProfile {
 
   @Column(name = "salary_expected_max")
   private Integer salaryExpectedMax;
+
+  @JdbcTypeCode(SqlTypes.TINYINT)
+  @Column(name = "years_experience", nullable = false)
+  private int yearsExperience;
 
   @Column(name = "consent_given", nullable = false)
   private boolean consentGiven;
@@ -127,6 +133,10 @@ public class CandidateProfile {
 
   public Integer getSalaryExpectedMax() {
     return salaryExpectedMax;
+  }
+
+  public int getYearsExperience() {
+    return yearsExperience;
   }
 
   public boolean isConsentGiven() {
@@ -203,6 +213,10 @@ public class CandidateProfile {
 
   public void setSalaryExpectedMax(Integer salaryExpectedMax) {
     this.salaryExpectedMax = salaryExpectedMax;
+  }
+
+  public void setYearsExperience(int yearsExperience) {
+    this.yearsExperience = yearsExperience;
   }
 
   public void setConsentGiven(boolean consentGiven) {

@@ -26,6 +26,7 @@ data class ProfileUiState(
     val phone: String = "",
     val description: String = "",
     val salaryLine: String = "",
+    val yearsExperienceLine: String = "",
     val modalities: List<String> = emptyList(),
     val workloads: List<String> = emptyList(),
     val skills: List<CandidateProfileSkillJson> = emptyList()
@@ -106,6 +107,7 @@ class ProfileViewModel : ViewModel() {
                 phone = p.phone?.trim().orEmpty().ifBlank { "—" },
                 description = p.profileSummary?.trim().orEmpty().ifBlank { "Sin descripción personal." },
                 salaryLine = formatSalaryRange(p.salaryExpectedMin, p.salaryExpectedMax),
+                yearsExperienceLine = formatYearsExperience(p.yearsExperience),
                 modalities = p.preferredModalities.map { modalityLabel(it) },
                 workloads = p.preferredWorkloads.map { workloadLabel(it) },
                 skills = p.skills)
@@ -129,6 +131,16 @@ class ProfileViewModel : ViewModel() {
             minStr != null -> minStr
             maxStr != null -> maxStr
             else -> "—"
+        }
+    }
+
+    private fun formatYearsExperience(years: Int): String {
+        return if (years <= 0) {
+            "Sin experiencia laboral declarada"
+        } else if (years == 1) {
+            "1 año de experiencia"
+        } else {
+            "$years años de experiencia"
         }
     }
 

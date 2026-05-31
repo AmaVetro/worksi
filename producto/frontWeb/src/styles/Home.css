@@ -66,10 +66,21 @@
     align-items: stretch;
     }
 
-    .recruiter-job-detail-back {
-    align-self: flex-start;
+    .recruiter-job-detail-toolbar {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    gap: 12px;
     margin-top: 0;
     margin-bottom: 8px;
+    }
+
+    .recruiter-job-detail-toolbar-btn {
+    margin-top: 0;
+    margin-bottom: 0;
+    flex-shrink: 0;
     }
 
     .recruiter-job-detail-header {

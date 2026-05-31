@@ -1,5 +1,6 @@
 package com.worksi.app.ui.register
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,7 +26,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RangeSlider
+import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -54,6 +57,11 @@ private val RegisterBackButtonRowHeight = 56.dp
 private const val SALARY_STEP = 50_000f
 private val SALARY_RANGE_F = 300_000f..8_000_000f
 private val SALARY_SLIDER_DEFAULT = 1_000_000f..2_500_000f
+private const val MAX_YEARS_EXPERIENCE = 50
+
+private val MatchingNoticeBackground = Color(0x1AF97316)
+private val MatchingNoticeBorder = Color(0x59F97316)
+private val MatchingNoticeText = Color(0xFFC2410C)
 
 private fun snapSalary(value: Float): Float {
     val stepped = (value / SALARY_STEP).roundToInt() * SALARY_STEP
@@ -197,6 +205,49 @@ fun RegisterPreferencesScreen(
                 "${formatClPesos(SALARY_RANGE_F.start.toLong())} — ${formatClPesos(SALARY_RANGE_F.endInclusive.toLong())}",
                 style = MaterialTheme.typography.bodySmall,
                 color = White.copy(alpha = 0.55f)
+            )
+            Spacer(Modifier.height(16.dp))
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                color = MatchingNoticeBackground,
+                border = BorderStroke(1.dp, MatchingNoticeBorder)
+            ) {
+                Text(
+                    "Atencion: tus modalidades, cargas horarias y anos de experiencia declarados se consideran en el porcentaje de matching.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MatchingNoticeText,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)
+                )
+            }
+            Spacer(Modifier.height(16.dp))
+            Text("Anos de experiencia laboral (*)", color = White.copy(alpha = 0.9f))
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Indica cuantos anos de experiencia profesional tienes (0 si eres recien egresado).",
+                style = MaterialTheme.typography.bodySmall,
+                color = White.copy(alpha = 0.75f)
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = if (d.yearsExperience <= 0) "0 anos" else "${d.yearsExperience} anos",
+                style = MaterialTheme.typography.titleMedium,
+                color = White,
+                fontWeight = FontWeight.SemiBold
+            )
+            Slider(
+                value = d.yearsExperience.toFloat(),
+                onValueChange = { v ->
+                    viewModel.updateDraft { it.copy(yearsExperience = v.roundToInt()) }
+                },
+                valueRange = 0f..MAX_YEARS_EXPERIENCE.toFloat(),
+                steps = MAX_YEARS_EXPERIENCE - 1,
+                modifier = Modifier.fillMaxWidth(),
+                colors = SliderDefaults.colors(
+                    thumbColor = White,
+                    activeTrackColor = OrangeAccent,
+                    inactiveTrackColor = White.copy(alpha = 0.35f)
+                )
             )
             Spacer(Modifier.height(16.dp))
             Text("Modalidades preferidas (* al menos una)", color = White.copy(alpha = 0.9f))

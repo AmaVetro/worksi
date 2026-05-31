@@ -11,7 +11,7 @@ REGLA DE MATCHING (VÁLIDA EN TODO EL PLAN)
 
 ●    El candidato puede declarar y editar skills en su perfil; se persisten como parte del perfil (HU-04, HU-05).
 
-●    El porcentaje de compatibilidad en el producto combina cinco dimensiones (score 0–100 cada una): texto de la oferta (description), título de la oferta (title), modalidad, carga horaria y años de experiencia (years_experience_required vs años inferidos del CV); ver Contrato Unificado API. El POST /match puede aportar similitud semántica cv_text vs fragmentos de oferta; Spring arma dimensiones y score final. Las skills del perfil del candidato no se incluyen en POST /match ni influyen en el porcentaje. Las skills de la oferta (job_skills) tampoco influyen.
+●    El porcentaje de compatibilidad en el producto combina cinco dimensiones (score 0–100 cada una): texto de la oferta (description), título de la oferta (title), modalidad, carga horaria y años de experiencia (years_experience_required vs years_experience del perfil del candidato); ver Contrato Unificado API (match_breakdown en feed, detalle candidato y GET /api/v1/company/jobs/{job_id}/applications para HU-28). El POST /match puede aportar similitud semántica cv_text vs fragmentos de oferta; Spring arma dimensiones y score final. Las skills del perfil del candidato no se incluyen en POST /match ni influyen en el porcentaje. Las skills de la oferta (job_skills) tampoco influyen.
 ●    Tampoco deben influir en el porcentaje: presentación personal del perfil, rango de sueldo esperado, sueldo ofrecido de la oferta y nacionalidad.
 
 
@@ -41,8 +41,6 @@ SOLO SI SOBRA TIEMPO (FUERA DEL PLAN DE SPRINTS)
 ═══════════════════════════════════════════════════════════
 
 Estas HU no forman parte del compromiso del MVP ni consumen las semanas numeradas. Implementarlas solo si sobra tiempo antes de la entrega o en paralelo no crítico.
-
-●    HU-16 — Editar oferta (Reclutador / portal empresa).
 
 ●    HU-14 — Cancelar postulación (candidato).
 
@@ -137,13 +135,14 @@ Equilibrio: experiencia swipe depende del score Sprint 6; web admin garantiza on
 
 Sprint 8:   25 - 31 Mayo 2026
 
-Esfuerzo total estimado del equipo: 9 h.
+Esfuerzo total estimado del equipo: 12 h.
 Contenido:
 ●    HU-13 — Listado postulaciones candidatos (APPLIED / VIEWED mínimos).
 ●    Completar web reclutador: listados GET /api/v1/company/jobs, formulario creación/visualización HU-15 alineados Flujo Pantallas App Web donde faltaban detalles (incluye región/coherencia comunas / skills topes según Contrato UI).
 ●    PATCH imagen empresa vía cliente si backlog UI pendiente.
 ●    HU-28 — Detalle del score de matching reclutador (pantalla «Explicación matching empresa» con gráfico por dimensiones y score final).
-Equilibrio: candidato tiene seguimiento; reclutador puede ver desglose de score HU-28; empresa opera ciclo medio sin depender HU opcional.
+●    HU-16 — Editar oferta (RECRUITER; modificar campos de oferta publicada; cambios persistentes; validaciones Contrato).
+Equilibrio: candidato tiene seguimiento; reclutador puede ver desglose de score HU-28 y editar ofertas HU-16; empresa opera ciclo medio sin depender HU opcional.
 
 
 
@@ -184,7 +183,7 @@ Contenido:
 ●    Integración E2E: candidato móvil + flujo empresa con reclutadores creados por ADMIN entorno único Docker; revisión checklist calidad Contrato oficial.
 ●    Bugs críticos recién detectados durante demo seca interna.
 ●    Validación invariante scoring: mismo CV + misma oferta → mismo resultado aún si solo cambian skills de perfil o skills listados job (persistiendo campos de dimensiones de score invariantes).
-●    Pasada integración backend Spring ↔ FastAPI acotada, Postman rutas prioritarias Spring: POST /api/v1/auth/login (multicuenta), POST /api/v1/admin/companies, GET /api/v1/admin/companies, POST /api/v1/admin/recruiters, rutas HU portal reclutador bajo prefijo GET/POST/PATCH necesarios en /api/v1/company/* según Contrato, GET /api/v1/candidate/jobs/feed; servicio IA: POST /match (FastAPI, fuera de /api/v1 Spring).
+●    Pasada integración backend Spring ↔ FastAPI acotada, Postman rutas prioritarias Spring: POST /api/v1/auth/login (multicuenta), POST /api/v1/admin/companies, GET /api/v1/admin/companies, POST /api/v1/admin/recruiters, rutas HU portal reclutador bajo prefijo GET/POST/PATCH necesarios en /api/v1/company/* según Contrato (incluye PATCH /api/v1/company/jobs/{job_id} HU-16 y GET /api/v1/company/jobs/{job_id}/applications con match_breakdown HU-28), GET /api/v1/candidate/jobs/feed; servicio IA: POST /match (FastAPI, fuera de /api/v1 Spring).
 ●    HU-22 queda opcional backlog (sección sólo tiempo extra).
 ●    Demo muestra historia: admin alta empresa reclutadores, reclutador publica oferta, candidato registra tras consentimiento, swipe + post + vista empresa con score.
 ●    Preparación entrega stakeholder.
@@ -227,9 +226,9 @@ LÓGICA DE DESARROLLO (RESUMEN)
 
 ●    Swipe/post Sprint 7 apoyados score; paralelo primera entrega navegable web ADMIN/RECRUITER.
 
-●    HU-13 Sprint 8 (incluye HU-28 desglose score reclutador); refinamiento web Sprint 8–9; Sprint 9 suma HU-17 HU-25 HU-26 (portal reclutador y listados ADMIN); Sprint 10 suma HU-20 HU-05 HU-24 HU-27 (HU-27 requiere listados HU-25/HU-26 del Sprint 9); cierre Sprint 11 E2E + demo.
+●    HU-13 Sprint 8 (incluye HU-28 desglose score reclutador y HU-16 editar oferta); refinamiento web Sprint 8–9; Sprint 9 suma HU-17 HU-25 HU-26 (portal reclutador y listados ADMIN); Sprint 10 suma HU-20 HU-05 HU-24 HU-27 (HU-27 requiere listados HU-25/HU-26 del Sprint 9); cierre Sprint 11 E2E + demo.
 
-●    HU-17, HU-24, HU-25, HU-26, HU-27 y HU-28 pasan a plan obligatorio en Sprints 8–10 (HU-28 en Sprint 8; HU-17, HU-25, HU-26 en Sprint 9; HU-20, HU-05, HU-24, HU-27 en Sprint 10; ya no backlog opcional salvo HU-14, HU-16, HU-18, HU-22).
+●    HU-16, HU-17, HU-24, HU-25, HU-26, HU-27 y HU-28 pasan a plan obligatorio en Sprints 8–10 (HU-28 y HU-16 en Sprint 8; HU-17, HU-25, HU-26 en Sprint 9; HU-20, HU-05, HU-24, HU-27 en Sprint 10; ya no backlog opcional salvo HU-14, HU-18, HU-22).
 
 ●    HU opcionales backlog restante no bloquean ruta crítica.
 

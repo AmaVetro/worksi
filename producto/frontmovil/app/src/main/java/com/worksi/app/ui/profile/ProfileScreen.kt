@@ -206,6 +206,10 @@ fun ProfileScreen(
 
                     Spacer(Modifier.height(20.dp))
 
+                    YearsExperienceBlock(yearsLine = state.yearsExperienceLine)
+
+                    Spacer(Modifier.height(20.dp))
+
                     PreferenceBlock(title = "Modalidades preferidas", chips = state.modalities)
 
                     Spacer(Modifier.height(16.dp))
@@ -302,6 +306,23 @@ private fun SalaryBlock(salaryLine: String) {
             Text("Sueldo esperado", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = CyanPrimary)
             Spacer(Modifier.height(6.dp))
             Text(salaryLine, fontSize = 15.sp, color = Color.Black, textAlign = TextAlign.Center)
+        }
+        IconButton(onClick = {}, modifier = Modifier.size(40.dp)) {
+            Icon(Icons.Filled.Edit, contentDescription = null, tint = CyanPrimary, modifier = Modifier.size(22.dp))
+        }
+    }
+}
+
+@Composable
+private fun YearsExperienceBlock(yearsLine: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween) {
+        Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("Experiencia laboral", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = CyanPrimary)
+            Spacer(Modifier.height(6.dp))
+            Text(yearsLine, fontSize = 15.sp, color = Color.Black, textAlign = TextAlign.Center)
         }
         IconButton(onClick = {}, modifier = Modifier.size(40.dp)) {
             Icon(Icons.Filled.Edit, contentDescription = null, tint = CyanPrimary, modifier = Modifier.size(22.dp))

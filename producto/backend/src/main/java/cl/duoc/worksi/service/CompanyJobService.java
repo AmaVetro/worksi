@@ -262,6 +262,83 @@ public class CompanyJobService {
         .body(new CompanyJobCreatedResponse(jobId, JobStatus.ACTIVE.name(), publishedInstant));
   }
 
+  @Transactional
+  public ResponseEntity<?> updateJob(
+      long recruiterUserId, long jobId, String dataJson, MultipartFile image) {
+    if (dataJson == null || dataJson.isBlank()) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Parte data obligatoria");
+    }
+    CompanyJobCreateRequest req;
+    try {
+      req = objectMapper.readValue(dataJson, CompanyJobCreateRequest.class);
+    } catch (IOException e) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "JSON data invalido");
+    }
+    if (image != null && !image.isEmpty()) {
+      String ct = image.getContentType();
+      if (ct == null || !ALLOWED_JOB_IMAGE_TYPES.contains(ct.toLowerCase(Locale.ROOT))) {
+        return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Imagen debe ser PNG o JPEG");
+      }
+    }
+    Optional<Job> opt = jobRepository.findById(jobId);
+    if (opt.isEmpty()) {
+      return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
+    }
+    Job job = opt.get();
+    if (job.getPublishedByUserId() == null || !job.getPublishedByUserId().equals(recruiterUserId)) {
+      return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
+    }
+    ResponseEntity<?> v = validateJobPayload(req);
+    if (v != null) {
+      return v;
+    }
+    Modality modality;
+    Workload workload;
+    try {
+      modality = Modality.valueOf(req.getModality().trim());
+      workload = Workload.valueOf(req.getWorkload().trim());
+    } catch (IllegalArgumentException e) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "modality o workload invalido");
+    }
+    job.setCompanyCommercialName(req.getCompanyCommercialName().trim());
+    job.setTitle(req.getTitle().trim());
+    job.setDescription(req.getDescription().trim());
+    job.setRegionId(req.getRegionId());
+    job.setCommuneId(req.getCommuneId());
+    job.setSalaryOffered(req.getSalaryOffered());
+    job.setYearsExperienceRequired(req.getYearsExperienceRequired());
+    job.setModality(modality);
+    job.setWorkload(workload);
+    if (image == null || image.isEmpty()) {
+      String urlFromJson = trimNull(req.getImageUrl());
+      if (urlFromJson != null) {
+        job.setImageUrl(urlFromJson);
+      }
+    }
+    jobRepository.saveAndFlush(job);
+    jobSkillRepository.deleteAllByJobId(jobId);
+    for (Long sid : new LinkedHashSet<>(req.getSkillsIds())) {
+      jobSkillRepository.save(new JobSkill(jobId, sid));
+    }
+    if (image != null && !image.isEmpty()) {
+      try {
+        Files.createDirectories(jobImageBaseDir);
+        String ext =
+            image.getContentType().toLowerCase(Locale.ROOT).contains("png") ? ".png" : ".jpg";
+        String filename = jobId + "_" + UUID.randomUUID() + ext;
+        Path target = jobImageBaseDir.resolve(filename);
+        try (InputStream in = image.getInputStream()) {
+          Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
+        }
+        job.setImageUrl(target.toAbsolutePath().normalize().toString());
+        jobRepository.save(job);
+      } catch (IOException e) {
+        return err(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "No se pudo guardar la imagen");
+      }
+    }
+    return ResponseEntity.ok(toDetail(jobRepository.findById(jobId).orElse(job)));
+  }
+
   public ResponseEntity<?> listMyJobs(long recruiterUserId, int page, int size, String sort) {
     if (!recruiterProfileRepository.existsById(recruiterUserId)) {
       return err(HttpStatus.FORBIDDEN, "FORBIDDEN", "Sesion no autorizada como reclutador");

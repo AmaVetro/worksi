@@ -7,7 +7,7 @@ regex principal en:
 correo (patrón muy estructurado)
 RUT (formato chileno estructurado)
 edad explícita (xx años, fechas de nacimiento cuando el patrón sea claro)
-años de experiencia declarados dentro del CV cuando aparezcan en patrón claro (por ejemplo "X años de experiencia")
+años de experiencia declarados dentro del CV cuando aparezcan en patrón claro (por ejemplo "X años de experiencia"); se retiran del cv_text para fairness y no alimentan experience_score (la dimensión usa years_experience del perfil; match_breakdown HU-28)
 género cuando venga en etiquetas/formularios (sexo:, género:)
 nacionalidad en frases directas (nacionalidad:, chileno/a, etc.)
 institución de procedencia cuando aparezca en bloques típicos de educación o etiquetas claras

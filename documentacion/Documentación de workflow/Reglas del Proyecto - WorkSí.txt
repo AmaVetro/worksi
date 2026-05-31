@@ -10,18 +10,18 @@ Objetivo: centralizar reglas esenciales para que cualquier integrante encuentre 
 - Las HU opcionales no forman parte del compromiso obligatorio del MVP; se implementan solo si sobra tiempo.
 - HU opcionales actuales (fuera del compromiso obligatorio del MVP; solo si sobra tiempo; orden según Sprint oficiales):
   - HU-24 Guardar oferta
-  - HU-16 Editar oferta
   - HU-17 Eliminar oferta (descartada del diseño actual por estado único ACTIVE)
   - HU-14 Cancelar postulación
   - HU-18 Activar/desactivar oferta (descartada del diseño actual por estado único ACTIVE)
   - HU-22 Eliminación de cuenta
+- Plan obligatorio MVP incluye entre otras: HU-16 (editar oferta, Sprint 8) y HU-28 (detalle score matching reclutador, Sprint 8); ver Sprint oficiales y Contrato Unificado API.
 - Se debe evitar a toda costa la sobreingeniería siempre en todo el proyecto y priorizar el ahorro de tiempo, dejar un MVP funcional con los aspectos core y solo los aspectos suficientes, no sobre ingeniería.
 
 ============================================================
 2) REGLA GLOBAL DE MATCHING (CRÍTICA)
 ============================================================
 - El candidato puede declarar y editar skills en su perfil; se persisten como parte del perfil (HU-04, HU-05).
-- En app móvil de postulantes, el porcentaje de compatibilidad en el producto se calcula combinando cinco dimensiones (score 0–100 cada una): texto de la oferta (description), título de la oferta (title), modalidad, carga horaria y años de experiencia (years_experience_required de la oferta vs años inferidos del CV); ver Contrato Unificado API.
+- En app móvil de postulantes, el porcentaje de compatibilidad en el producto se calcula combinando cinco dimensiones (score 0–100 cada una): texto de la oferta (description), título de la oferta (title), modalidad, carga horaria y años de experiencia (years_experience_required de la oferta vs years_experience del perfil del candidato); ver Contrato Unificado API.
 - El contrato base hacia IA (POST /match, URI /match del servicio FastAPI) usa cv_text y job_text para similitud semántica; las skills del perfil del candidato no se incluyen en el request de POST /match ni influyen en el porcentaje.
 - job_text concatenado (cuando aplique llamada única) usa title, description, modality y workload; no concatenar lista de skills, sueldos ni years_experience_required en esa cadena — los años de experiencia entran como dimensión estructurada en el score final, no dentro de job_text.
 - La explicación del match debe basarse en las dimensiones de scoring y la comparación CV vs oferta, no en skills de perfil.
@@ -166,13 +166,13 @@ Objetivo: centralizar reglas esenciales para que cualquier integrante encuentre 
 ============================================================
 - Autenticación y roles antes del resto (candidato móvil con registro+login CANDIDATE; web con ADMIN y reclutadores RECRUITER y ficha empresa sin usuario empresa; mismo contrato oficial de API; skills de perfil no son insumo del porcentaje).
 - Consentimiento (HU-21, checkbox y timestamp) obligatorio en pantalla "Uso de datos", última pantalla antes de crear la cuenta oficialmente; al aceptar el consentimiento se crea la cuenta y se pasa a Perfil.
-- Subida y almacenamiento de CV (HU-06); luego extracción de texto con Tika y post-procesamiento mínimo en backend, y ofertas creadas y visibles (HU-15, HU-10) como insumos antes de fairness y score. El consumo de matching en producto requiere CV limpio, campos de oferta para las cinco dimensiones oficiales (incluye years_experience_required vs años inferidos del CV), modalidades y cargas preferidas del postulante; no skills de perfil del candidato.
+- Subida y almacenamiento de CV (HU-06); luego extracción de texto con Tika y post-procesamiento mínimo en backend, y ofertas creadas y visibles (HU-15, HU-10) como insumos antes de fairness y score. El consumo de matching en producto requiere CV limpio, campos de oferta para las cinco dimensiones oficiales (incluye years_experience_required vs years_experience del perfil del candidato), modalidades y cargas preferidas del postulante; no skills de perfil del candidato.
 - Fairness (HU-09) antes de score (HU-07) y explicación breve (HU-08, plantilla mínima).
 - Swipe y postulación (HU-11, HU-12) cuando existan ofertas y contrato de matching operativo (cv_text + job_text).
 - Listado de postulaciones del candidato (HU-13) después de existir postulaciones; cancelación (HU-14) es opcional fuera del plan obligatorio.
 - Vista empresa / postulantes (HU-19) y estado VIEWED por acción manual (HU-23) después del flujo de postulación; orden por compatibilidad (HU-20) en etapa de consolidación (actores RECRUITER según Contrato).
 - Editar perfil (HU-05) en etapa tardía sin bloquear el núcleo; edición de skills de perfil no redefine el score sin cambio de CV u oferta.
-- Cierre, E2E y demo concentrados en Sprint 11; HU opcionales (24, 16, 17, 14, 18, 22) no condicionan el flujo obligatorio del MVP.
+- Cierre, E2E y demo concentrados en Sprint 11; HU opcionales (14, 18, 22) no condicionan el flujo obligatorio del MVP; HU-16 y HU-28 son obligatorias en Sprint 8.
 
 ============================================================
 13) REGLAS DE MENSAJE DE DEFENSA DEL PROYECTO

@@ -91,13 +91,24 @@ export default function RecruiterJobDetail() {
       <Navbar />
       <div className="home-container">
         <div className="home-content recruiter-job-detail-shell">
-          <button
-            type="button"
-            className="secondary-btn recruiter-job-detail-back"
-            onClick={() => navigate("/recruiter/ofertas")}
-          >
-            Volver al listado
-          </button>
+          <div className="recruiter-job-detail-toolbar">
+            <button
+              type="button"
+              className="secondary-btn recruiter-job-detail-toolbar-btn"
+              onClick={() => navigate("/recruiter/ofertas")}
+            >
+              Volver al listado
+            </button>
+            {!error && jobId && (
+              <button
+                type="button"
+                className="secondary-btn recruiter-job-detail-toolbar-btn"
+                onClick={() => navigate(`/recruiter/ofertas/${jobId}/editar`)}
+              >
+                Editar oferta
+              </button>
+            )}
+          </div>
           {error && <p className="recruiter-job-detail-error">{error}</p>}
           {job && (
             <article className="recruitment-card recruiter-job-detail-card">

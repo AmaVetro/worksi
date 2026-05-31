@@ -72,4 +72,13 @@ public class CompanyController {
       @AuthenticationPrincipal UserPrincipal principal, @PathVariable("job_id") long jobId) {
     return companyJobService.getMyJob(principal.getUser().getId(), jobId);
   }
+
+  @PatchMapping(value = "/jobs/{job_id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public ResponseEntity<?> updateJob(
+      @AuthenticationPrincipal UserPrincipal principal,
+      @PathVariable("job_id") long jobId,
+      @RequestPart("data") String data,
+      @RequestPart(value = "image", required = false) MultipartFile image) {
+    return companyJobService.updateJob(principal.getUser().getId(), jobId, data, image);
+  }
 }

@@ -15,6 +15,7 @@ import RecruiterReclutamiento from "../pages/RecruiterReclutamiento";
 import RecruiterJobsList from "../pages/RecruiterJobsList";
 import RecruiterJobCreate from "../pages/RecruiterJobCreate";
 import RecruiterJobDetail from "../pages/RecruiterJobDetail";
+import RecruiterJobEdit from "../pages/RecruiterJobEdit";
 import RecruiterPostulacionesPlaceholder from "../pages/RecruiterPostulacionesPlaceholder";
 
 function AppRoutes() {
@@ -88,6 +89,14 @@ function AppRoutes() {
           element={
             <PrivateRoute roles={["RECRUITER"]}>
               <RecruiterJobCreate />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/recruiter/ofertas/:jobId/editar"
+          element={
+            <PrivateRoute roles={["RECRUITER"]}>
+              <RecruiterJobEdit />
             </PrivateRoute>
           }
         />

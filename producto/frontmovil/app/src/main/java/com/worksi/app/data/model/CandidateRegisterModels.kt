@@ -31,6 +31,7 @@ data class CandidateRegisterPayload(
     @Json(name = "profile_summary") val profileSummary: String?,
     @Json(name = "salary_expected_min") val salaryExpectedMin: Int?,
     @Json(name = "salary_expected_max") val salaryExpectedMax: Int?,
+    @Json(name = "years_experience") val yearsExperience: Int,
     @Json(name = "preferred_modalities") val preferredModalities: List<String>,
     @Json(name = "preferred_workloads") val preferredWorkloads: List<String>,
     @Json(name = "skills_ids") val skillsIds: List<Long>

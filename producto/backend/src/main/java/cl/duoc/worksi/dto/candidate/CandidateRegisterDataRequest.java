@@ -55,6 +55,9 @@ public class CandidateRegisterDataRequest {
   @JsonProperty("salary_expected_max")
   private Integer salaryExpectedMax;
 
+  @JsonProperty("years_experience")
+  private Integer yearsExperience;
+
   @JsonProperty("preferred_modalities")
   private List<String> preferredModalities;
 
@@ -198,6 +201,14 @@ public class CandidateRegisterDataRequest {
 
   public void setSalaryExpectedMax(Integer salaryExpectedMax) {
     this.salaryExpectedMax = salaryExpectedMax;
+  }
+
+  public Integer getYearsExperience() {
+    return yearsExperience;
+  }
+
+  public void setYearsExperience(Integer yearsExperience) {
+    this.yearsExperience = yearsExperience;
   }
 
   public List<String> getPreferredModalities() {

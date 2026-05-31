@@ -1,5 +1,5 @@
 CONTRATO UNIFICADO DE INTEGRACION - WORKSI
-Version: 1.11
+Version: 1.12
 Estado: Oficial para desarrollo paralelo (Backend + Web + Android)
 
 
@@ -11,7 +11,8 @@ OBJETIVO
 
 ALCANCE
 - Incluye: endpoints, autenticacion, registro candidato (incluido un solo request de alta con consentimiento), perfiles, catalogos, CV, ofertas, matching, swipe, postulaciones, vistas empresa, alta empresa y reclutadores por administrador del sistema (web MVP).
-- Excluye del MVP obligatorio: HU-14, HU-16, HU-17 (descartada del diseño actual por estado único ACTIVE), HU-18 (descartada del diseño actual por estado único ACTIVE), HU-22, HU-24.
+- Incluye en plan obligatorio MVP: HU-16 (editar oferta reclutador, Sprint 8) y HU-28 (detalle score matching reclutador, Sprint 8) con endpoints de esta seccion.
+- Excluye del MVP obligatorio: HU-14, HU-17 (descartada del diseño actual por estado único ACTIVE), HU-18 (descartada del diseño actual por estado único ACTIVE), HU-22, HU-24.
 
 
 ARQUITECTURA OBLIGATORIA
@@ -608,6 +609,23 @@ OFERTAS (EMPRESA)
 - Si no hay archivo valido o no aplica: 404 (o error de negocio acorde a implementacion).
 
 
+19.2) Editar oferta propia (HU-16)
+- PATCH /api/v1/company/jobs/{job_id}
+- Auth: RECRUITER
+- Content-Type: multipart/form-data (misma estructura que POST seccion 17)
+- Form-data:
+  - data (string JSON obligatorio): mismos campos editables que creacion (company_commercial_name, title, description, region_id, commune_id, salary_offered, years_experience_required, modality, workload, skills_ids; image_url en JSON opcional si no hay parte image).
+  - image (binario PNG o JPEG): opcional; si viene archivo, reemplaza imagen almacenada con misma regla que POST.
+- Reglas autorizacion:
+  - solo el reclutador publicador de la oferta (misma titularidad que GET detalle).
+- Validaciones:
+  - mismas que POST seccion 17 (skills_ids 3..8, region_id/commune_id coherentes, etc.).
+- Reglas negocio:
+  - no cambia company_id ni published_by_user_id.
+  - status ACTIVE se mantiene salvo reglas futuras de HU-17.
+- Response 200: mismo cuerpo que GET /api/v1/company/jobs/{job_id} (seccion 19) tras persistir cambios.
+
+
 OFERTAS (CANDIDATO)
 
 20) Feed ofertas para swipe
@@ -631,7 +649,15 @@ OFERTAS (CANDIDATO)
   ],
   "match": {
     "score": 82.15,
-    "explanation_short": "Coincidencia en experiencia y stack"
+    "explanation_short": "Coincidencia en experiencia y stack",
+    "match_breakdown": {
+      "final_score": 82.15,
+      "description_score": 78.50,
+      "title_score": 85.00,
+      "modality_score": 100.00,
+      "workload_score": 100.00,
+      "experience_score": 75.00
+    }
   }
 }
 
@@ -646,6 +672,7 @@ OFERTAS (CANDIDATO)
   - workload
   - match.score
   - match.explanation
+  - match.match_breakdown (misma estructura que CONTRATO DE SCORE FINAL)
 
 SWIPE Y POSTULACIONES CANDIDATO
 
@@ -713,9 +740,35 @@ POSTULACIONES EMPRESA
 - GET /api/v1/company/jobs/{job_id}/applications?page=1&size=20&sort=match_score,desc
 - Auth: RECRUITER
 - Reglas:
-  - solo oferta propia.
+  - solo oferta propia (reclutador publicador).
   - orden por score descendente para HU-20.
-
+  - cada item incluye match_score y match_breakdown para HU-28 (pantalla «Explicación matching empresa»).
+- Response 200 item ejemplo:
+{
+  "application_id": 8001,
+  "candidate_user_id": 1201,
+  "status": "APPLIED",
+  "applied_at": "2026-04-25T03:50:00Z",
+  "viewed_at": null,
+  "match_score": 82.15,
+  "match_explanation": "Coincidencia en experiencia y stack",
+  "match_breakdown": {
+    "final_score": 82.15,
+    "description_score": 78.50,
+    "title_score": 85.00,
+    "modality_score": 100.00,
+    "workload_score": 100.00,
+    "experience_score": 75.00
+  },
+  "candidate_preview": {
+    "first_name": "Juan",
+    "last_name_paternal": "Perez",
+    "sector_name": "Tecnologia"
+  }
+}
+- Notas:
+  - match_breakdown obligatorio cuando exista match_score calculado; si no hay score, match_breakdown puede ser null y la UI HU-28 muestra estado vacio/error visible.
+  - candidate_preview: campos minimos para listado; detalle ampliado de perfil puede reutilizar los mismos datos o ampliarse en iteracion posterior sin romper este contrato.
 
 
 27) Marcar postulacion como VIEWED
@@ -763,9 +816,19 @@ CONTRATO DE SCORE FINAL (BACKEND -> FRONT)
   - title_score: similitud semántica cv_text vs title de la oferta.
   - modality_score: 100 si modality de la oferta está en preferred_modalities del candidato; 0 si no coincide.
   - workload_score: 100 si workload de la oferta está en preferred_workloads del candidato; 0 si no coincide.
-  - experience_score: comparación years_experience_required de la oferta vs años de experiencia inferidos del CV (valor numérico extraído en backend del texto del CV antes de fairness sobre cv_text; la mención literal se retira del cv_text por fairness pero el valor inferido entra en esta dimensión).
+  - experience_score: comparación years_experience_required de la oferta vs years_experience del perfil del candidato (declarado en registro/edición de perfil); si no hubiera valor, 0.
 - POST /match (FastAPI) puede aportar similitud semántica base; Spring calcula dimensiones y final_score.
-- Desglose match_breakdown (obligatorio en respuestas que incluyan match para candidato y en detalle HU-28 reclutador): objeto con final_score y scores por dimensión (description, title, modality, workload, experience) más textos breves de apoyo cuando aplique.
+- Objeto match_breakdown (obligatorio cuando la respuesta incluya match para candidato o listado/detalle postulaciones empresa HU-28):
+{
+  "final_score": 82.15,
+  "description_score": 78.50,
+  "title_score": 85.00,
+  "modality_score": 100.00,
+  "workload_score": 100.00,
+  "experience_score": 75.00
+}
+- En respuestas con match al candidato: incluir match.score (= final_score), match.explanation_short o match.explanation, y match.match_breakdown.
+- En GET /api/v1/company/jobs/{job_id}/applications (HU-28): incluir match_score y match_breakdown por fila segun ejemplo seccion 26.
 - Redondeo de respuesta: dos decimales (DECIMAL 5,2).
 
 
@@ -824,6 +887,7 @@ MATRIZ DE AUTORIZACION
   - POST /api/v1/company/jobs
   - GET /api/v1/company/jobs
   - GET /api/v1/company/jobs/{job_id}
+  - PATCH /api/v1/company/jobs/{job_id}
   - GET /api/v1/company/jobs/{job_id}/image
   - GET /api/v1/company/jobs/{job_id}/applications
   - PATCH /api/v1/company/applications/{application_id}/viewed
@@ -840,6 +904,8 @@ CHECKLIST DE INTEGRACION FINAL
 - CV PDF <= 1MB validado y almacenado.
 - Oferta creada con POST /api/v1/company/jobs multipart (data JSON + image opcional PNG/JPEG), company_commercial_name, sin requirements, salary_offered y years_experience_required obligatorios, skills 3..8.
 - Detalle oferta reclutador GET /api/v1/company/jobs/{job_id} con region_name, commune_name, skills (id y name) y campos de imagen external_image_url / has_protected_image; imagen en disco con GET /api/v1/company/jobs/{job_id}/image cuando has_protected_image.
+- Edicion oferta HU-16: PATCH /api/v1/company/jobs/{job_id} multipart (mismas reglas que POST).
+- Listado postulaciones empresa GET /api/v1/company/jobs/{job_id}/applications con match_score y match_breakdown por fila (HU-28).
 - Feed candidato sin repeticion de ofertas.
 - Swipe PASS/APPLY funcionando.
 - Postulacion APPLIED creada solo al confirmar.

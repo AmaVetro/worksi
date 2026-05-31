@@ -82,7 +82,6 @@ ANTES DEL SPRINT 1 — ACUERDOS QUE TODO EL EQUIPO DEBE ENTENDER
 - VIEWED se marca automáticamente en servidor cuando el reclutador en sesión RECRUITER abre el detalle de una postulación concreta (HU-23); no al listar postulantes de la oferta ni al postular el candidato.
 
 7) Lista oficial “solo si sobra tiempo” (no planificar como bloqueante)
-- HU-16 Editar oferta
 - HU-14 Cancelar postulación
 - HU-18 Activar/desactivar oferta (descartada del diseño actual por estado único ACTIVE)
 - HU-22 Eliminación de cuenta
@@ -696,16 +695,17 @@ C) QUÉ NO HACER EN EL SPRINT 7
 ================================================================================
 SPRINT 8 — SEMANA 25 - 31 Mayo DE 2026
 ================================================================================
-Esfuerzo total estimado del equipo: 9 horas.
+Esfuerzo total estimado del equipo: 12 horas.
 Contenido oficial:
 - HU-13 Ver postulaciones candidato estados APPLIED / VIEWED mínimos.
 - Completar web reclutador: listados GET /api/v1/company/jobs, formulario creación y visualización
   HU-15 alineados Flujo Pantallas App Web (region_id coherence comunas, skills topes Contrato/UI).
 - PATCH imagen empresa vía cliente si backlog UI Sprint 7 dejó pendiente marca employer.
 - HU-28 Detalle del score de matching reclutador (pantalla «Explicación matching empresa» con gráfico por dimensiones).
+- HU-16 Editar oferta (RECRUITER; modificar campos; cambios persistentes; validaciones activas según Contrato).
 
 Objetivo del sprint en una frase:
-Historial candidato coherente; reclutador con desglose de score HU-28; ciclo medio ofertas vía pantallas Contrato antes de postulantes finos Sprint 9.
+Historial candidato coherente; reclutador con desglose de score HU-28 y edición de ofertas HU-16; ciclo medio ofertas vía pantallas Contrato antes de postulantes finos Sprint 9.
 
 ------------------------------------------------------------
 A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 8
@@ -725,8 +725,13 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 8
 
 4) HU-28 Detalle score matching reclutador
 - Pantalla «Explicación matching empresa» con gráfico de cinco dimensiones (description, title, modality, workload, experience) y score final.
-- Acceso desde flujo web reclutador (botón «Ver explicación matching»); datos match_breakdown según Contrato.
+- Acceso desde flujo web reclutador (botón «Ver explicación matching»); datos match_score y match_breakdown desde GET /api/v1/company/jobs/{job_id}/applications (Contrato sección 26).
 - Solo reclutador publicador de la oferta.
+
+5) HU-16 Editar oferta
+- Reclutador puede modificar campos editables de oferta publicada (mismas validaciones que creación HU-15; Contrato sección 19.2).
+- Cambios persistentes vía PATCH /api/v1/company/jobs/{job_id} (multipart).
+- Pantalla web «Editar Oferta» según Flujo Pantallas App Web.
 
 ------------------------------------------------------------
 B) DESGLOSE ULTRA DETALLADO
@@ -737,7 +742,8 @@ B3) Navegación a detalle vista previa oferta (2 a 3 horas)
 B4) Web pantallas reclutador listado ofertas + crear oferta HU-15 (3 a 4 horas equipo)
 B5) PATCH /api/v1/company/profile/image UI si backlog (1 hora)
 B6) HU-28: backend match_breakdown + pantalla web gráfico dimensiones (3 a 4 horas equipo)
-B7) Pruebas: postulación creada y listada más roundtrip alta oferta desde web (1 hora)
+B7) HU-16: PATCH /api/v1/company/jobs/{job_id} + pantalla Editar Oferta web (2 a 3 horas equipo)
+B8) Pruebas: postulación creada y listada más roundtrip alta y edición oferta desde web (1 hora)
 
 
 
@@ -971,7 +977,7 @@ Sprint 4 — HU-21 consentimiento; POST /api/v1/auth/register/candidate multipar
 Sprint 5 — Tika; HU-15 crear oferta RECRUITER modelo Contrato actual; PATCH /api/v1/company/profile/image; HU-10 GET /api/v1/candidate/jobs/feed.
 Sprint 6 — HU-09 fairness; HU-07 score; HU-08 explicación; contrato técnico POST /match (FastAPI) con cv_text y job_text.
 Sprint 7 — Web MVP React+Vite login ADMIN/RECRUITER, panel empresa/reclutadores, shell reclutador; HU-11 HU-12 opcional UI recuperación MVP (maqueta + nueva contraseña real).
-Sprint 8 — HU-13 postulaciones candidato; completar portal reclutador HU-15 UI; PATCH imagen empresa si backlog; HU-28 detalle score matching reclutador.
+Sprint 8 — HU-13 postulaciones candidato; completar portal reclutador HU-15 UI; PATCH imagen empresa si backlog; HU-28 detalle score matching reclutador; HU-16 editar oferta.
 Sprint 9 — HU-19 HU-23 VIEWED automático al abrir detalle de postulación (solo publicador Contrato; no al listar) + pulimiento mensajes errores web panel segunda mitad + HU-17 eliminar oferta + HU-25 listado empresas ADMIN + HU-26 listado reclutadores ADMIN.
 Sprint 10 — HU-20 orden descendente HU-05 perfil HU-24 guardar oferta HU-27 eliminar empresas/reclutadores ADMIN + copy seguridad/consentimiento.
 Sprint 11 — E2E Docker; bugs críticos; invariante matching; Postman rutas Sprint oficiales; demo stakeholder; HU-22 backlog tiempo extra.
@@ -981,7 +987,7 @@ Sprint 13 — Semana 29 junio–5 julio 2026; contenido por definir (HU opcional
 ================================================================================
 APÉNDICE B — BACKLOG “SOLO SI SOBRA TIEMPO” (NO BLOQUEA MVP)
 ================================================================================
-HU-16, HU-14, HU-18 (descartada por estado único ACTIVE), HU-22
+HU-14, HU-18 (descartada por estado único ACTIVE), HU-22
 
 ================================================================================
 FIN DEL DOCUMENTO

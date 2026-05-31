@@ -5,10 +5,12 @@ import cl.duoc.worksi.dto.ai.MatchApiResponse;
 import cl.duoc.worksi.entity.CandidateCv;
 import cl.duoc.worksi.entity.CandidatePreferredModality;
 import cl.duoc.worksi.entity.CandidatePreferredWorkload;
+import cl.duoc.worksi.entity.CandidateProfile;
 import cl.duoc.worksi.entity.Job;
 import cl.duoc.worksi.repository.CandidateCvRepository;
 import cl.duoc.worksi.repository.CandidatePreferredModalityRepository;
 import cl.duoc.worksi.repository.CandidatePreferredWorkloadRepository;
+import cl.duoc.worksi.repository.CandidateProfileRepository;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -23,24 +25,24 @@ public class ProductMatchService {
   private static final String IA_DOWN = "Servicio de matching no disponible.";
 
   private final CandidateCvRepository candidateCvRepository;
+  private final CandidateProfileRepository candidateProfileRepository;
   private final CandidatePreferredModalityRepository candidatePreferredModalityRepository;
   private final CandidatePreferredWorkloadRepository candidatePreferredWorkloadRepository;
   private final CvTextExtractionService cvTextExtractionService;
-  private final JobTextService jobTextService;
   private final AiMatchClient aiMatchClient;
 
   public ProductMatchService(
       CandidateCvRepository candidateCvRepository,
+      CandidateProfileRepository candidateProfileRepository,
       CandidatePreferredModalityRepository candidatePreferredModalityRepository,
       CandidatePreferredWorkloadRepository candidatePreferredWorkloadRepository,
       CvTextExtractionService cvTextExtractionService,
-      JobTextService jobTextService,
       AiMatchClient aiMatchClient) {
     this.candidateCvRepository = candidateCvRepository;
+    this.candidateProfileRepository = candidateProfileRepository;
     this.candidatePreferredModalityRepository = candidatePreferredModalityRepository;
     this.candidatePreferredWorkloadRepository = candidatePreferredWorkloadRepository;
     this.cvTextExtractionService = cvTextExtractionService;
-    this.jobTextService = jobTextService;
     this.aiMatchClient = aiMatchClient;
   }
 
@@ -71,51 +73,93 @@ public class ProductMatchService {
     if (norm == null || norm.isBlank()) {
       return new ProductMatchResult(null, NO_TEXT, NO_TEXT);
     }
-    String jobText = jobTextService.buildJobText(job);
-    Optional<MatchApiResponse> ai = aiMatchClient.match(norm, jobText);
-    if (ai.isEmpty()) {
+
+    String descriptionText = ensureMinAiText(job.getDescription());
+    String titleText = ensureMinAiText(job.getTitle());
+    Optional<MatchApiResponse> descAi = aiMatchClient.match(norm, descriptionText);
+    Optional<MatchApiResponse> titleAi = aiMatchClient.match(norm, titleText);
+    if (descAi.isEmpty() || titleAi.isEmpty()) {
       return new ProductMatchResult(null, IA_DOWN, IA_DOWN);
     }
-    double base01 = clamp01(ai.get().getScore());
-    double base100 = base01 * 100.0;
-    int bonus = preferenceBonus(candidateUserId, job);
-    double combined = base100 * 0.8 + bonus;
-    double finalScore = round2(clamp(combined, 0.0, 100.0));
-    String sem = safeExplanation(ai.get().getExplanation());
-    String extra = bonus > 0 ? " Coincide modalidad y/o jornada con tus preferencias." : "";
+
+    double descriptionScore = toDimensionScore(descAi.get().getScore());
+    double titleScore = toDimensionScore(titleAi.get().getScore());
+    double modalityScore = preferenceDimensionScore(candidateUserId, job.getModality().name(), true);
+    double workloadScore = preferenceDimensionScore(candidateUserId, job.getWorkload().name(), false);
+    int candidateYears = resolveCandidateYears(candidateUserId);
+    double experienceScore =
+        ExperienceScoreUtil.compute(candidateYears, job.getYearsExperienceRequired());
+
+    double finalScore =
+        round2(
+            clamp(
+                (descriptionScore
+                        + titleScore
+                        + modalityScore
+                        + workloadScore
+                        + experienceScore)
+                    / 5.0,
+                0.0,
+                100.0));
+
+    String sem = safeExplanation(descAi.get().getExplanation());
+    String extra = buildDimensionExplanation(modalityScore, workloadScore, experienceScore);
     String full = (sem + extra).trim();
     return new ProductMatchResult(finalScore, truncate(full, 140), full);
   }
 
-  private int preferenceBonus(long candidateUserId, Job job) {
-    Set<String> mods = new HashSet<>();
-    for (CandidatePreferredModality m :
-        candidatePreferredModalityRepository.findByCandidateUserId(candidateUserId)) {
-      mods.add(m.getModality().name());
-    }
-    Set<String> loads = new HashSet<>();
-    for (CandidatePreferredWorkload w :
-        candidatePreferredWorkloadRepository.findByCandidateUserId(candidateUserId)) {
-      loads.add(w.getWorkload().name());
-    }
-    int b = 0;
-    if (mods.contains(job.getModality().name())) {
-      b += 10;
-    }
-    if (loads.contains(job.getWorkload().name())) {
-      b += 10;
-    }
-    return b;
+  private int resolveCandidateYears(long candidateUserId) {
+    return candidateProfileRepository
+        .findById(candidateUserId)
+        .map(CandidateProfile::getYearsExperience)
+        .orElse(0);
   }
 
-  private static double clamp01(double v) {
-    if (v < 0.0) {
-      return 0.0;
+  private double preferenceDimensionScore(long candidateUserId, String jobValue, boolean modality) {
+    Set<String> prefs = new HashSet<>();
+    if (modality) {
+      for (CandidatePreferredModality m :
+          candidatePreferredModalityRepository.findByCandidateUserId(candidateUserId)) {
+        prefs.add(m.getModality().name());
+      }
+    } else {
+      for (CandidatePreferredWorkload w :
+          candidatePreferredWorkloadRepository.findByCandidateUserId(candidateUserId)) {
+        prefs.add(w.getWorkload().name());
+      }
     }
-    if (v > 1.0) {
-      return 1.0;
+    return prefs.contains(jobValue) ? 100.0 : 0.0;
+  }
+
+  private static double toDimensionScore(double raw01) {
+    return round2(clamp(raw01 * 100.0, 0.0, 100.0));
+  }
+
+  private static String ensureMinAiText(String primary) {
+    String t = primary == null ? "" : primary.trim();
+    if (t.length() >= 8) {
+      return t;
     }
-    return v;
+    return (t + " oferta laboral profesional").trim();
+  }
+
+  private static String buildDimensionExplanation(
+      double modalityScore, double workloadScore, double experienceScore) {
+    StringBuilder sb = new StringBuilder();
+    if (modalityScore >= 100.0) {
+      sb.append(" Modalidad acorde a tus preferencias.");
+    }
+    if (workloadScore >= 100.0) {
+      sb.append(" Jornada acorde a tus preferencias.");
+    }
+    if (experienceScore >= 100.0) {
+      sb.append(" Experiencia acorde a lo requerido.");
+    } else if (experienceScore >= 75.0) {
+      sb.append(" Experiencia cercana a lo requerido.");
+    } else if (experienceScore > 0.0) {
+      sb.append(" Experiencia parcial respecto a lo requerido.");
+    }
+    return sb.toString();
   }
 
   private static double clamp(double v, double lo, double hi) {

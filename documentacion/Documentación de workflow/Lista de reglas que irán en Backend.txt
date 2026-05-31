@@ -31,7 +31,8 @@ construcción de cv_text y job_text; years_experience_required como dimensión e
 
 Fairness (regex + spaCy) antes de embeddings.
 
-Explicación de match simple y sin datos sensibles; desglose match_breakdown por dimensiones (HU-28 reclutador).
+Explicación de match simple y sin datos sensibles; desglose match_breakdown por dimensiones (HU-28 reclutador; GET /api/v1/company/jobs/{job_id}/applications).
+Edición de oferta reclutador HU-16: PATCH /api/v1/company/jobs/{job_id}.
 
 Reglas de publicación de oferta (solo ACTIVE, cuándo se publica y cómo se llena published_at).
 

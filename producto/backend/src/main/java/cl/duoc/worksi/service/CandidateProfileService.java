@@ -135,6 +135,14 @@ public class CandidateProfileService {
       profile.setSalaryExpectedMax(smax);
     }
 
+    if (req.getYearsExperience() != null) {
+      int years = req.getYearsExperience();
+      if (years < 0 || years > 50) {
+        return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "years_experience invalido");
+      }
+      profile.setYearsExperience(years);
+    }
+
     if (req.getPreferredModalities() != null) {
       if (req.getPreferredModalities().isEmpty()) {
         return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "preferred_modalities invalido");
@@ -261,6 +269,7 @@ public class CandidateProfileService {
         p.getProfileSummary(),
         p.getSalaryExpectedMin(),
         p.getSalaryExpectedMax(),
+        p.getYearsExperience(),
         modalities,
         workloads,
         skillsOut,

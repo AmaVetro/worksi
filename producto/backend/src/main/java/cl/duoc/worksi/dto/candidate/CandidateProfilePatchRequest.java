@@ -13,6 +13,9 @@ public class CandidateProfilePatchRequest {
   @JsonProperty("salary_expected_max")
   private Integer salaryExpectedMax;
 
+  @JsonProperty("years_experience")
+  private Integer yearsExperience;
+
   @JsonProperty("region_id")
   private Long regionId;
 
@@ -53,6 +56,14 @@ public class CandidateProfilePatchRequest {
 
   public void setSalaryExpectedMax(Integer salaryExpectedMax) {
     this.salaryExpectedMax = salaryExpectedMax;
+  }
+
+  public Integer getYearsExperience() {
+    return yearsExperience;
+  }
+
+  public void setYearsExperience(Integer yearsExperience) {
+    this.yearsExperience = yearsExperience;
   }
 
   public Long getRegionId() {

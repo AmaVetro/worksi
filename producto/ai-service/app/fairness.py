@@ -36,16 +36,6 @@ def _regex_pass_initial(text: str) -> str:
         " ",
         s,
     )
-    s = re.sub(
-        r"(?i)\b\d{1,2}\s*a[nñ]os\s+de\s+experiencia\b",
-        " ",
-        s,
-    )
-    s = re.sub(
-        r"(?i)\b\d+\s*a[nñ]os\s+de\s+experiencia\s+en\b",
-        " ",
-        s,
-    )
     s = re.sub(r"(?i)\bchilena?\b|\bchileno\b", " ", s)
     return s
 

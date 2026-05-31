@@ -178,7 +178,7 @@ Se basa en:
 Coincidencias entre el texto del CV (tras fairness) y fragmentos de la oferta (description, title)
 Modalidad de la oferta vs modalidades preferidas del postulante
 Carga horaria de la oferta vs cargas horarias preferidas del postulante
-Años de experiencia requeridos por la oferta vs años inferidos del CV (valor estructurado extraído en backend; la redacción literal se retira del cv_text por fairness pero el valor inferido entra al score)
+Años de experiencia requeridos por la oferta vs years_experience del perfil del candidato (declarado en registro/edición; la redacción literal de años en el CV se retira del cv_text por fairness y no sustituye al valor de perfil; experience_score y match_breakdown HU-28 según Contrato)
 
 ❗ No se implementan explicaciones complejas
 
@@ -209,13 +209,14 @@ Consentimiento obligatorio para uso de datos en pantalla "Uso de datos", que es 
 En app móvil de postulantes: carga de CV con límite de 1 MB
 En app móvil de postulantes: selección de skills con mínimo 3 y máximo 12 en el flujo de registro (pantallas previas a "Uso de datos", estado en cliente) o en edición de perfil autenticado
 12.3 Módulo Ofertas
-Crear
-Editar (solo si sobra tiempo)
-Eliminar (solo si sobra tiempo)
+Crear (HU-15)
+Editar oferta reclutador HU-16 (Sprint 8; PATCH /api/v1/company/jobs/{job_id})
+Eliminar (solo si sobra tiempo; HU-17 en plan obligatorio Sprint 9 según Sprint oficiales)
 Activar/desactivar (solo si sobra tiempo)
 12.4 Módulo Postulaciones
 Crear postulación
 Listar postulaciones
+Desglose score matching reclutador HU-28 (GET /api/v1/company/jobs/{job_id}/applications con match_score y match_breakdown)
 Cancelar postulación (solo si sobra tiempo)
 Marcar postulación como VIEWED de forma manual desde el portal empresa (usuario RECRUITER), sin automatismo en backend.
 
@@ -240,7 +241,7 @@ En pantalla de ofertas: swipe izquierda = pasar, swipe derecha = postular con co
 En postulaciones móviles (MVP): estados visibles APPLIED y VIEWED; CANCELLED queda para backlog opcional
 Web (ADMIN + RECRUITER)
 Login único sin registro público en landing; administrador inicial vía datos sembrados (password_hash); reclutadores creados por ADMIN con company_id.
-Panel administrador: registrar empresa (ficha) y registrar reclutadores; panel reclutador: ofertas, postulantes, marcado VIEWED, orden por compatibilidad (alinear a Flujo Pantallas App Web y Contrato Unificado API).
+Panel administrador: registrar empresa (ficha) y registrar reclutadores; panel reclutador: ofertas (crear HU-15, editar HU-16 PATCH /api/v1/company/jobs/{job_id}), postulantes, desglose score HU-28 (GET /api/v1/company/jobs/{job_id}/applications con match_breakdown), marcado VIEWED, orden por compatibilidad (alinear a Flujo Pantallas App Web y Contrato Unificado API).
 14. INFRAESTRUCTURA
 
 Servicios en Docker:
@@ -275,11 +276,12 @@ Matching con IA
 Swipe funcional
 Gestión base de postulaciones (crear/listar)
 Explicación básica
+HU-16: Editar oferta (Sprint 8)
+HU-28: Detalle score matching reclutador (Sprint 8)
 
 Solo si sobra tiempo (backlog opcional):
 HU-14: Cancelar postulación
 HU-18: Activar/desactivar oferta (descartada del diseño actual por estado único ACTIVE)
-HU-16: Editar oferta
 HU-17: Eliminar oferta (descartada del diseño actual por estado único ACTIVE)
 HU-22: Eliminación de cuenta
 HU-24: Guardar oferta

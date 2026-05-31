@@ -45,3 +45,18 @@ export async function getJobImageBlob(jobId) {
   });
   return data;
 }
+
+export async function updateJob(jobId, payload, imageFile) {
+  const json = JSON.stringify(payload);
+  const form = new FormData();
+  form.append(
+    "data",
+    new Blob([json], { type: "application/json" }),
+    "data.json"
+  );
+  if (imageFile) {
+    form.append("image", imageFile);
+  }
+  const { data } = await api.patch(`/api/v1/company/jobs/${jobId}`, form);
+  return data;
+}

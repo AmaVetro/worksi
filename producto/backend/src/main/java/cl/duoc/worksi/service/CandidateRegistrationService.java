@@ -194,6 +194,7 @@ public class CandidateRegistrationService {
     profile.setProfileSummary(trimNull(data.getProfileSummary()));
     profile.setSalaryExpectedMin(data.getSalaryExpectedMin());
     profile.setSalaryExpectedMax(data.getSalaryExpectedMax());
+    profile.setYearsExperience(data.getYearsExperience());
     profile.setConsentGiven(true);
     profile.setConsentGivenAt(consentAt);
     try {
@@ -300,6 +301,14 @@ public class CandidateRegistrationService {
     }
     if (smin != null && smax != null && smin > smax) {
       return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Rango de sueldo incoherente");
+    }
+
+    Integer yearsExp = d.getYearsExperience();
+    if (yearsExp == null) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "years_experience obligatorio");
+    }
+    if (yearsExp < 0 || yearsExp > 50) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "years_experience invalido");
     }
 
     List<Long> skillIds = d.getSkillsIds();

@@ -38,6 +38,7 @@ data class RegisterDraft(
     val profileSummary: String = "",
     val salaryMin: String = "",
     val salaryMax: String = "",
+    val yearsExperience: Int = 0,
     val modalities: Set<String> = emptySet(),
     val workloads: Set<String> = emptySet(),
     val cvUri: String? = null,
@@ -360,6 +361,7 @@ class CandidateRegisterViewModel(application: Application) : AndroidViewModel(ap
                                 profileSummary = summary,
                                 salaryExpectedMin = salaryMinOut,
                                 salaryExpectedMax = salaryMaxOut,
+                                yearsExperience = d.yearsExperience,
                                 preferredModalities = d.modalities.toList(),
                                 preferredWorkloads = d.workloads.toList(),
                                 skillsIds = d.skillIds.toList()

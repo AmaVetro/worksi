@@ -43,6 +43,9 @@ public class CandidateProfileResponse {
   @JsonProperty("salary_expected_max")
   private final Integer salaryExpectedMax;
 
+  @JsonProperty("years_experience")
+  private final int yearsExperience;
+
   @JsonProperty("preferred_modalities")
   private final List<String> preferredModalities;
 
@@ -72,6 +75,7 @@ public class CandidateProfileResponse {
       String profileSummary,
       Integer salaryExpectedMin,
       Integer salaryExpectedMax,
+      int yearsExperience,
       List<String> preferredModalities,
       List<String> preferredWorkloads,
       List<CandidateProfileSkillResponse> skills,
@@ -90,6 +94,7 @@ public class CandidateProfileResponse {
     this.profileSummary = profileSummary;
     this.salaryExpectedMin = salaryExpectedMin;
     this.salaryExpectedMax = salaryExpectedMax;
+    this.yearsExperience = yearsExperience;
     this.preferredModalities = preferredModalities;
     this.preferredWorkloads = preferredWorkloads;
     this.skills = skills;
@@ -147,6 +152,10 @@ public class CandidateProfileResponse {
 
   public Integer getSalaryExpectedMax() {
     return salaryExpectedMax;
+  }
+
+  public int getYearsExperience() {
+    return yearsExperience;
   }
 
   public List<String> getPreferredModalities() {

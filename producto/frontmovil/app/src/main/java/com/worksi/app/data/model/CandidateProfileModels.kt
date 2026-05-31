@@ -20,6 +20,7 @@ data class CandidateProfileJson(
     @Json(name = "profile_summary") val profileSummary: String?,
     @Json(name = "salary_expected_min") val salaryExpectedMin: Int?,
     @Json(name = "salary_expected_max") val salaryExpectedMax: Int?,
+    @Json(name = "years_experience") val yearsExperience: Int = 0,
     @Json(name = "preferred_modalities") val preferredModalities: List<String> = emptyList(),
     @Json(name = "preferred_workloads") val preferredWorkloads: List<String> = emptyList(),
     val skills: List<CandidateProfileSkillJson> = emptyList()

@@ -84,8 +84,16 @@ Pantalla “Ofertas Publicadas”:
 
 Pantalla “Vista Oferta”:
 - Detalle de la oferta: GET /api/v1/company/jobs/{job_id}. La respuesta incluye nombres legibles region_name y commune_name, lista skills con id y name, y para la imagen de la oferta los mismos criterios que la ficha empresa: external_image_url si la imagen es URL http(s), o has_protected_image true si esta guardada como archivo en servidor; en ese ultimo caso el cliente debe cargar el binario con GET /api/v1/company/jobs/{job_id}/image (Authorization Bearer) para mostrarla (por ejemplo debajo del titulo en la UI). Si no hay imagen, no se muestra bloque de imagen.
+- Botón “Editar oferta” (HU-16) → pantalla “Editar Oferta”.
 - Listado de postulantes de esa oferta con información básica y porcentaje de emparejamiento, orden de mayor a menor porcentaje: GET /api/v1/company/jobs/{job_id}/applications?page=1&size=20&sort=match_score,desc
 - Por fila, “Ver Postulante” → pantalla “Perfil postulantes” (mismos datos del listado anterior).
+
+
+
+Pantalla “Editar Oferta” (HU-16):
+- Mismos campos obligatorios y opcionales que “Crear Oferta”, precargados desde GET /api/v1/company/jobs/{job_id}.
+- Botón “Guardar cambios” → PATCH /api/v1/company/jobs/{job_id} en multipart/form-data (parte data JSON + parte image opcional), alineado al Contrato Unificado API sección 19.2.
+- Tras éxito → vuelta a “Vista Oferta” con datos actualizados.
 
 
 
@@ -114,7 +122,7 @@ Pantalla “Postulaciones postulantes”:
 Pantalla “Explicación matching empresa” (HU-28):
 - Muestra score final del postulante para esa oferta y un gráfico con score por dimensión: texto de la oferta (description), título de la oferta (title), modalidad, carga horaria y años de experiencia.
 - El gráfico y textos explican cómo esas dimensiones conforman el score final (Contrato Unificado API, match_breakdown).
-- Datos desde backend postulaciones empresa (p. ej. GET /api/v1/company/jobs/{job_id}/applications con match_breakdown por fila o endpoint de detalle acordado).
+- Datos desde GET /api/v1/company/jobs/{job_id}/applications (match_score y match_breakdown del postulante seleccionado; Contrato sección 26).
 - Botón “Ver perfil postulante” → pantalla “Perfil postulantes”.
 
 
