@@ -161,7 +161,7 @@ Años de experiencia declarados dentro del CV (si aparecen en el texto del CV)
 El sistema reduce sesgos, pero no los elimina completamente.
 
 11. MATCHING
-Input (ilustrativo; cv_text proviene del texto extraído con Tika y la limpieza previa; job_text resume la oferta. Para la app móvil de postulantes, el porcentaje considera CV limpio + modalidades preferidas + cargas horarias preferidas):
+Input (ilustrativo; cv_text proviene del texto extraído con Tika y la limpieza previa; job_text resume title+description+modality+workload para similitud semántica. El score final del producto combina cinco dimensiones — description, title, modality, workload y años de experiencia — según Contrato Unificado API):
 {
   "cv_text": "...",
   "job_text": "..."
@@ -175,10 +175,10 @@ Explicación del match (simplificada)
 
 Se basa en:
 
-Coincidencias entre el texto del CV (tras fairness) y el texto de la oferta
-Palabras clave o temas relevantes inferidos de esa comparación
-Modalidades preferidas del postulante vs modalidad de la oferta
-Cargas horarias preferidas del postulante vs carga horaria de la oferta
+Coincidencias entre el texto del CV (tras fairness) y fragmentos de la oferta (description, title)
+Modalidad de la oferta vs modalidades preferidas del postulante
+Carga horaria de la oferta vs cargas horarias preferidas del postulante
+Años de experiencia requeridos por la oferta vs años inferidos del CV (valor estructurado extraído en backend; la redacción literal se retira del cv_text por fairness pero el valor inferido entra al score)
 
 ❗ No se implementan explicaciones complejas
 
@@ -188,8 +188,6 @@ Skills del perfil del postulante
 Presentación personal escrita en perfil (fuera del CV)
 Rango de sueldo esperado declarado por el postulante
 Sueldo ofrecido en la oferta
-Años de experiencia requeridos por la oferta
-Años de experiencia declarados por el postulante dentro del CV
 Nacionalidad del postulante
 
 12. BACKEND (API REST)

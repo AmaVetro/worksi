@@ -101,10 +101,10 @@ CONSTRUCCION OBLIGATORIA DE job_text (BACKEND)
   - modality
   - workload
 - No existe campo separado requirements en persistencia de oferta; todo texto libre del puesto va en description (Flujo Pantallas App Web).
-- No incluir:
+- No incluir en job_text concatenado:
   - job_skills
   - salary_offered
-  - years_experience_required
+  - years_experience_required (entra al score como dimensión estructurada experience_score; ver CONTRATO DE SCORE FINAL)
   - company_commercial_name (solo referencia de marca en listados; no forma parte del texto semantico de matching salvo decision explicita futura de producto)
 
 
@@ -750,20 +750,23 @@ MATCHING API EXTERNA (CONSUMIDA SOLO POR SPRING)
   "explanation": "Coincidencia en experiencia backend y herramientas"
 }
 - Reglas:
-  - score de FastAPI es base semantica.
-  - Spring transforma a 0..100 y aplica ajuste modalidad/workload.
+  - score de FastAPI es aporte semántico cuando aplique llamada /match.
+  - Spring calcula las cinco dimensiones y final_score según CONTRATO DE SCORE FINAL.
 
 
 
 CONTRATO DE SCORE FINAL (BACKEND -> FRONT)
-- Formula fija para evitar ambiguedad:
-  final_score = clamp( base_semantic_score_0_100 * 0.8 + preference_bonus_0_20, 0, 100 )
-- preference_bonus_0_20:
-  - +10 si modalidad oferta esta en preferred_modalities.
-  - +10 si workload oferta esta en preferred_workloads.
-  - +0 en cada caso si no coincide.
-- Redondeo de respuesta:
-  - dos decimales (DECIMAL 5,2).
+- El porcentaje final (0..100, dos decimales) combina cinco dimensiones con peso igual (20% cada una):
+  final_score = clamp( (description_score + title_score + modality_score + workload_score + experience_score) / 5 , 0, 100 )
+- Dimensiones (cada una score 0..100):
+  - description_score: similitud semántica cv_text (post-fairness) vs description de la oferta.
+  - title_score: similitud semántica cv_text vs title de la oferta.
+  - modality_score: 100 si modality de la oferta está en preferred_modalities del candidato; 0 si no coincide.
+  - workload_score: 100 si workload de la oferta está en preferred_workloads del candidato; 0 si no coincide.
+  - experience_score: comparación years_experience_required de la oferta vs años de experiencia inferidos del CV (valor numérico extraído en backend del texto del CV antes de fairness sobre cv_text; la mención literal se retira del cv_text por fairness pero el valor inferido entra en esta dimensión).
+- POST /match (FastAPI) puede aportar similitud semántica base; Spring calcula dimensiones y final_score.
+- Desglose match_breakdown (obligatorio en respuestas que incluyan match para candidato y en detalle HU-28 reclutador): objeto con final_score y scores por dimensión (description, title, modality, workload, experience) más textos breves de apoyo cuando aplique.
+- Redondeo de respuesta: dos decimales (DECIMAL 5,2).
 
 
 

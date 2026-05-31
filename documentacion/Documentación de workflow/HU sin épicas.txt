@@ -76,9 +76,8 @@ Criterios de aceptación:
 - pretensión de renta
 * Validación de campos
 * Persistencia correcta
-* Las skills del perfil no se usan para calcular el porcentaje de matching; ese porcentaje usa
- CV limpio frente al contenido de la oferta, considerando además modalidades preferidas y 
- cargas horarias preferidas del postulante
+* Las skills del perfil no se usan para calcular el porcentaje de matching; ese porcentaje combina
+ las cinco dimensiones oficiales (description, title, modality, workload, años de experiencia) según Contrato Unificado API
 
 
 
@@ -118,15 +117,13 @@ Como candidato
 * Para saber qué tan adecuado soy para el puesto
 Criterios de aceptación:
 * Se muestra porcentaje (0–100%)
-* Se calcula usando IA a partir del CV limpio frente al contenido de la oferta, considerando 
-además modalidades preferidas y cargas horarias preferidas del postulante
+* Se calcula usando IA y reglas de producto a partir del CV limpio frente a la oferta, considerando las cinco dimensiones oficiales de matching (incluye años de experiencia)
 * No usa skills declaradas en el perfil
 * No usa presentación personal del perfil
 * No usa rango de sueldo esperado
 * No usa sueldo ofrecido de la oferta
-* No usa años de experiencia requeridos por la oferta
-* No usa años de experiencia declarados por el postulante dentro del CV
 * No usa nacionalidad del postulante
+* El porcentaje final combina cinco dimensiones (cada una con score 0–100): texto de la oferta (description), título de la oferta (title), modalidad, carga horaria y años de experiencia (years_experience_required de la oferta vs años inferidos del CV); ver Contrato Unificado API
 * Manejo de error si falla IA
 
 
@@ -153,8 +150,8 @@ Como candidato
 * Quiero que mis datos sensibles no sean usados en el matching
 * Para evitar discriminación
 Criterios de aceptación:
-* No se usan: nombre, edad, género, institución de procedencia, correo, rut, nacionalidad, años de experiencia declarados dentro del CV
-* El procesamiento elimina estos datos antes del análisis
+* No se usan en el texto enviado a embeddings semánticos: nombre, edad, género, institución de procedencia, correo, rut, nacionalidad, menciones literales de años de experiencia declarados dentro del CV
+* El procesamiento elimina estos datos del cv_text antes del análisis semántico (fairness); los años de experiencia inferidos del CV se extraen antes de esa limpieza y entran en la dimensión experience_score del porcentaje final
 
 
 
@@ -244,8 +241,7 @@ skills_ids entre 3 y 8 asociadas a la oferta
 * Opcional: image_url por oferta (imagen propia del aviso).
 * Persistencia ACTIVE según MVP; estado único ACTIVE.
 * En vistas resumidas del producto pueden mostrarse hasta 4 skills en el card; hasta 8 en detalle candidato según contrato.
-* Para POST /match, job_text en backend se construye solo concatenando title, description, modality y workload; no incluye job_skills, salary_offered, years_experience_required ni company_commercial_name (solo marca en listados), según contrato.
-* El porcentaje final del producto aplica también bonus por modalidades y cargas horarias preferidas del candidato frente a modality y workload de la oferta, además del score semántico base.
+* El porcentaje final del producto combina las cinco dimensiones oficiales de matching (description, title, modality, workload, años de experiencia); ver Contrato Unificado API. job_text concatenado para llamadas IA no incluye job_skills, salary_offered ni company_commercial_name; years_experience_required entra como dimensión estructurada, no dentro de esa cadena.
 * Validación de campos
 * Se guarda correctamente
 
@@ -346,13 +342,15 @@ Criterios de aceptación:
 
 HU-23 — Marcar postulación como vista
 Como reclutador (RECRUITER)
-* Quiero marcar una postulación como vista
-* Para llevar seguimiento del estado de los candidatos
+* Quiero que una postulación se marque como vista al abrir su detalle
+* Para llevar seguimiento del estado de los candidatos sin acciones extra
 Criterios de aceptación:
-* Existe una acción manual para marcar como “VIEWED”
-* El estado cambia solo cuando quien opera el portal empresa (sesión RECRUITER) ejecuta esa acción
-* El estado se refleja correctamente en la lista de postulantes
-* No afecta otras postulaciones fuera de la seleccionada
+* El marcado como “VIEWED” es automático en servidor cuando el reclutador publicador abre el detalle de una postulación concreta (p. ej. pantalla «Perfil postulantes» / consulta de esa application_id)
+* Las postulaciones en estado APPLIED pasan a VIEWED con viewed_at solo al abrir ese detalle; idempotente si ya están VIEWED
+* No se marca VIEWED al listar el conjunto de postulantes de la oferta (p. ej. GET /api/v1/company/jobs/{job_id}/applications); solo al entrar al detalle de la postulación elegida
+* No se marca VIEWED al postular el candidato
+* El estado se refleja correctamente en listados del reclutador y en el listado del candidato (HU-13)
+* Solo afecta la postulación cuyo detalle abrió el reclutador; no otras postulaciones de la misma oferta ni ajenas
 
 
 
@@ -437,3 +435,19 @@ Criterios de aceptación (alineados a portal administrador y Contrato Unificado 
 * La eliminación de un reclutador no afecta otros reclutadores ni empresas no seleccionadas
 * La eliminación de una empresa respeta las reglas de integridad definidas por backend respecto a reclutadores asociados y datos relacionados
 * No se elimina ningún registro sin confirmación explícita del administrador
+
+
+
+
+
+HU-28 — Detalle del score de matching (reclutador)
+Como reclutador (RECRUITER)
+* Quiero acceder al detalle del score de compatibilidad de un postulante con una oferta
+* Para entender por qué obtuvo ese porcentaje y evaluar con criterio
+Criterios de aceptación:
+* Desde el flujo de postulantes de la oferta (p. ej. botón «Ver explicación matching» en Flujo Pantallas App Web) se accede a la pantalla «Explicación matching empresa».
+* La pantalla muestra el score final del postulante para esa oferta y un gráfico con el score por dimensión: texto de la oferta (description), título de la oferta (title), modalidad, carga horaria y años de experiencia.
+* El gráfico y textos de apoyo muestran cómo esas cinco dimensiones conforman el score final (misma regla de cálculo que el porcentaje visible al candidato; Contrato Unificado API).
+* Solo accesible para el reclutador publicador de la oferta (sesión RECRUITER).
+* Datos desde backend (postulaciones empresa según Contrato); sin exponer datos sensibles removidos por fairness.
+* Carga sin errores; manejo visible si falta score o desglose.

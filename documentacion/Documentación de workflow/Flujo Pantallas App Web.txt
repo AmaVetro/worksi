@@ -108,13 +108,13 @@ Pantalla “Crear Oferta”:
 
 Pantalla “Postulaciones postulantes”:
 - Listado según oferta: GET /api/v1/company/jobs/{job_id}/applications?page=1&size=20&sort=match_score,desc
-- Botón “Ver explicación matching” → pantalla “Explicación matching empresa”.
-- Marcar postulación como vista: PATCH /api/v1/company/applications/{application_id}/viewed
+- Botón “Ver explicación matching” → pantalla “Explicación matching empresa” (HU-28).
 
 
-
-Pantalla “Explicación matching empresa”:
-- Texto explicativo del emparejamiento con los datos ya obtenidos del listado: GET /api/v1/company/jobs/{job_id}/applications?page=1&size=20&sort=match_score,desc
+Pantalla “Explicación matching empresa” (HU-28):
+- Muestra score final del postulante para esa oferta y un gráfico con score por dimensión: texto de la oferta (description), título de la oferta (title), modalidad, carga horaria y años de experiencia.
+- El gráfico y textos explican cómo esas dimensiones conforman el score final (Contrato Unificado API, match_breakdown).
+- Datos desde backend postulaciones empresa (p. ej. GET /api/v1/company/jobs/{job_id}/applications con match_breakdown por fila o endpoint de detalle acordado).
 - Botón “Ver perfil postulante” → pantalla “Perfil postulantes”.
 
 

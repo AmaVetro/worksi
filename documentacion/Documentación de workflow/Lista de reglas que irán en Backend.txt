@@ -24,14 +24,14 @@ oferta mínimo 3 / máximo 8 al crear/publicar.
 
 
 Reglas de matching:
-qué campos sí/no entran al score,
+qué campos sí/no entran al score (cinco dimensiones oficiales incluyen años de experiencia; ver Contrato),
 que skills de perfil/oferta no alteren score,
-construcción de cv_text y job_text (según Contrato Unificado API: job_text solo title + description + modality + workload).
+construcción de cv_text y job_text; years_experience_required como dimensión estructurada, no dentro de job_text concatenado.
 
 
 Fairness (regex + spaCy) antes de embeddings.
 
-Explicación de match simple y sin datos sensibles.
+Explicación de match simple y sin datos sensibles; desglose match_breakdown por dimensiones (HU-28 reclutador).
 
 Reglas de publicación de oferta (solo ACTIVE, cuándo se publica y cómo se llena published_at).
 
@@ -51,4 +51,4 @@ Manejo de archivos CV en filesystem (subida, reemplazo, marcar actual de forma c
 
 Ordenar postulantes por compatibilidad en vistas portal empresa (/api/v1/company/jobs/{job_id}/applications).
 
-Invariante funcional del score: mismo CV + misma oferta => mismo score aunque cambien skills de perfil/oferta.
+Invariante funcional del score: mismo CV + misma oferta => mismo score aunque cambien skills de perfil/oferta; campos de dimensiones (description, title, modality, workload, years_experience_required) invariantes.

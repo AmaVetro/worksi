@@ -21,21 +21,15 @@ Objetivo: centralizar reglas esenciales para que cualquier integrante encuentre 
 2) REGLA GLOBAL DE MATCHING (CRÍTICA)
 ============================================================
 - El candidato puede declarar y editar skills en su perfil; se persisten como parte del perfil (HU-04, HU-05).
-- En app móvil de postulantes, el porcentaje de compatibilidad en el producto se calcula con:
-  - contenido del CV limpio (texto extraído del PDF y limpiado)
-  - contenido relevante de la oferta
-  - modalidades preferidas del postulante vs modalidad de la oferta
-  - cargas horarias preferidas del postulante vs carga horaria de la oferta
-- El contrato base hacia IA (POST /match, URI /match del servicio FastAPI) usa cv_text y job_text; las skills del perfil del candidato no se incluyen en el request de POST /match ni influyen en el porcentaje.
-- job_text debe armarse solo con title, description, modality y workload de la oferta (Contrato Unificado API); no concatenar lista de skills, sueldos ni años de experiencia requeridos como parte de ese texto semántico.
-- La explicación del match debe basarse en la comparación CV vs oferta, no en skills de perfil.
+- En app móvil de postulantes, el porcentaje de compatibilidad en el producto se calcula combinando cinco dimensiones (score 0–100 cada una): texto de la oferta (description), título de la oferta (title), modalidad, carga horaria y años de experiencia (years_experience_required de la oferta vs años inferidos del CV); ver Contrato Unificado API.
+- El contrato base hacia IA (POST /match, URI /match del servicio FastAPI) usa cv_text y job_text para similitud semántica; las skills del perfil del candidato no se incluyen en el request de POST /match ni influyen en el porcentaje.
+- job_text concatenado (cuando aplique llamada única) usa title, description, modality y workload; no concatenar lista de skills, sueldos ni years_experience_required en esa cadena — los años de experiencia entran como dimensión estructurada en el score final, no dentro de job_text.
+- La explicación del match debe basarse en las dimensiones de scoring y la comparación CV vs oferta, no en skills de perfil.
 - En app móvil de postulantes no se usan para el porcentaje:
   - skills del perfil
   - presentación personal del perfil
   - rango de sueldo esperado
   - sueldo ofrecido en la oferta
-  - años de experiencia requeridos por la oferta
-  - años de experiencia declarados por el postulante dentro del CV
   - nacionalidad del postulante
 
 ============================================================
@@ -172,7 +166,7 @@ Objetivo: centralizar reglas esenciales para que cualquier integrante encuentre 
 ============================================================
 - Autenticación y roles antes del resto (candidato móvil con registro+login CANDIDATE; web con ADMIN y reclutadores RECRUITER y ficha empresa sin usuario empresa; mismo contrato oficial de API; skills de perfil no son insumo del porcentaje).
 - Consentimiento (HU-21, checkbox y timestamp) obligatorio en pantalla "Uso de datos", última pantalla antes de crear la cuenta oficialmente; al aceptar el consentimiento se crea la cuenta y se pasa a Perfil.
-- Subida y almacenamiento de CV (HU-06); luego extracción de texto con Tika y post-procesamiento mínimo en backend, y ofertas creadas y visibles (HU-15, HU-10) como insumos antes de fairness y score. El consumo de matching en producto requiere CV limpio, contenido de oferta, modalidades preferidas y cargas horarias preferidas; no skills de perfil del candidato.
+- Subida y almacenamiento de CV (HU-06); luego extracción de texto con Tika y post-procesamiento mínimo en backend, y ofertas creadas y visibles (HU-15, HU-10) como insumos antes de fairness y score. El consumo de matching en producto requiere CV limpio, campos de oferta para las cinco dimensiones oficiales (incluye years_experience_required vs años inferidos del CV), modalidades y cargas preferidas del postulante; no skills de perfil del candidato.
 - Fairness (HU-09) antes de score (HU-07) y explicación breve (HU-08, plantilla mínima).
 - Swipe y postulación (HU-11, HU-12) cuando existan ofertas y contrato de matching operativo (cv_text + job_text).
 - Listado de postulaciones del candidato (HU-13) después de existir postulaciones; cancelación (HU-14) es opcional fuera del plan obligatorio.

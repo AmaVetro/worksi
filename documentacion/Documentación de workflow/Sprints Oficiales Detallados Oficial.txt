@@ -22,9 +22,7 @@ Convenciones en este documento:
 
 Regla global de matching (válida en todo el proyecto; no negociar en código):
 - El candidato declara y persiste skills en perfil (HU-04, HU-05).
-- El porcentaje de compatibilidad en producto considera: CV limpio (texto extraído
-  y fairness cuando corresponda) frente texto semántico oferta donde job_text se arma
-  en backend sólo con title + description + modality + workload según Contrato; más política combinada en producto cuando preferencias modality/workload del candidato aplican contra la oferta (Sprint oficiales + Contrato).
+- El porcentaje de compatibilidad en producto considera cinco dimensiones (description, title, modality, workload, años de experiencia); ver Contrato Unificado API.
 - El contrato mínimo hacia IA es POST /match con cv_text y job_text. En este
   documento, la palabra “skills” en reglas de porcentaje designa las listas
   estructuradas guardadas en BD: skills de perfil del postulante y skills
@@ -38,8 +36,7 @@ Regla global de matching (válida en todo el proyecto; no negociar en código):
   para la similitud semántica frente a job_text. No se trata de “skills de
   perfil”; es contenido narrativo del propio CV.
 - Tampoco influyen en el porcentaje: presentación personal del perfil, rango de
-  sueldo esperado, sueldo ofrecido en la oferta, años de experiencia requeridos
-  por la oferta, años de experiencia declarados dentro del CV, nacionalidad.
+  sueldo esperado, sueldo ofrecido en la oferta, nacionalidad.
 
 Regla global de testing (válida en todo el proyecto):
 - No implementar testing en frontends: no carpetas de testing en el proyecto web (React/Vite) ni en el móvil (Android); quienes desarrollan esas capas comprueban que todo funcione visualmente y por uso manual.
@@ -82,8 +79,7 @@ ANTES DEL SPRINT 1 — ACUERDOS QUE TODO EL EQUIPO DEBE ENTENDER
 6) Estados de postulación
 - APPLIED, VIEWED, CANCELLED existen como dominio; en MVP móvil lo visible es
   APPLIED y VIEWED. CANCELLED solo si sobra tiempo (HU-14).
-- VIEWED solo por acción manual del reclutador en sesión RECRUITER (HU-23).
-  Prohibido marcado automático de VIEWED.
+- VIEWED se marca automáticamente en servidor cuando el reclutador en sesión RECRUITER abre el detalle de una postulación concreta (HU-23); no al listar postulantes de la oferta ni al postular el candidato.
 
 7) Lista oficial “solo si sobra tiempo” (no planificar como bloqueante)
 - HU-16 Editar oferta
@@ -429,7 +425,7 @@ Contenido oficial:
 
 Objetivo del sprint en una frase:
 Extraer texto de CV en backend para el pipeline posterior; tener ofertas ACTIVE
-publicadas por RECRUITER según Contrato con job_text bien definido; feed/listado
+publicadas por RECRUITER según Contrato con dimensiones de score bien definidas; feed/listado
 candidato HU-10 listo antes de fairness y swipe.
 
 ------------------------------------------------------------
@@ -450,7 +446,7 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 5
   modality y workload enums; skills_ids entre 3 y 8 en job_skills.
 - Opcional por oferta image_url/imagen archivo según Flujo Contrato si el equipo ya modela esa parte en Sprint 8 UI.
 - job_text construido en backend para IA concatena únicamente title + description + modality + workload (no incluye skills,
-  salary_offered ni years_experience_required ni nombre comercial en texto semántico).
+  salary_offered ni company_commercial_name en esa cadena). years_experience_required entra al score como dimensión experience_score, no dentro de job_text.
 - PATCH /api/v1/company/profile/image operativo donde corresponda (marca empleador sobre companies, fuera texto job_text).
 
 3) HU-10 Feed / ver ofertas candidato
@@ -500,8 +496,8 @@ Contenido oficial:
   horarias preferidas del postulante comparadas con oferta.
 
 Objetivo del sprint en una frase:
-Congelar el núcleo IA: texto limpio → fairness → embedding → score base →
-ajuste por preferencias → explicación breve y segura, invocable desde Spring.
+Congelar el núcleo IA: texto limpio → fairness → embedding → cinco dimensiones de score →
+score final (promedio) → explicación breve y segura, invocable desde Spring.
 
 ------------------------------------------------------------
 A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 6
@@ -519,11 +515,9 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 6
   “empresa útil”.
 
 2) HU-07 Calcular compatibilidad
-- Mostrar porcentaje 0 a 100 en respuesta de producto (puede ser entero).
-- Cálculo IA basado en embeddings con modelo all-MiniLM-L6-v2 y cosine
-  similarity en scikit-learn.
-- Debe respetar exclusiones de matching del perfil y oferta (no sueldos, no
-  años exp, etc.).
+- Mostrar porcentaje 0 a 100 en respuesta de producto (puede ser entero o decimal según contrato).
+- Cálculo en Spring: cinco dimensiones (description, title, modality, workload, experience) según CONTRATO DE SCORE FINAL; IA aporta similitud semántica donde aplique POST /match.
+- Debe respetar exclusiones de matching del perfil y oferta (no sueldos, no skills BD, etc.).
 
 Definición operativa obligatoria (sin ambigüedad para skills):
 - Las skills guardadas en BD en el perfil del postulante y las skills guardadas
@@ -533,7 +527,7 @@ Definición operativa obligatoria (sin ambigüedad para skills):
 - job_text que se envía a FastAPI se construye en Spring concatenando únicamente
   título + descripción + modalidad + workload (carga horaria) de la oferta, según Contrato oficial.
   Quedan explícitamente fuera del texto semántico de job_text: listas skills de oferta persistidas en BD,
-  sueldo ofrecido, años de experiencia requeridos, company_commercial_name (marca sólo fuera texto IA).
+  sueldo ofrecido, company_commercial_name (marca sólo fuera texto IA). years_experience_required no va en job_text; entra como experience_score.
 - cv_text que se envía es el texto del CV post-Tika y post-fairness (idealmente
   fairness en Python; si el equipo decide fairness solo en Python, el Java
   envía texto Tika limpio básico y Python aplica fairness antes de embeddings).
@@ -570,10 +564,9 @@ Spring Boot:
 - Manejo de error si IA cae: respuesta controlada al cliente móvil/web.
 
 5) Regla de combinación de score (clarificación obligatoria para el equipo)
-- FastAPI retorna score semántico base por textos.
-- Spring aplica ajuste por modalidad y carga horaria comparando preferencias
-  del candidato vs oferta, produciendo porcentaje final. Documentar fórmula
-  mínima (aunque sea lineal con tope) para evitar discusiones en Sprint 11.
+- FastAPI puede retornar similitud semántica base por textos cuando aplique POST /match.
+- Spring calcula las cinco dimensiones y final_score según Contrato (promedio igual ponderado 20% c/u).
+- Persistir match_breakdown en postulación o recalcular on-read de forma consistente; documentar elección.
 
 ------------------------------------------------------------
 B) DESGLOSE ULTRA DETALLADO
@@ -598,8 +591,7 @@ B4) Prueba crítica exigida por Sprint 11 (adelantar si se puede)
 - Mismo CV y misma oferta debe dar mismo score aunque cambien solo las skills de
   perfil en BD: preparar caso Postman desde ya.
 - Mismo CV y misma oferta debe dar mismo score aunque cambien solo las skills
-  en job_skills persistidas sin alterar los campos que componen job_text (title, description,
-  modality, workload): preparar caso equivalente.
+  en job_skills persistidas sin alterar campos de dimensiones de score (description, title, modality, workload, years_experience_required): preparar caso equivalente.
 
 ------------------------------------------------------------
 C) QUÉ NO HACER EN EL SPRINT 6
@@ -669,7 +661,7 @@ B) DESGLOSE ULTRA DETALLADO
 ------------------------------------------------------------
 B1) Endpoint lista ofertas para swipe (1 a 2 horas)
 - Incluye campos UI Flujo Pantallas: imagen si existe, nombre, empresa, sueldo,
-  comuna, modalidad, años exp (mostrar pero no usar en score), descripción
+  comuna, modalidad, años exp (dimensión experience_score), descripción
   truncada, 4 skills, score + barra.
 
 B2) Endpoint detalle oferta (1 a 2 horas)
@@ -710,9 +702,10 @@ Contenido oficial:
 - Completar web reclutador: listados GET /api/v1/company/jobs, formulario creación y visualización
   HU-15 alineados Flujo Pantallas App Web (region_id coherence comunas, skills topes Contrato/UI).
 - PATCH imagen empresa vía cliente si backlog UI Sprint 7 dejó pendiente marca employer.
+- HU-28 Detalle del score de matching reclutador (pantalla «Explicación matching empresa» con gráfico por dimensiones).
 
 Objetivo del sprint en una frase:
-Historial candidato coherente; reclutador gestiona ciclo medio ofertas vía pantallas Contrato antes de vistas postulantes finas Sprint 9.
+Historial candidato coherente; reclutador con desglose de score HU-28; ciclo medio ofertas vía pantallas Contrato antes de postulantes finos Sprint 9.
 
 ------------------------------------------------------------
 A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 8
@@ -721,8 +714,7 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 8
 - Lista de postulaciones del candidato autenticado.
 - Muestra nombre oferta, empresa, sueldo ofrecido, estado.
 - Estados visibles MVP: APPLIED y VIEWED (VIEWED puede aparecer solo después de
-  Sprint 9, pero la UI debe soportarlo sin romper; mientras tanto, VIEWED se
-  verá cuando el reclutador publicador marca VIEWED HU-23).
+  Sprint 9, cuando el reclutador abra el detalle de una postulación HU-23; la UI debe soportarlo sin romper desde Sprint 8).
 
 2) Pantalla “Vista Previa Oferta” según Flujo Pantallas
 - Desde lista, ver detalle resumido + estado + botón ir a oferta en feed.
@@ -730,6 +722,11 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 8
 3) Web reclutador complemento HU-15
 - Listados mismos filtros sólo-ofertas-publicadas-por-el-reclutador autenticado según Contrato.
 - Forms publish flow campos opcionales requeridos región/coherencias skills 3–8.
+
+4) HU-28 Detalle score matching reclutador
+- Pantalla «Explicación matching empresa» con gráfico de cinco dimensiones (description, title, modality, workload, experience) y score final.
+- Acceso desde flujo web reclutador (botón «Ver explicación matching»); datos match_breakdown según Contrato.
+- Solo reclutador publicador de la oferta.
 
 ------------------------------------------------------------
 B) DESGLOSE ULTRA DETALLADO
@@ -739,7 +736,8 @@ B2) UI móvil lista postulaciones (3 a 4 horas)
 B3) Navegación a detalle vista previa oferta (2 a 3 horas)
 B4) Web pantallas reclutador listado ofertas + crear oferta HU-15 (3 a 4 horas equipo)
 B5) PATCH /api/v1/company/profile/image UI si backlog (1 hora)
-B6) Pruebas: postulación creada y listada más roundtrip alta oferta desde web (1 hora)
+B6) HU-28: backend match_breakdown + pantalla web gráfico dimensiones (3 a 4 horas equipo)
+B7) Pruebas: postulación creada y listada más roundtrip alta oferta desde web (1 hora)
 
 
 
@@ -750,13 +748,13 @@ B6) Pruebas: postulación creada y listada más roundtrip alta oferta desde web 
 SPRINT 9 — SEMANA 1 - 7 Junio DE 2026
 ================================================================================
 Esfuerzo total estimado del equipo: 18 horas.
-Contenido oficial: HU-19 Ver postulantes sesión RECRUITER + HU-23 Marcar VIEWED sólo manual
-reclutador + pulimiento navegaciones web segunda mitad panel errores campo “Completa este campo”
+Contenido oficial: HU-19 Ver postulantes sesión RECRUITER + HU-23 Marcar VIEWED automático al abrir detalle de postulación
+(reclutador publicador) + pulimiento navegaciones web segunda mitad panel errores campo “Completa este campo”
 según Sprint oficiales Flujo Contrato + HU-17 Eliminar oferta (RECRUITER) + HU-25 Ver empresas
 registradas (ADMIN) + HU-26 Ver reclutadores registrados (ADMIN), según HU sin épicas.
 
 Objetivo del sprint en una frase:
-Reclutador ve postulantes por oferta propia, marca vista manual HU-23 y puede eliminar ofertas
+Reclutador ve postulantes por oferta propia, VIEWED automático HU-23 al abrir detalle de postulación (no al listar) y puede eliminar ofertas
 HU-17; administrador dispone de listados de empresas HU-25 y reclutadores HU-26; UI web con
 mensajes de error alineados al flujo oficial.
 
@@ -770,9 +768,10 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 9
 - Sin errores de carga.
 
 2) HU-23
-- Acción explícita UI + PATCH /api/v1/company/applications/{application_id}/viewed; sólo el reclutador publicador autorizado Contrato puede ejecutar PATCH.
-- Solo cambia la fila seleccionada; servidor sin marcado automático VIEWED idempotencia según Contrato.
-- Estado reflejo hu-13 cuando candidato lista postulaciones (refresh navegador o pull).
+- Marcado automático en servidor al abrir el detalle de una postulación concreta (p. ej. pantalla «Perfil postulantes» / consulta por application_id): esa fila APPLIED pasa a VIEWED con viewed_at; idempotente si ya VIEWED.
+- Solo el reclutador publicador autorizado Contrato dispara la transición al abrir el detalle; no requiere botón ni PATCH manual en UI.
+- No marcar VIEWED al listar postulantes de la oferta (GET /api/v1/company/jobs/{job_id}/applications) ni al crear la postulación del candidato.
+- Estado reflejado en HU-13 cuando el candidato lista postulaciones (refresh navegador o pull).
 
 3) Pulimiento errores navegaciones web segunda mitad HU
 - Mensajes “Completa este campo” alineados formularios web portal según HU sin épicas Flujo donde aplique tiempo restante equipo.
@@ -799,8 +798,8 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 9
 B) DESGLOSE ULTRA DETALLADO
 ------------------------------------------------------------
 B1) GET /api/v1/company/jobs/{job_id}/applications con auth sólo reclutador publicador + validación company job FK (3 horas).
-B2) PATCH VIEWED manual HU-23 (2 horas).
-B3) Web UI reclutador listas postulantes + botón marcar visto (3 horas).
+B2) Lógica automática VIEWED en backend al abrir detalle de postulación HU-23 (2 horas).
+B3) Web UI reclutador listas postulantes + pantalla detalle/perfil postulante; VIEWED al abrir detalle, no al cargar solo el listado (3 horas).
 B4) Ensayo permisos cruzados: recruiter compañía A vs job empresa B debe 403; segundo reclutador misma company_id no lista job ajeno sólo Contrato reclutador publicador (1 hora).
 B5) HU-17: endpoint o regla DELETE/PATCH retiro oferta + UI confirmación reclutador (3 horas).
 B6) HU-25: pantalla listado empresas ADMIN + GET /api/v1/admin/companies en UI (2 a 3 horas).
@@ -848,7 +847,7 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 10
 Regla crítica:
 - Editar skills de perfil NO debe cambiar score si CV y oferta no cambian:
   validar con prueba manual tipo Sprint 11.
-- Cambiar solo las skills declaradas job_skills tampoco altera porcentaje final si job_text invariante title+description+modality+workload (skills fuera texto semántico Contrato).
+- Cambiar solo las skills declaradas job_skills tampoco altera porcentaje final si campos de dimensiones invariantes (description, title, modality, workload, years_experience_required).
 
 3) Pulimiento texto legal menor copy
 - Textos seguridad consentimiento HU-21 pantallas correlacionadas revisión menor copy equipo producto stakeholder donde alcance tiempo Sprint oficiales.
@@ -891,7 +890,7 @@ Contenido oficial:
 - Checklist de calidad previo al cierre.
 - Chequeo explícito de regla de matching Sprint oficiales: mismo CV + misma oferta → mismo
   resultado aunque solo cambien skills de perfil o skills enumeradas job_skills manteniendo
-  job_text intocable title+description+modality+workload.
+  job_text intocable title+description+modality+workload y years_experience_required invariante.
 - Pasada integración Spring ↔ FastAPI acotada Postman rutas prioritarias Spring: POST /api/v1/auth/login (multicuenta), POST /api/v1/admin/companies, GET /api/v1/admin/companies, POST /api/v1/admin/recruiters, endpoints /api/v1/company/* del flujo reclutador según Contrato, GET /api/v1/candidate/jobs/feed; servicio IA: POST /match (FastAPI, path /match del contenedor IA).
 - Pruebas de integración finales, bugs críticos demo seca, preparación entrega stakeholder.
 - HU-22 permanece sólo tiempo extra backlog Sprint oficiales.
@@ -908,13 +907,13 @@ A) CHECKLIST OBLIGATORIA DE CIERRE (sin atajos)
 - Candidato: flujo móvil con CV/datos/skills cliente, HU-21 consentimiento, POST /api/v1/auth/register/candidate multipart; cuenta CANDIDATE operativa perfil Bearer.
 - Con CV procesado texto Tika, reclutador publica oferta vía sesión RECRUITER (portal web combinado Contrato demo).
 - Candidato consume feed swipe con score HU-11 y confirma postulación HU-12 (POST /api/v1/candidate/applications).
-- Mismo reclutador publicador lista applications job marca VIEWED HU-23 candidato ve estado HU-13.
+- Mismo reclutador publicador abre detalle de postulación → VIEWED automático HU-23; candidato ve estado HU-13.
 - Lista postulantes orden descendente HU-20 verificación visual.
 
 2) Chequeo explícito regla matching (obligatorio documentado)
 - Capturas o logs: dos consultas con misma oferta y mismo CV; en el medio se
   cambian skills de perfil; el porcentaje final no debe cambiar.
-- Caso análogo: mismo CV mismos textos IA; sólo mutan filas job_skills sin cambiar campos concatenados job_text Contrato anterior.
+- Caso análogo: mismo CV mismos textos IA; sólo mutan filas job_skills sin cambiar campos que componen las dimensiones de score Contrato.
 
 3) Seguridad mínima
 - Rutas privadas protegidas.
@@ -928,11 +927,8 @@ A) CHECKLIST OBLIGATORIA DE CIERRE (sin atajos)
   roto, postulación duplicada incorrecta, score inconsistente con reglas.
 
 6) Demo alineada a regla global
-- Explicar en demo: score explicado como texto del CV (incluidas habilidades
-  descritas en prosa en el CV) frente a texto permitido de la oferta en
-  job_text, más modalidades preferidas y cargas horarias preferidas; las skills
-  de perfil y las skills requeridas en ficha de oferta existen en BD pero no
-  gobiernan el porcentaje.
+- Explicar en demo: score como promedio de cinco dimensiones (description, title, modality, workload, años de experiencia);
+  las skills de perfil y de oferta en BD no gobiernan el porcentaje.
 
 ------------------------------------------------------------
 B) ENTREGABLES DE DOCUMENTACIÓN PARA DEFENSA (mínimo)
@@ -975,8 +971,8 @@ Sprint 4 — HU-21 consentimiento; POST /api/v1/auth/register/candidate multipar
 Sprint 5 — Tika; HU-15 crear oferta RECRUITER modelo Contrato actual; PATCH /api/v1/company/profile/image; HU-10 GET /api/v1/candidate/jobs/feed.
 Sprint 6 — HU-09 fairness; HU-07 score; HU-08 explicación; contrato técnico POST /match (FastAPI) con cv_text y job_text.
 Sprint 7 — Web MVP React+Vite login ADMIN/RECRUITER, panel empresa/reclutadores, shell reclutador; HU-11 HU-12 opcional UI recuperación MVP (maqueta + nueva contraseña real).
-Sprint 8 — HU-13 postulaciones candidato; completar portal reclutador HU-15 UI; PATCH imagen empresa si backlog.
-Sprint 9 — HU-19 HU-23 vistas postulantes solo publicador Contrato + pulimiento mensajes errores web panel segunda mitad + HU-17 eliminar oferta + HU-25 listado empresas ADMIN + HU-26 listado reclutadores ADMIN.
+Sprint 8 — HU-13 postulaciones candidato; completar portal reclutador HU-15 UI; PATCH imagen empresa si backlog; HU-28 detalle score matching reclutador.
+Sprint 9 — HU-19 HU-23 VIEWED automático al abrir detalle de postulación (solo publicador Contrato; no al listar) + pulimiento mensajes errores web panel segunda mitad + HU-17 eliminar oferta + HU-25 listado empresas ADMIN + HU-26 listado reclutadores ADMIN.
 Sprint 10 — HU-20 orden descendente HU-05 perfil HU-24 guardar oferta HU-27 eliminar empresas/reclutadores ADMIN + copy seguridad/consentimiento.
 Sprint 11 — E2E Docker; bugs críticos; invariante matching; Postman rutas Sprint oficiales; demo stakeholder; HU-22 backlog tiempo extra.
 Sprint 12 — Semana 22–28 junio 2026; contenido por definir (HU opcionales, CI/CD, despliegue demo, etc.).
