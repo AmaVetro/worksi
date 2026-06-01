@@ -36,7 +36,7 @@ Edición de oferta reclutador HU-16: PATCH /api/v1/company/jobs/{job_id}.
 
 Reglas de publicación de oferta (solo ACTIVE, cuándo se publica y cómo se llena published_at).
 
-Regla “VIEWED solo por acción manual desde portal empresa (usuario RECRUITER)” (la BD valida fechas, pero no automatismo de cambio).
+Regla VIEWED automático (HU-23): al abrir detalle de postulación por application_id (pantallas «Ver postulación» o «Perfil postulantes»), el reclutador publicador dispara APPLIED → VIEWED en servidor; idempotente; no al listar postulantes ni al postular; no requiere botón manual en UI (la BD valida fechas; el cambio lo ejecuta backend, no el usuario con acción explícita).
 
 Regla de “cancelar postulación” como opcional (solo si se implementa).
 

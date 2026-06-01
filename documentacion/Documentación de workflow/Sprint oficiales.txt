@@ -1,6 +1,6 @@
 PLAN DE SPRINTS — WorkSí
 
-(Reordenado por lógica de desarrollo · Product Backlog como insumo · 13 semanas · equipo de 3 · carga más equilibrada por esfuerzo real · total MVP estimado 102 h de equipo)
+(Reordenado por lógica de desarrollo · Product Backlog como insumo · 13 semanas · equipo de 3 · carga más equilibrada por esfuerzo real · total MVP estimado ~155 h de equipo con match/chat, testing/CI y cierre E2E en sprints 11–13)
 
 Fuentes alineadas: Contrato Unificado API, Flujo Pantallas App Web / Móvil, HU sin épicas, Reglas del Proyecto, migraciones Flyway en producto/backend/src/main/resources/db/migration/
 
@@ -33,7 +33,7 @@ PARÁMETROS DEL PLAN (EXPLÍCITOS)
 
 ●    Web MVP empresa: sin registro público de empresa en landing; alta de ficha empresa y alta reclutadores solo por ADMIN (panel + API); rutas /api/v1/company/* exclusivas RECRUITER.
 
-●    Regla esencial de testing: no implementar testing en frontends (sin carpetas de testing en web ni móvil); quienes trabajan en frontends validan de forma visual. La pasada de pruebas, reducida a lo más crítico y sobre el sistema completo, se concentra al final del MVP cuando el proyecto esté listo. Dentro de esa política, seguir evitando testing opcional o de baja prioridad; al cierre se incluye integración y flujo core, E2E candidato más flujo reclutador, y comprobación puntual de API si aplica.
+●    Regla esencial de testing: no implementar testing en frontends (sin carpetas de testing en web ni móvil); quienes trabajan en frontends validan de forma visual. Tests automatizados backend/IA y CI/CD se concentran en Sprint 12 (solo lo crítico: pipeline IA, extracción Tika, match, integración de funcionalidades esenciales). La pasada E2E final, bugs críticos y demo stakeholder se concentran en Sprint 13. Omitir tests de funcionalidades no críticas o sencillas.
 
 
 ═══════════════════════════════════════════════════════════
@@ -136,13 +136,14 @@ Equilibrio: experiencia swipe depende del score Sprint 6; web admin garantiza on
 Sprint 8:   25 - 31 Mayo 2026
 
 Esfuerzo total estimado del equipo: 12 h.
-Contenido:
+Contenido (orden lógico de implementación reclutador: listado postulantes → desglose score → editar oferta):
 ●    HU-13 — Listado postulaciones candidatos (APPLIED / VIEWED mínimos).
 ●    Completar web reclutador: listados GET /api/v1/company/jobs, formulario creación/visualización HU-15 alineados Flujo Pantallas App Web donde faltaban detalles (incluye región/coherencia comunas / skills topes según Contrato UI).
 ●    PATCH imagen empresa vía cliente si backlog UI pendiente.
-●    HU-28 — Detalle del score de matching reclutador (pantalla «Explicación matching empresa» con gráfico por dimensiones y score final).
+●    HU-19 (mínimo Sprint 8) — Ver postulantes por oferta: GET /api/v1/company/jobs/{job_id}/applications; en listado ofertas contador postulaciones + ícono; en «Vista Oferta» botón celeste «Ver postulaciones» con card que gira al reverso (listado match_score desc); por fila «Ver postulación» → pantalla básica (nombre, datos básicos, match_score); sin perfil completo solo lectura ni VIEWED automático (Sprint 9).
+●    HU-28 — Detalle del score de matching reclutador: pantalla «Detalle de Score» con barras por dimensión y score final (match_breakdown); en Sprint 8 pantalla y datos operativos; acceso formal desde «Ver postulación» al completar HU-19 Sprint 9.
 ●    HU-16 — Editar oferta (RECRUITER; modificar campos de oferta publicada; cambios persistentes; validaciones Contrato).
-Equilibrio: candidato tiene seguimiento; reclutador puede ver desglose de score HU-28 y editar ofertas HU-16; empresa opera ciclo medio sin depender HU opcional.
+Equilibrio: candidato con historial HU-13; reclutador con listado mínimo de postulantes, desglose HU-28 y edición HU-16; perfil postulante, VIEWED automático y pulido de flujo reclutador en Sprint 9.
 
 
 
@@ -150,14 +151,14 @@ Equilibrio: candidato tiene seguimiento; reclutador puede ver desglose de score 
 Sprint 9:   1 - 7 Junio 2026
 
 Esfuerzo total estimado del equipo: 18 h.
-Contenido:
-●    HU-19 — Ver postulantes (sesión RECRUITER) por job.
-●    HU-23 — Marcar VIEWED automático al abrir detalle de postulación (reclutador publicador); no al listar postulantes de la oferta ni acción manual en UI.
+Contenido (reclutador: complemento HU-19 y VIEWED sobre listado Sprint 8; no repetir núcleo GET applications):
+●    HU-19 (complemento Sprint 9) — Pantalla «Ver postulación» con botones «Detalle de Score» (HU-28) y «Ver perfil de candidato»; «Perfil postulantes» solo lectura (igual app móvil sin edición); botón visible «Establecer Match» (flujo funcional HU-29 en Sprint 11); pulimiento navegaciones web.
+●    HU-23 — Marcar VIEWED automático al abrir «Ver postulación» o «Perfil postulantes» (reclutador publicador); no al listar reverso de la card ni acción manual en UI.
 ●    Pulimiento navegaciones web segunda mitad HU panel (mensajes errores campo “Completa este campo”).
 ●    HU-17 — Eliminar oferta (RECRUITER; confirmación previa; deja de ser visible para candidatos; no rompe postulaciones previas según HU sin épicas).
 ●    HU-25 — Ver empresas registradas (ADMIN; vista listado con GET /api/v1/admin/companies; datos mínimos comercial, corporate_email, teléfono, región, comuna, sector; vacío y errores manejados).
 ●    HU-26 — Ver reclutadores registrados (ADMIN; vista listado desde backend; nombre, apellidos, email, empresa asociada, rol; vacío y errores manejados).
-Equilibrio: operación empresa coherente con transición automática APPLIED→VIEWED al abrir detalle del postulante (no al listar); portal administrador con listados de empresas y reclutadores listos para gestión en Sprint 10.
+Equilibrio: operación empresa con APPLIED→VIEWED al abrir perfil postulante (HU-23); listado por oferta ya operativo desde Sprint 8; portal administrador con listados HU-25/HU-26 para gestión en Sprint 10.
 
 
 
@@ -176,32 +177,39 @@ Equilibrio: iteración sobre módulos existentes y cierre de gestión admin (baj
 
 
 
-Sprint 11 (Sprint pesado):  15 - 21 Junio 2026   
+Sprint 11 (Sprint pesado):  15 - 21 Junio 2026
+
+Esfuerzo total estimado del equipo: 18 h.
+Contenido (orden lógico: backend chat → HU-29 → HU-30 → HU-31):
+●    Migraciones BD y backend chat MVP (Contrato v1.13 secciones 28–33): POST /api/v1/chat/conversations, GET /api/v1/chat/conversations, GET /api/v1/chat/conversations/pending, GET/POST mensajes con polling after_message_id; permiso mínimo solo participantes.
+●    HU-29 — Establecer match con candidato (reclutador): modal confirmación, primer mensaje max 80, éxito e «Ir al chat»; desde botón «Establecer Match» en perfil postulante (HU-19 Sprint 9).
+●    HU-30 — Chatear con candidatos (match) (reclutador): bloques «Matchs» en Inicio y Reclutamiento («Ir a ver»); pantallas «Matchs» y «Chat con candidato» (polling).
+●    HU-31 — Responder match y chatear con empresa (candidato): ícono mensajería en Ofertas (HU-10) → vista «Chats» única; modal post-login con «Responder Chat» o «Ver después»; «Chats» muestra conversaciones activas y matchs pendientes de revisar (pospuestos con «Ver después»); «Chat con empresa» (solo nombre comercial empresa).
+Equilibrio: mensajería bidireccional sobre postulaciones ya operativas (HU-19/HU-28 Sprint 8–9); depende de perfil postulante y botón «Establecer Match» visibles desde Sprint 9.
+
+
+Sprint 12:  22 - 28 Junio 2026
+
+Esfuerzo total estimado del equipo: 14 h.
+Contenido (orden lógico de desarrollo):
+●    1) Tests automatizados críticos backend (sin frontends): extracción texto Apache Tika; pipeline fairness + POST /match FastAPI; cálculo score Spring (cinco dimensiones); integración Spring ↔ FastAPI; seguridad auth (política contraseña, JWT, bloqueo 4 intentos); endpoints críticos registro candidato, feed, postulación, listado postulaciones empresa, chat mínimo. Omitir tests de pantallas, copy, formularios secundarios o HU de baja prioridad.
+●    2) Optimización velocidad cálculo IA: perfilar POST /match (carga modelos spaCy/Sentence Transformers, tiempos por request); reducir latencia (warm-up en arranque contenedor, cache en memoria de modelos ya cargados, timeouts acordados); verificar que tests críticos de match siguen pasando tras optimizar.
+●    3) CI/CD: pipeline (p. ej. GitHub Actions) que levante o use servicios acordados, ejecute solo la suite crítica anterior y falle el build si regresiona Tika, IA o integración esencial.
+Equilibrio: calidad y rendimiento del núcleo técnico antes del cierre E2E; no sustituye validación visual de frontends.
+
+
+Sprint 13 (Sprint pesado):  29 Junio - 5 Julio 2026
 
 Esfuerzo total estimado del equipo: 8 h.
-Contenido:
-●    Integración E2E: candidato móvil + flujo empresa con reclutadores creados por ADMIN entorno único Docker; revisión checklist calidad Contrato oficial.
+Contenido (contenido anterior del Sprint 11 — cierre MVP):
+●    Integración E2E: candidato móvil + flujo empresa con reclutadores creados por ADMIN en entorno único Docker; flujo match/chat incluido en demo si Sprint 11 cerrado; revisión checklist calidad Contrato oficial.
 ●    Bugs críticos recién detectados durante demo seca interna.
 ●    Validación invariante scoring: mismo CV + misma oferta → mismo resultado aún si solo cambian skills de perfil o skills listados job (persistiendo campos de dimensiones de score invariantes).
-●    Pasada integración backend Spring ↔ FastAPI acotada, Postman rutas prioritarias Spring: POST /api/v1/auth/login (multicuenta), POST /api/v1/admin/companies, GET /api/v1/admin/companies, POST /api/v1/admin/recruiters, rutas HU portal reclutador bajo prefijo GET/POST/PATCH necesarios en /api/v1/company/* según Contrato (incluye PATCH /api/v1/company/jobs/{job_id} HU-16 y GET /api/v1/company/jobs/{job_id}/applications con match_breakdown HU-28), GET /api/v1/candidate/jobs/feed; servicio IA: POST /match (FastAPI, fuera de /api/v1 Spring).
+●    Pasada integración backend Spring ↔ FastAPI acotada; Postman rutas prioritarias Spring y chat según Contrato v1.13.
 ●    HU-22 queda opcional backlog (sección sólo tiempo extra).
-●    Demo muestra historia: admin alta empresa reclutadores, reclutador publica oferta, candidato registra tras consentimiento, swipe + post + vista empresa con score.
+●    Demo stakeholder: admin alta empresa/reclutadores, reclutador publica oferta, candidato registra, swipe + post, reclutador ve postulación (HU-19), Detalle de Score (HU-28), establece match (HU-29), chat bidireccional (HU-30/HU-31; candidato pospone con «Ver después» y retoma desde «Chats»).
 ●    Preparación entrega stakeholder.
-Equilibrio semana puerto cierre oficial plan.
-
-
-
-
-Sprint 12 en semana 22 - 28 Junio 2026
-(Por definir, aún no se sabe qué se hará en este sprint: si acaso se harán las HU opcionales, o sistema de mensajes al
- correo, o agregar CI/CD, o agregar Match real tipo tinder, o 
-agregar despliegue tipo demo en render, vercel, railway, etc)
-
-
-
-Sprint 13 en semana 29 Junio - 5 Julio 2026
-(Por definir, aún no se sabe qué se hará en este sprint: si acaso se harán las HU opcionales, o agregar CI/CD, o agregar Match real tipo tinder o 
-agregar despliegue tipo demo en render, vercel, railway, etc)
+Equilibrio: semana puerto cierre oficial del plan MVP.
 
 
 
@@ -226,9 +234,9 @@ LÓGICA DE DESARROLLO (RESUMEN)
 
 ●    Swipe/post Sprint 7 apoyados score; paralelo primera entrega navegable web ADMIN/RECRUITER.
 
-●    HU-13 Sprint 8 (incluye HU-28 desglose score reclutador y HU-16 editar oferta); refinamiento web Sprint 8–9; Sprint 9 suma HU-17 HU-25 HU-26 (portal reclutador y listados ADMIN); Sprint 10 suma HU-20 HU-05 HU-24 HU-27 (HU-27 requiere listados HU-25/HU-26 del Sprint 9); cierre Sprint 11 E2E + demo.
+●    HU-13 Sprint 8 (HU-19 mínimo card flip + listado postulantes, HU-28 «Detalle de Score», HU-16 editar oferta); Sprint 9 complemento HU-19 (Ver postulación completa, perfil solo lectura, botón Establecer Match) + HU-23 VIEWED + HU-17 + HU-25 + HU-26; Sprint 10 HU-20 HU-05 HU-24 HU-27; Sprint 11 HU-29 HU-30 HU-31 (match + chat); Sprint 12 tests críticos + optimización IA + CI/CD; cierre Sprint 13 E2E + demo.
 
-●    HU-16, HU-17, HU-24, HU-25, HU-26, HU-27 y HU-28 pasan a plan obligatorio en Sprints 8–10 (HU-28 y HU-16 en Sprint 8; HU-17, HU-25, HU-26 en Sprint 9; HU-20, HU-05, HU-24, HU-27 en Sprint 10; ya no backlog opcional salvo HU-14, HU-18, HU-22).
+●    HU-16, HU-17, HU-24, HU-25, HU-26, HU-27, HU-28 y HU-29–HU-31 pasan a plan obligatorio MVP (Sprints 8–11). Sprint 8: HU-19 mínimo + HU-28 + HU-16; Sprint 9: HU-19 complemento + HU-23 + HU-17 + HU-25 + HU-26; Sprint 10: HU-20, HU-05, HU-24, HU-27; Sprint 11: HU-29, HU-30, HU-31. Backlog opcional salvo HU-14, HU-18, HU-22.
 
 ●    HU opcionales backlog restante no bloquean ruta crítica.
 
@@ -243,10 +251,10 @@ RESUMEN NUMÉRICO
 
 ●    Equipo: 3 integrantes; horas por sprint = esfuerzo total del equipo en esa semana
 
-●    Ajuste fino: ±1 h redistribuible dentro rango MVP 83–110 h manteniendo calendario
+●    Ajuste fino: ±1 h redistribuible dentro rango MVP 83–110 h manteniendo calendario; con match/chat (Sprint 11), testing/CI (Sprint 12) y cierre E2E (Sprint 13) el total planificado sube aprox. a 155 h equipo (13 semanas).
 
 
 
-Total MVP según documentación técnica previa: mínimo ~83 h, más probable ~100–110 h; esta línea base 102 h se mantiene equilibrada y admite micro ajustes por sprint sin mover fechas.
+Total MVP según esta línea base: sprints 1–10 suman ~115 h; Sprint 11 match/chat ~18 h; Sprint 12 tests/IA/CI ~14 h; Sprint 13 cierre E2E ~8 h; total referencia ~155 h (admite micro ajustes por sprint sin mover fechas).
 
 

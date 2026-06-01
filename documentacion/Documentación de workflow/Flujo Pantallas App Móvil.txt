@@ -12,7 +12,9 @@ Pantalla "al abrir la app":
 - Tras el splash cuando aplique, muestra botones iniciar sesión y crear cuenta; el botón iniciar sesión lleva a Pantalla Iniciar Sesión. El botón crear cuenta lleva a Pantalla "Crear Cuenta".
 
 
-Pantalla Iniciar Sesión --> Pide email y contraseña, con botón "iniciar sesión" (endpoint: POST /api/v1/auth/login). También está el botón "Olvidé mi contraseña" (navegación UI local). Debe tener validaciones de email y contraseña en UI y backend. Este bloqueo por intentos fallidos aplica igual que en la web (Contrato Unificado API): con 4 intentos incorrectos se bloquea (mismo endpoint: POST /api/v1/auth/login). Si se bloquea se muestra pantalla "Recuperar contraseña". En esta app móvil el postulante opera con rol CANDIDATE; los roles ADMIN y RECRUITER son del flujo web empresa (ver Flujo Pantallas App Web). 
+Pantalla Iniciar Sesión --> Pide email y contraseña, con botón "iniciar sesión" (endpoint: POST /api/v1/auth/login). También está el botón "Olvidé mi contraseña" (navegación UI local). Debe tener validaciones de email y contraseña en UI y backend. Este bloqueo por intentos fallidos aplica igual que en la web (Contrato Unificado API): con 4 intentos incorrectos se bloquea (mismo endpoint: POST /api/v1/auth/login). Si se bloquea se muestra pantalla "Recuperar contraseña". En esta app móvil el postulante opera con rol CANDIDATE; los roles ADMIN y RECRUITER son del flujo web empresa (ver Flujo Pantallas App Web).
+
+Tras un login exitoso, si existe un match pendiente iniciado por un reclutador (empresa que quiere conversar y el candidato aún no ha respondido al chat), se muestra de inmediato la pantalla modal "Aviso match pendiente" antes de continuar al flujo habitual de la app.
 
 
 Pantalla "Recuperar contraseña", muestra mensaje "Excediste el límite de intentos. Por nuestros lineamientos de seguridad, deberás recuperar tu contraseña" "Pulsa aquí:" y aparece el botón "Recuperar contraseña" que lleva a pantalla "Olvidé mi contraseña", es decir, se lleva a la misma pantalla que botón "Olvidé mi contraseña" que esta en Pantalla Iniciar Sesión.
@@ -96,6 +98,7 @@ Carga de datos de perfil (endpoint: GET /api/v1/candidate/profile). Guardado de 
 
 
 Pantalla "Ofertas" --> Ahí ya ve las ofertas con (endpoint de carga feed: GET /api/v1/candidate/jobs/feed?page=1&size=20):
+- En la esquina superior derecha (sobre el área de ofertas / cabecera de la pantalla), ícono de mensajería. Al pulsarlo → vista «Chats» (HU-31): punto único de acceso a conversaciones con empresas y a matchs pendientes de revisar.
 - Su imagen (adjunta por quien crea la oferta en portal empresa: rol RECRUITER en web, ver Flujo Pantallas App Web / Contrato)
 - Su nombre
 - Nombre de empresa
@@ -118,6 +121,36 @@ En esta pantalla el postulante puede ver todas sus postulaciones, y el estado qu
 
 
 Pantalla "Vista Previa Oferta" --> Muestra la oferta seleccionada desde "Mis Postulaciones", con toda la info que tiene la oferta en Pantalla "Ofertas", pero añadiendo el estado "VIEWED", "APPLIED" según corresponda (endpoint: GET /api/v1/candidate/applications/{application_id}), y abajo los botones "Ir a Oferta" (que lleva a la Oferta en pantalla "Ofertas", reutilizando GET /api/v1/candidate/jobs/{job_id}).
+
+
+Pantalla "Aviso match pendiente" (modal a pantalla completa):
+- Se muestra apenas el candidato inicia sesión con éxito cuando un reclutador ha establecido match con él y el candidato aún no ha respondido al chat (match pendiente de respuesta).
+- Modal a pantalla completa, colores coherentes con el resto de la app.
+- Texto principal en grande: "¡Una empresa quiere hacer match contigo!"
+- Debajo, el nombre comercial de la empresa (no el nombre del reclutador).
+- Botón "Responder Chat" → pantalla "Chat con empresa" del match correspondiente.
+- Arriba del todo, esquina superior izquierda, botón "Ver después" → cierra el modal y continúa al flujo normal (por ejemplo Pantalla "Ofertas"); el match sigue pendiente y permanece accesible en la vista "Chats" para revisarlo más tarde (no se descarta).
+- Si el candidato pulsó "Ver después" en un login anterior, el match pendiente sigue apareciendo en "Chats" hasta que responda; el modal puede mostrarse de nuevo en un login posterior mientras siga pendiente, según reglas de negocio en Contrato.
+- Datos: GET /api/v1/chat/conversations/pending para el modal; listado completo en GET /api/v1/chat/conversations.
+
+
+Pantalla "Chats":
+- Vista única de acceso a mensajería: el candidato entra desde el ícono de mensajería en Pantalla "Ofertas" (o vuelve aquí con "Volver" desde "Chat con empresa").
+- Listado unificado GET /api/v1/chat/conversations que incluye:
+  - Conversaciones activas (match ya respondido por el candidato).
+  - Matchs pendientes de revisar (pending_for_candidate true): empresas que establecieron match y el candidato aún no ha enviado su primer mensaje, incluidos los pospuestos al pulsar "Ver después" en el modal de aviso al iniciar sesión.
+- En cada fila el candidato ve el nombre comercial de la empresa, no el nombre del reclutador individual.
+- Los matchs pendientes se distinguen visualmente en el listado (p. ej. etiqueta o indicador de pendiente).
+- Al pulsar una fila (pendiente o activa) → pantalla "Chat con empresa" de esa conversación; desde ahí puede leer el mensaje del reclutador y decidir responder o chatear.
+- Al enviar el primer mensaje del candidato en un match pendiente, ese ítem deja de mostrarse como pendiente en esta vista (pending_for_candidate false según Contrato).
+
+
+Pantalla "Chat con empresa":
+- Hilo de mensajes entre el candidato y la empresa. En la cabecera o identificación del chat el candidato ve solo el nombre comercial de la empresa, nunca el nombre personal del reclutador.
+- Campo para escribir mensaje y botón enviar; historial con polling o refresco periódico según MVP de mensajería.
+- Botón "Volver" arriba a la izquierda → vista "Chats".
+- Envío: POST /api/v1/chat/conversations/{id}/messages; historial: GET /api/v1/chat/conversations/{id}/messages.
+- Regla de privacidad mínima: solo el candidato de esa conversación y el reclutador que la inició pueden leer y escribir en ese hilo; otros candidatos y otros reclutadores no ven esos mensajes.
 
 Eso sería todo respecto a la App móvil de Postulantes de WorkSí.
 

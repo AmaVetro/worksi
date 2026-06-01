@@ -1,5 +1,5 @@
 CONTRATO UNIFICADO DE INTEGRACION - WORKSI
-Version: 1.12
+Version: 1.13
 Estado: Oficial para desarrollo paralelo (Backend + Web + Android)
 
 
@@ -10,9 +10,9 @@ OBJETIVO
 
 
 ALCANCE
-- Incluye: endpoints, autenticacion, registro candidato (incluido un solo request de alta con consentimiento), perfiles, catalogos, CV, ofertas, matching, swipe, postulaciones, vistas empresa, alta empresa y reclutadores por administrador del sistema (web MVP).
-- Incluye en plan obligatorio MVP: HU-16 (editar oferta reclutador, Sprint 8) y HU-28 (detalle score matching reclutador, Sprint 8) con endpoints de esta seccion.
-- Excluye del MVP obligatorio: HU-14, HU-17 (descartada del diseño actual por estado único ACTIVE), HU-18 (descartada del diseño actual por estado único ACTIVE), HU-22, HU-24.
+- Incluye: endpoints, autenticacion, registro candidato (incluido un solo request de alta con consentimiento), perfiles, catalogos, CV, ofertas, matching, swipe, postulaciones, chat y match reclutador-candidato (MVP mensajeria), vistas empresa, alta empresa y reclutadores por administrador del sistema (web MVP).
+- Incluye en plan obligatorio MVP: HU-16 (editar oferta reclutador, Sprint 8), HU-17 (eliminar oferta, Sprint 9), HU-28 (detalle score matching reclutador, Sprint 8), HU-29–HU-31 (match/chat, Sprint 11) y mensajeria minima post-match (Flujo Pantallas App Web / Flujo Pantallas App Movil) con endpoints de esta seccion.
+- Excluye del MVP obligatorio: HU-14, HU-18 (descartada del diseño actual por estado único ACTIVE), HU-22, HU-24.
 
 
 ARQUITECTURA OBLIGATORIA
@@ -560,6 +560,15 @@ OFERTAS (EMPRESA)
 18) Listar mis ofertas
 - GET /api/v1/company/jobs?page=1&size=20&sort=created_at,desc
 - Auth: RECRUITER
+- Response item minimo (campos adicionales al detalle resumido):
+{
+  "id": 5001,
+  "title": "Desarrollador Backend Java",
+  "status": "ACTIVE",
+  "published_at": "2026-04-25T03:40:00Z",
+  "applications_count": 12
+}
+- applications_count: numero de postulaciones APPLIED o VIEWED asociadas a esa oferta (para UI en listado de ofertas web; Flujo Pantallas App Web).
 
 19) Ver detalle oferta propia
 - GET /api/v1/company/jobs/{job_id}
@@ -585,6 +594,7 @@ OFERTAS (EMPRESA)
   "has_protected_image": true,
   "status": "ACTIVE",
   "published_at": "2026-04-25T03:40:00Z",
+  "applications_count": 12,
   "skills_ids": [79, 77, 83],
   "skills": [
     { "id": 79, "name": "Desarrollo de software" },
@@ -742,7 +752,7 @@ POSTULACIONES EMPRESA
 - Reglas:
   - solo oferta propia (reclutador publicador).
   - orden por score descendente para HU-20.
-  - cada item incluye match_score y match_breakdown para HU-28 (pantalla «Explicación matching empresa»).
+  - cada item incluye match_score y match_breakdown para HU-28 (pantalla «Detalle de Score» / «Ver postulacion»).
 - Response 200 item ejemplo:
 {
   "application_id": 8001,
@@ -778,6 +788,7 @@ POSTULACIONES EMPRESA
 - Reglas:
   - solo el reclutador publicador de la oferta asociada.
   - idempotente: si ya VIEWED, mantener VIEWED.
+  - en producto MVP el backend dispara esta transicion automaticamente al abrir el detalle de la postulacion (HU-23; GET detalle o equivalente al entrar a «Ver postulacion» / «Perfil postulantes»); no al listar postulantes de la oferta ni al postular el candidato; no requiere boton manual en UI.
 - Response 200:
 {
   "application_id": 8001,
@@ -786,11 +797,183 @@ POSTULACIONES EMPRESA
 }
 
 
+CHAT Y MATCH (MVP MENSAJERIA RECLUTADOR <-> CANDIDATO)
+
+Reglas generales MVP:
+- Una conversacion vincula exactamente a un reclutador (quien la inicia) y un candidato.
+- Solo esos dos usuarios pueden listar mensajes y enviar mensajes en esa conversacion; otros reclutadores u otros candidatos reciben 403.
+- El reclutador inicia el match desde flujo web (perfil candidato / postulacion); el candidato no puede crear conversaciones.
+- En cliente movil el candidato ve company_commercial_name de la empresa del reclutador, no el nombre personal del reclutador.
+- Primer mensaje al establecer match: maximo 80 caracteres (campo first_message en POST conversacion).
+- Mensajes posteriores: maximo 500 caracteres por mensaje (campo body en POST mensaje).
+- MVP sin WebSockets: clientes refrescan con polling usando GET mensajes y query param after_message_id.
+- No hay adjuntos ni notificaciones push en este MVP.
+
+
+28) Establecer match (crear conversacion + primer mensaje)
+- POST /api/v1/chat/conversations
+- Auth: RECRUITER
+- Request:
+{
+  "application_id": 8001,
+  "first_message": "Hola, nos interesa tu perfil para esta oferta."
+}
+- Validaciones:
+  - application_id debe existir y pertenecer a una oferta publicada por el reclutador en sesion.
+  - candidate_user_id se deriva de la postulacion; no se envia en el body.
+  - first_message obligatorio, longitud 1..80 tras trim.
+  - no duplicar conversacion activa para el mismo par (recruiter_user_id, candidate_user_id) segun regla de negocio acordada; si ya existe, 409 CONFLICT.
+- Reglas:
+  - persiste conversacion y el primer mensaje en la misma operacion.
+  - company_id y company_commercial_name se derivan de la empresa del reclutador para respuestas al candidato.
+- Response 201:
+{
+  "conversation_id": 9001,
+  "application_id": 8001,
+  "candidate_user_id": 1201,
+  "company_id": 201,
+  "company_commercial_name": "Empresa X",
+  "recruiter_user_id": 301,
+  "created_at": "2026-04-25T05:00:00Z",
+  "first_message": {
+    "message_id": 9101,
+    "body": "Hola, nos interesa tu perfil para esta oferta.",
+    "sent_at": "2026-04-25T05:00:00Z"
+  }
+}
+
+
+29) Listar mis conversaciones (matchs / chats)
+- GET /api/v1/chat/conversations?page=1&size=20&sort=updated_at,desc
+- Auth: RECRUITER o CANDIDATE
+- Reglas:
+  - RECRUITER: solo conversaciones donde recruiter_user_id coincide con el usuario en sesion.
+  - CANDIDATE: solo conversaciones donde candidate_user_id coincide con el usuario en sesion.
+- Response 200 item ejemplo RECRUITER:
+{
+  "conversation_id": 9001,
+  "candidate_user_id": 1201,
+  "candidate_display_name": "Juan Perez",
+  "application_id": 8001,
+  "job_id": 5001,
+  "job_title": "Desarrollador Backend Java",
+  "last_message_preview": "Hola, nos interesa tu perfil...",
+  "last_message_at": "2026-04-25T05:00:00Z",
+  "updated_at": "2026-04-25T05:00:00Z",
+  "pending_for_candidate": true
+}
+- Response 200 item ejemplo CANDIDATE:
+{
+  "conversation_id": 9001,
+  "company_id": 201,
+  "company_commercial_name": "Empresa X",
+  "application_id": 8001,
+  "job_id": 5001,
+  "job_title": "Desarrollador Backend Java",
+  "last_message_preview": "Hola, nos interesa tu perfil...",
+  "last_message_at": "2026-04-25T05:00:00Z",
+  "updated_at": "2026-04-25T05:00:00Z",
+  "pending_for_candidate": true
+}
+- pending_for_candidate: true mientras el candidato aun no ha enviado ningun mensaje en esa conversacion (solo existe el primer mensaje del reclutador). Usado para modal «Una empresa quiere hacer match contigo» en login movil.
+
+
+30) Match pendiente para candidato (modal post-login)
+- GET /api/v1/chat/conversations/pending
+- Auth: CANDIDATE
+- Reglas:
+  - devuelve como maximo una conversacion pendiente (la mas reciente con pending_for_candidate true), o lista vacia.
+- Response 200 sin pendiente:
+{
+  "item": null
+}
+- Response 200 con pendiente:
+{
+  "item": {
+    "conversation_id": 9001,
+    "company_commercial_name": "Empresa X",
+    "job_title": "Desarrollador Backend Java",
+    "first_message_preview": "Hola, nos interesa tu perfil para esta oferta."
+  }
+}
+
+
+31) Listar mensajes de una conversacion
+- GET /api/v1/chat/conversations/{conversation_id}/messages?page=1&size=50&sort=sent_at,asc
+- GET /api/v1/chat/conversations/{conversation_id}/messages?after_message_id=9101&size=50
+- Auth: RECRUITER o CANDIDATE participante de la conversacion
+- Query params opcionales:
+  - after_message_id: devuelve mensajes con id mayor al indicado (polling MVP).
+  - page, size, sort: paginacion estandar cuando no se usa after_message_id.
+- Reglas:
+  - 403 si el usuario no es recruiter_user_id ni candidate_user_id de la conversacion.
+- Response 200 item ejemplo:
+{
+  "message_id": 9101,
+  "conversation_id": 9001,
+  "sender_user_id": 301,
+  "sender_role": "RECRUITER",
+  "body": "Hola, nos interesa tu perfil para esta oferta.",
+  "sent_at": "2026-04-25T05:00:00Z"
+}
+- sender_role: CANDIDATE | RECRUITER (solo informativo para UI; el candidato movil no muestra nombre del reclutador en cabecera, solo company_commercial_name de la conversacion obtenida del listado o detalle).
+
+
+32) Enviar mensaje en conversacion existente
+- POST /api/v1/chat/conversations/{conversation_id}/messages
+- Auth: RECRUITER o CANDIDATE participante de la conversacion
+- Request:
+{
+  "body": "Gracias, me interesa conversar."
+}
+- Validaciones:
+  - body obligatorio, longitud 1..500 tras trim.
+- Reglas:
+  - 403 si el usuario no participa en la conversacion.
+  - al primer mensaje enviado por CANDIDATE, pending_for_candidate pasa a false.
+- Response 201:
+{
+  "message_id": 9102,
+  "conversation_id": 9001,
+  "sender_user_id": 1201,
+  "sender_role": "CANDIDATE",
+  "body": "Gracias, me interesa conversar.",
+  "sent_at": "2026-04-25T05:05:00Z"
+}
+
+
+33) Detalle de conversacion (opcional cabecera chat)
+- GET /api/v1/chat/conversations/{conversation_id}
+- Auth: RECRUITER o CANDIDATE participante
+- Response 200 ejemplo RECRUITER:
+{
+  "conversation_id": 9001,
+  "candidate_user_id": 1201,
+  "candidate_display_name": "Juan Perez",
+  "application_id": 8001,
+  "job_id": 5001,
+  "job_title": "Desarrollador Backend Java",
+  "created_at": "2026-04-25T05:00:00Z",
+  "pending_for_candidate": false
+}
+- Response 200 ejemplo CANDIDATE:
+{
+  "conversation_id": 9001,
+  "company_id": 201,
+  "company_commercial_name": "Empresa X",
+  "application_id": 8001,
+  "job_id": 5001,
+  "job_title": "Desarrollador Backend Java",
+  "created_at": "2026-04-25T05:00:00Z",
+  "pending_for_candidate": false
+}
+
+
 
 
 MATCHING API EXTERNA (CONSUMIDA SOLO POR SPRING)
 
-28) Match interno IA
+34) Match interno IA
 - URL interna sugerida: /match (FastAPI)
 - Request:
 {
@@ -879,6 +1062,11 @@ MATRIZ DE AUTORIZACION
   - POST /api/v1/candidate/applications
   - GET /api/v1/candidate/applications
   - GET /api/v1/candidate/applications/{application_id}
+  - GET /api/v1/chat/conversations
+  - GET /api/v1/chat/conversations/pending
+  - GET /api/v1/chat/conversations/{conversation_id}
+  - GET /api/v1/chat/conversations/{conversation_id}/messages
+  - POST /api/v1/chat/conversations/{conversation_id}/messages
 - RECRUITER (Bearer access_token rol RECRUITER):
   - GET /api/v1/auth/me
   - GET /api/v1/company/profile
@@ -891,6 +1079,11 @@ MATRIZ DE AUTORIZACION
   - GET /api/v1/company/jobs/{job_id}/image
   - GET /api/v1/company/jobs/{job_id}/applications
   - PATCH /api/v1/company/applications/{application_id}/viewed
+  - POST /api/v1/chat/conversations
+  - GET /api/v1/chat/conversations
+  - GET /api/v1/chat/conversations/{conversation_id}
+  - GET /api/v1/chat/conversations/{conversation_id}/messages
+  - POST /api/v1/chat/conversations/{conversation_id}/messages
 
 
 
@@ -905,11 +1098,12 @@ CHECKLIST DE INTEGRACION FINAL
 - Oferta creada con POST /api/v1/company/jobs multipart (data JSON + image opcional PNG/JPEG), company_commercial_name, sin requirements, salary_offered y years_experience_required obligatorios, skills 3..8.
 - Detalle oferta reclutador GET /api/v1/company/jobs/{job_id} con region_name, commune_name, skills (id y name) y campos de imagen external_image_url / has_protected_image; imagen en disco con GET /api/v1/company/jobs/{job_id}/image cuando has_protected_image.
 - Edicion oferta HU-16: PATCH /api/v1/company/jobs/{job_id} multipart (mismas reglas que POST).
-- Listado postulaciones empresa GET /api/v1/company/jobs/{job_id}/applications con match_score y match_breakdown por fila (HU-28).
+- Listado postulaciones empresa GET /api/v1/company/jobs/{job_id}/applications con match_score y match_breakdown por fila (HU-28 / Detalle de Score).
+- Chat MVP: POST /api/v1/chat/conversations (match + primer mensaje max 80), listado GET /api/v1/chat/conversations, pendiente candidato GET /api/v1/chat/conversations/pending, mensajes GET/POST /api/v1/chat/conversations/{conversation_id}/messages con polling after_message_id; solo participantes leen/escriben.
 - Feed candidato sin repeticion de ofertas.
 - Swipe PASS/APPLY funcionando.
 - Postulacion APPLIED creada solo al confirmar.
-- Empresa marca VIEWED manualmente.
+- VIEWED automatico en servidor al abrir detalle de postulacion (HU-23); no al listar ni al postular.
 - Orden por score descendente en vistas empresa.
 - Invariante de score verificada (skills no alteran score).
 - Recuperacion MVP: bloqueo a 4 intentos real con derivacion a pantallas; sin codigo OTP real para usuario; maqueta en solicitud/ingreso de codigo; solo persistencia real al confirmar nueva contraseña (`password_hash`).
