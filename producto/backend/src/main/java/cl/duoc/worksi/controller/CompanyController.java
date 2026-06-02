@@ -2,6 +2,7 @@ package cl.duoc.worksi.controller;
 
 import cl.duoc.worksi.dto.company.CompanyProfileImagePatchRequest;
 import cl.duoc.worksi.security.UserPrincipal;
+import cl.duoc.worksi.service.CompanyApplicationsService;
 import cl.duoc.worksi.service.CompanyJobService;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
@@ -22,9 +23,13 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/v1/company")
 public class CompanyController {
   private final CompanyJobService companyJobService;
+  private final CompanyApplicationsService companyApplicationsService;
 
-  public CompanyController(CompanyJobService companyJobService) {
+  public CompanyController(
+      CompanyJobService companyJobService,
+      CompanyApplicationsService companyApplicationsService) {
     this.companyJobService = companyJobService;
+    this.companyApplicationsService = companyApplicationsService;
   }
 
   @GetMapping("/profile")
@@ -80,5 +85,16 @@ public class CompanyController {
       @RequestPart("data") String data,
       @RequestPart(value = "image", required = false) MultipartFile image) {
     return companyJobService.updateJob(principal.getUser().getId(), jobId, data, image);
+  }
+
+  @GetMapping("/jobs/{job_id}/applications")
+  public ResponseEntity<?> listJobApplications(
+      @AuthenticationPrincipal UserPrincipal principal,
+      @PathVariable("job_id") long jobId,
+      @RequestParam(name = "page", defaultValue = "1") int page,
+      @RequestParam(name = "size", defaultValue = "20") int size,
+      @RequestParam(name = "sort", defaultValue = "match_score,desc") String sort) {
+    return companyApplicationsService.listForJob(
+        principal.getUser().getId(), jobId, page, size, sort);
   }
 }

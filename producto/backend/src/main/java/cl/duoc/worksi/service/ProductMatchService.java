@@ -1,7 +1,9 @@
 package cl.duoc.worksi.service;
 
 import cl.duoc.worksi.client.AiMatchClient;
+import cl.duoc.worksi.dto.MatchBreakdownResponse;
 import cl.duoc.worksi.dto.ai.MatchApiResponse;
+import cl.duoc.worksi.entity.Application;
 import cl.duoc.worksi.entity.CandidateCv;
 import cl.duoc.worksi.entity.CandidatePreferredModality;
 import cl.duoc.worksi.entity.CandidatePreferredWorkload;
@@ -11,6 +13,7 @@ import cl.duoc.worksi.repository.CandidateCvRepository;
 import cl.duoc.worksi.repository.CandidatePreferredModalityRepository;
 import cl.duoc.worksi.repository.CandidatePreferredWorkloadRepository;
 import cl.duoc.worksi.repository.CandidateProfileRepository;
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -51,7 +54,7 @@ public class ProductMatchService {
         candidateCvRepository.findTopByCandidateUserIdAndCurrentIsTrueOrderByUploadedAtDesc(
             candidateUserId);
     if (cvOpt.isEmpty()) {
-      return new ProductMatchResult(null, NO_CV, NO_CV);
+      return new ProductMatchResult(null, NO_CV, NO_CV, null);
     }
     CandidateCv cv = cvOpt.get();
     String norm = cv.getNormalizedText();
@@ -59,10 +62,7 @@ public class ProductMatchService {
       try {
         cvTextExtractionService.extractAndPersist(cv.getId());
       } catch (ResponseStatusException ex) {
-        if (ex.getStatusCode() == HttpStatus.UNPROCESSABLE_ENTITY) {
-          return new ProductMatchResult(null, NO_TEXT, NO_TEXT);
-        }
-        return new ProductMatchResult(null, NO_TEXT, NO_TEXT);
+        return new ProductMatchResult(null, NO_TEXT, NO_TEXT, null);
       }
       cv =
           candidateCvRepository
@@ -71,7 +71,7 @@ public class ProductMatchService {
       norm = cv.getNormalizedText();
     }
     if (norm == null || norm.isBlank()) {
-      return new ProductMatchResult(null, NO_TEXT, NO_TEXT);
+      return new ProductMatchResult(null, NO_TEXT, NO_TEXT, null);
     }
 
     String descriptionText = ensureMinAiText(job.getDescription());
@@ -79,7 +79,7 @@ public class ProductMatchService {
     Optional<MatchApiResponse> descAi = aiMatchClient.match(norm, descriptionText);
     Optional<MatchApiResponse> titleAi = aiMatchClient.match(norm, titleText);
     if (descAi.isEmpty() || titleAi.isEmpty()) {
-      return new ProductMatchResult(null, IA_DOWN, IA_DOWN);
+      return new ProductMatchResult(null, IA_DOWN, IA_DOWN, null);
     }
 
     double descriptionScore = toDimensionScore(descAi.get().getScore());
@@ -102,10 +102,43 @@ public class ProductMatchService {
                 0.0,
                 100.0));
 
+    MatchBreakdownResponse breakdown =
+        new MatchBreakdownResponse(
+            finalScore,
+            descriptionScore,
+            titleScore,
+            modalityScore,
+            workloadScore,
+            experienceScore);
+
     String sem = safeExplanation(descAi.get().getExplanation());
     String extra = buildDimensionExplanation(modalityScore, workloadScore, experienceScore);
     String full = (sem + extra).trim();
-    return new ProductMatchResult(finalScore, truncate(full, 140), full);
+    return new ProductMatchResult(finalScore, truncate(full, 140), full, breakdown);
+  }
+
+  public MatchBreakdownResponse breakdownFromApplication(Application application) {
+    if (application.getMatchScore() == null) {
+      return null;
+    }
+    if (application.getDescriptionScore() != null
+        && application.getTitleScore() != null
+        && application.getModalityScore() != null
+        && application.getWorkloadScore() != null
+        && application.getExperienceScore() != null) {
+      return new MatchBreakdownResponse(
+          toDouble(application.getMatchScore()),
+          toDouble(application.getDescriptionScore()),
+          toDouble(application.getTitleScore()),
+          toDouble(application.getModalityScore()),
+          toDouble(application.getWorkloadScore()),
+          toDouble(application.getExperienceScore()));
+    }
+    return null;
+  }
+
+  public MatchBreakdownResponse breakdownFromResult(ProductMatchResult result) {
+    return result == null ? null : result.breakdown();
   }
 
   private int resolveCandidateYears(long candidateUserId) {
@@ -133,6 +166,10 @@ public class ProductMatchService {
 
   private static double toDimensionScore(double raw01) {
     return round2(clamp(raw01 * 100.0, 0.0, 100.0));
+  }
+
+  private static Double toDouble(BigDecimal value) {
+    return value == null ? null : value.doubleValue();
   }
 
   private static String ensureMinAiText(String primary) {
@@ -184,5 +221,9 @@ public class ProductMatchService {
     return raw.trim();
   }
 
-  public record ProductMatchResult(Double score, String explanationShort, String explanationFull) {}
+  public record ProductMatchResult(
+      Double score,
+      String explanationShort,
+      String explanationFull,
+      MatchBreakdownResponse breakdown) {}
 }

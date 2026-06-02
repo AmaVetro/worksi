@@ -16,7 +16,8 @@ import RecruiterJobsList from "../pages/RecruiterJobsList";
 import RecruiterJobCreate from "../pages/RecruiterJobCreate";
 import RecruiterJobDetail from "../pages/RecruiterJobDetail";
 import RecruiterJobEdit from "../pages/RecruiterJobEdit";
-import RecruiterPostulacionesPlaceholder from "../pages/RecruiterPostulacionesPlaceholder";
+import RecruiterApplicationView from "../pages/RecruiterApplicationView";
+import RecruiterMatchScoreDetail from "../pages/RecruiterMatchScoreDetail";
 
 function AppRoutes() {
   return (
@@ -93,6 +94,22 @@ function AppRoutes() {
           }
         />
         <Route
+          path="/recruiter/ofertas/:jobId/postulaciones/:applicationId/score"
+          element={
+            <PrivateRoute roles={["RECRUITER"]}>
+              <RecruiterMatchScoreDetail />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/recruiter/ofertas/:jobId/postulaciones/:applicationId"
+          element={
+            <PrivateRoute roles={["RECRUITER"]}>
+              <RecruiterApplicationView />
+            </PrivateRoute>
+          }
+        />
+        <Route
           path="/recruiter/ofertas/:jobId/editar"
           element={
             <PrivateRoute roles={["RECRUITER"]}>
@@ -105,14 +122,6 @@ function AppRoutes() {
           element={
             <PrivateRoute roles={["RECRUITER"]}>
               <RecruiterJobDetail />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/recruiter/postulaciones"
-          element={
-            <PrivateRoute roles={["RECRUITER"]}>
-              <RecruiterPostulacionesPlaceholder />
             </PrivateRoute>
           }
         />

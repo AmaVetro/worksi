@@ -163,13 +163,9 @@ export default function RecruiterHome() {
 
             <div className="actions-container">
               <div className="action-card">
-                <p>Postulaciones</p>
-                <button
-                  type="button"
-                  className="secondary-btn"
-                  onClick={() => navigate("/recruiter/postulaciones")}
-                >
-                  Ver postulaciones
+                <p>Matchs</p>
+                <button type="button" className="secondary-btn">
+                  Ir a ver
                 </button>
               </div>
             </div>

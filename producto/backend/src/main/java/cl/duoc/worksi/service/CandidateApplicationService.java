@@ -2,6 +2,7 @@ package cl.duoc.worksi.service;
 
 import cl.duoc.worksi.dto.candidate.CandidateApplicationCreatedResponse;
 import cl.duoc.worksi.dto.candidate.CandidateApplicationRequest;
+import cl.duoc.worksi.dto.MatchBreakdownResponse;
 import cl.duoc.worksi.entity.Application;
 import cl.duoc.worksi.entity.CandidateJobSwipe;
 import cl.duoc.worksi.entity.Job;
@@ -52,14 +53,37 @@ public class CandidateApplicationService {
     Job job = opt.get();
     ProductMatchService.ProductMatchResult match = productMatchService.compute(candidateUserId, job);
     BigDecimal score = null;
+    BigDecimal descriptionScore = null;
+    BigDecimal titleScore = null;
+    BigDecimal modalityScore = null;
+    BigDecimal workloadScore = null;
+    BigDecimal experienceScore = null;
     if (match.score() != null) {
       score = BigDecimal.valueOf(match.score());
+      MatchBreakdownResponse bd = match.breakdown();
+      if (bd != null) {
+        descriptionScore = bd.getDescriptionScore() != null ? BigDecimal.valueOf(bd.getDescriptionScore()) : null;
+        titleScore = bd.getTitleScore() != null ? BigDecimal.valueOf(bd.getTitleScore()) : null;
+        modalityScore = bd.getModalityScore() != null ? BigDecimal.valueOf(bd.getModalityScore()) : null;
+        workloadScore = bd.getWorkloadScore() != null ? BigDecimal.valueOf(bd.getWorkloadScore()) : null;
+        experienceScore = bd.getExperienceScore() != null ? BigDecimal.valueOf(bd.getExperienceScore()) : null;
+      }
     }
     String explanation = match.explanationFull();
     if (explanation != null && explanation.isBlank()) {
       explanation = match.explanationShort();
     }
-    Application app = Application.createApplied(candidateUserId, jobId, score, explanation);
+    Application app =
+        Application.createApplied(
+            candidateUserId,
+            jobId,
+            score,
+            explanation,
+            descriptionScore,
+            titleScore,
+            modalityScore,
+            workloadScore,
+            experienceScore);
     Application saved = applicationRepository.save(app);
     if (!candidateJobSwipeRepository.existsByCandidateUserIdAndJobId(candidateUserId, jobId)) {
       candidateJobSwipeRepository.save(

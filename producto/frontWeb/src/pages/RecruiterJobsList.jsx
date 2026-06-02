@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import ApplicationsCountChip from "../components/ApplicationsCountChip";
 import { listMyJobs } from "../services/companyService";
 import { goBack } from "../utils/goBack";
 import "../styles/Home.css";
@@ -61,7 +62,16 @@ export default function RecruiterJobsList() {
                     {job.modality}
                   </div>
                 </div>
-                <button
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <ApplicationsCountChip count={job.applications_count} />
+                  <button
                   type="button"
                   className="secondary-btn"
                   style={{ marginTop: 0, alignSelf: "center" }}
@@ -69,6 +79,7 @@ export default function RecruiterJobsList() {
                 >
                   Ir a ver oferta
                 </button>
+                </div>
               </div>
             ))}
           </div>

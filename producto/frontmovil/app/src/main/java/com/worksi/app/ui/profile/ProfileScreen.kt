@@ -73,7 +73,7 @@ fun ProfileScreen(
     viewModel: ProfileViewModel = viewModel(),
     onBack: () -> Unit,
     onNavigateToHome: () -> Unit,
-    onNavigateToMenu: () -> Unit = {},
+    onNavigateToApplications: () -> Unit = {},
     onLogout: () -> Unit
 ) {
     val state by viewModel.ui.collectAsState()
@@ -116,7 +116,7 @@ fun ProfileScreen(
                     colors = profileNavColors())
                 NavigationBarItem(
                     selected = false,
-                    onClick = onNavigateToMenu,
+                    onClick = onNavigateToApplications,
                     icon = { Icon(Icons.Filled.Menu, contentDescription = null, tint = White) },
                     label = { Text("Postulaciones", color = White, fontSize = 12.sp) },
                     colors = profileNavColors())

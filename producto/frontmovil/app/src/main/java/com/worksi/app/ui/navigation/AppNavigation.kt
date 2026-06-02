@@ -15,6 +15,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.worksi.app.ui.applications.ApplicationPreviewScreen
+import com.worksi.app.ui.applications.ApplicationsScreen
 import com.worksi.app.ui.jobdetail.JobDetailScreen
 import com.worksi.app.data.local.SecureTokenStore
 import com.worksi.app.ui.home.HomeScreen
@@ -44,6 +46,7 @@ sealed class Screen(val route: String) {
     object Login : Screen("login")
     object Session : Screen("session")
     object Profile : Screen("profile")
+    object Applications : Screen("applications")
     object RegisterPersonal : Screen("register_personal")
     object RegisterCv : Screen("register_cv")
     object RegisterSkills : Screen("register_skills")
@@ -57,6 +60,7 @@ sealed class Screen(val route: String) {
 }
 
 private const val JobDetailRoute = "job_detail/{jobId}"
+private const val ApplicationPreviewRoute = "application_preview/{applicationId}"
 
 @Composable
 fun AppNavigation() {
@@ -108,7 +112,7 @@ fun AppNavigation() {
             HomeScreen(
                 viewModel = homeViewModel,
                 onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
-                onNavigateToMenu = { },
+                onNavigateToApplications = { navController.navigate(Screen.Applications.route) },
                 onSettings = { },
                 onLogout = {
                     SecureTokenStore.clear()
@@ -117,7 +121,10 @@ fun AppNavigation() {
                         launchSingleTop = true
                     }
                 },
-                onOpenJobDetail = { jobId -> navController.navigate("job_detail/$jobId") })
+                onOpenJobDetail = { jobId -> navController.navigate("job_detail/$jobId") },
+                onOpenApplicationPreview = { appId ->
+                    navController.navigate("application_preview/$appId")
+                })
         }
 
         composable(Screen.Profile.route) {
@@ -128,7 +135,7 @@ fun AppNavigation() {
                 onNavigateToHome = {
                     navController.popBackStack(Screen.Session.route, inclusive = false)
                 },
-                onNavigateToMenu = { },
+                onNavigateToApplications = { navController.navigate(Screen.Applications.route) },
                 onLogout = {
                     SecureTokenStore.clear()
                     navController.navigate(Screen.Welcome.route) {
@@ -147,6 +154,34 @@ fun AppNavigation() {
                 Box(modifier = Modifier.fillMaxSize())
               } else {
                 JobDetailScreen(jobId = jobId, onBack = { navController.popBackStack() })
+              }
+            }
+
+        composable(Screen.Applications.route) {
+            ApplicationsScreen(
+                onNavigateToHome = {
+                    navController.popBackStack(Screen.Session.route, inclusive = false)
+                },
+                onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
+                onOpenPreview = { appId ->
+                    navController.navigate("application_preview/$appId")
+                })
+        }
+
+        composable(
+            route = ApplicationPreviewRoute,
+            arguments = listOf(navArgument("applicationId") { type = NavType.LongType })) { entry ->
+              val appId = entry.arguments?.getLong("applicationId") ?: 0L
+              if (appId <= 0L) {
+                LaunchedEffect(Unit) { navController.popBackStack() }
+                Box(modifier = Modifier.fillMaxSize())
+              } else {
+                ApplicationPreviewScreen(
+                    applicationId = appId,
+                    onBack = { navController.popBackStack() },
+                    onGoToJob = { jobId ->
+                      navController.navigate("job_detail/$jobId")
+                    })
               }
             }
 

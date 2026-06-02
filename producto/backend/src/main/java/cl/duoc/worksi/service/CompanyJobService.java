@@ -67,6 +67,7 @@ public class CompanyJobService {
   private final Path companyImageBaseDir;
   private final Path jobImageBaseDir;
   private final ObjectMapper objectMapper;
+  private final CompanyApplicationsService companyApplicationsService;
 
   public CompanyJobService(
       RecruiterProfileRepository recruiterProfileRepository,
@@ -77,6 +78,7 @@ public class CompanyJobService {
       CommuneRepository communeRepository,
       SkillRepository skillRepository,
       ObjectMapper objectMapper,
+      CompanyApplicationsService companyApplicationsService,
       @Value("${worksi.storage.company-images}") String companyImagesDir,
       @Value("${worksi.storage.job-images}") String jobImagesDir) {
     this.recruiterProfileRepository = recruiterProfileRepository;
@@ -87,6 +89,7 @@ public class CompanyJobService {
     this.communeRepository = communeRepository;
     this.skillRepository = skillRepository;
     this.objectMapper = objectMapper;
+    this.companyApplicationsService = companyApplicationsService;
     this.companyImageBaseDir = Path.of(companyImagesDir);
     this.jobImageBaseDir = Path.of(jobImagesDir);
   }
@@ -439,7 +442,8 @@ public class CompanyJobService {
         job.getModality().name(),
         job.getStatus().name(),
         published,
-        created);
+        created,
+        companyApplicationsService.countVisibleApplications(job.getId()));
   }
 
   private CompanyJobDetailResponse toDetail(Job job) {
@@ -498,7 +502,8 @@ public class CompanyJobService {
         job.getStatus().name(),
         published,
         skillIdsOrdered,
-        skillsOut);
+        skillsOut,
+        companyApplicationsService.countVisibleApplications(job.getId()));
   }
 
   private ResponseEntity<?> validateJobPayload(CompanyJobCreateRequest req) {

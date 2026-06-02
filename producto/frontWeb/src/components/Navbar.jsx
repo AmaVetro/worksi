@@ -67,8 +67,7 @@ function Navbar() {
           <div
             className={`nav-item ${
               location.pathname.startsWith("/recruiter/reclutamiento") ||
-              location.pathname.startsWith("/recruiter/ofertas") ||
-              location.pathname.startsWith("/recruiter/postulaciones")
+              location.pathname.startsWith("/recruiter/ofertas")
                 ? "active"
                 : ""
             }`}

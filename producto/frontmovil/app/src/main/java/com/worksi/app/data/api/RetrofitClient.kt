@@ -40,6 +40,9 @@ object RetrofitClient {
 
     val candidateProfileApi: CandidateProfileApi = retrofit.create(CandidateProfileApi::class.java)
 
+    val candidateApplicationsApi: CandidateApplicationsApi =
+        retrofit.create(CandidateApplicationsApi::class.java)
+
     fun candidateJobImageUrl(jobId: Long): String {
         val base = BASE_URL.trimEnd('/')
         return "$base/api/v1/candidate/jobs/$jobId/image"

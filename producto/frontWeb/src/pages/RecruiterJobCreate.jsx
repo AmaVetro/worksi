@@ -212,10 +212,6 @@ export default function RecruiterJobCreate() {
             Volver
           </button>
           <h2>Crear oferta</h2>
-          <p className="hint">
-            Un solo texto de descripción. Skills 3 a 8. Imagen opcional (PNG/JPEG). POST
-            /api/v1/company/jobs multipart
-          </p>
           <form onSubmit={handleSubmit}>
             <div className="admin-form-grid">
               <label className="full">

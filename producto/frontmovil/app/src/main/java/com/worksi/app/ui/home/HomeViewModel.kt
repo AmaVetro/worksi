@@ -16,6 +16,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+data class ApplySuccessInfo(
+    val applicationId: Long,
+    val title: String,
+    val company: String,
+    val communeName: String,
+    val modality: String,
+    val salary: Int,
+    val experienceYears: Int,
+    val description: String,
+    val matchPercentage: Float?
+)
+
 class HomeViewModel : ViewModel() {
   private val api = RetrofitClient.candidateJobsApi
   private val queue: ArrayDeque<CandidateJobFeedItemJson> = ArrayDeque()
@@ -37,6 +49,9 @@ class HomeViewModel : ViewModel() {
 
   private val _showApplyConfirm = MutableStateFlow(false)
   val showApplyConfirm: StateFlow<Boolean> = _showApplyConfirm.asStateFlow()
+
+  private val _applySuccess = MutableStateFlow<ApplySuccessInfo?>(null)
+  val applySuccess: StateFlow<ApplySuccessInfo?> = _applySuccess.asStateFlow()
 
   init {
     viewModelScope.launch {
@@ -94,7 +109,7 @@ class HomeViewModel : ViewModel() {
   }
 
   fun onSwipeToApply() {
-    if (queue.firstOrNull() == null || _actionBusy.value) return
+    if (queue.firstOrNull() == null || _actionBusy.value || _applySuccess.value != null) return
     _showApplyConfirm.value = true
   }
 
@@ -102,32 +117,54 @@ class HomeViewModel : ViewModel() {
     _showApplyConfirm.value = false
   }
 
+  fun onDismissApplySuccess() {
+    _applySuccess.value = null
+  }
+
   fun onConfirmApply() {
     val head = queue.firstOrNull() ?: return
     if (_actionBusy.value) return
+    val offerSnapshot = head.toJobOffer()
     viewModelScope.launch {
       _actionBusy.value = true
       _showApplyConfirm.value = false
       _errorMessage.value = null
-      val err =
+      val result =
           withContext(Dispatchers.IO) {
             try {
               val r = api.postApplication(CandidateApplicationBody(head.jobId))
               if (!r.isSuccessful) {
-                ApiErrorParser.message(r)
+                Result.failure(Exception(ApiErrorParser.message(r)))
               } else {
-                null
+                val body = r.body()
+                if (body == null) {
+                  Result.failure(Exception("Respuesta vacía"))
+                } else {
+                  Result.success(body)
+                }
               }
             } catch (e: Exception) {
-              e.message ?: "Error de red"
+              Result.failure(e)
             }
           }
-      if (err != null) {
-        _errorMessage.value = err
+      if (result.isFailure) {
+        _errorMessage.value = result.exceptionOrNull()?.message ?: "Error de red"
         _actionBusy.value = false
         return@launch
       }
+      val created = result.getOrThrow()
       advanceQueue()
+      _applySuccess.value =
+          ApplySuccessInfo(
+              applicationId = created.applicationId,
+              title = offerSnapshot.title,
+              company = offerSnapshot.company,
+              communeName = offerSnapshot.communeName,
+              modality = offerSnapshot.modality,
+              salary = offerSnapshot.salary,
+              experienceYears = offerSnapshot.experienceYears,
+              description = offerSnapshot.description,
+              matchPercentage = offerSnapshot.matchPercentage)
       _actionBusy.value = false
     }
   }

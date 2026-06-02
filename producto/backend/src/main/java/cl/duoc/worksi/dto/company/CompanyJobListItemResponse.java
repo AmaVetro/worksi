@@ -22,6 +22,9 @@ public class CompanyJobListItemResponse {
   @JsonProperty("created_at")
   private final Instant createdAt;
 
+  @JsonProperty("applications_count")
+  private final long applicationsCount;
+
   public CompanyJobListItemResponse(
       long id,
       String title,
@@ -30,7 +33,8 @@ public class CompanyJobListItemResponse {
       String modality,
       String status,
       Instant publishedAt,
-      Instant createdAt) {
+      Instant createdAt,
+      long applicationsCount) {
     this.id = id;
     this.title = title;
     this.companyCommercialName = companyCommercialName;
@@ -39,6 +43,7 @@ public class CompanyJobListItemResponse {
     this.status = status;
     this.publishedAt = publishedAt;
     this.createdAt = createdAt;
+    this.applicationsCount = applicationsCount;
   }
 
   public long getId() {
@@ -71,5 +76,9 @@ public class CompanyJobListItemResponse {
 
   public Instant getCreatedAt() {
     return createdAt;
+  }
+
+  public long getApplicationsCount() {
+    return applicationsCount;
   }
 }

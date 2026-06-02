@@ -22,8 +22,10 @@ import kotlin.math.roundToInt
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.worksi.app.data.api.RetrofitClient
@@ -37,10 +39,11 @@ import com.worksi.app.ui.theme.*
 fun HomeScreen(
     viewModel: HomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
     onNavigateToProfile: () -> Unit = {},
-    onNavigateToMenu: () -> Unit = {},
+    onNavigateToApplications: () -> Unit = {},
     onSettings: () -> Unit = {},
     onLogout: () -> Unit = {},
-    onOpenJobDetail: (Long) -> Unit = {}
+    onOpenJobDetail: (Long) -> Unit = {},
+    onOpenApplicationPreview: (Long) -> Unit = {}
 ) {
     val offer by viewModel.offer.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -48,9 +51,11 @@ fun HomeScreen(
     val errorMessage by viewModel.errorMessage.collectAsState()
     val actionBusy by viewModel.actionBusy.collectAsState()
     val showApplyConfirm by viewModel.showApplyConfirm.collectAsState()
+    val applySuccess by viewModel.applySuccess.collectAsState()
     val errText = errorMessage
     val currentOffer = offer
     var showMenu by remember { mutableStateOf(false) }
+    val feedEnabled = !actionBusy && applySuccess == null
 
     if (showApplyConfirm) {
         AlertDialog(
@@ -71,6 +76,16 @@ fun HomeScreen(
                 }
             }
         )
+    }
+
+    applySuccess?.let { success ->
+        ApplySuccessDialog(
+            info = success,
+            onViewApplication = {
+                viewModel.onDismissApplySuccess()
+                onOpenApplicationPreview(success.applicationId)
+            },
+            onBackToOffers = { viewModel.onDismissApplySuccess() })
     }
 
     Scaffold(
@@ -126,7 +141,7 @@ fun HomeScreen(
                 )
                 NavigationBarItem(
                     selected = false,
-                    onClick = onNavigateToMenu,
+                    onClick = onNavigateToApplications,
                     icon = { Icon(Icons.Filled.Menu, contentDescription = "Menú principal", tint = White) },
                     label = { Text("Postulaciones", color = White, fontSize = 12.sp) },
                     colors = NavigationBarItemDefaults.colors(
@@ -191,7 +206,7 @@ fun HomeScreen(
                                     .verticalScroll(rememberScrollState())) {
                             SwipeableJobOfferCard(
                                 offer = currentOffer,
-                                enabled = !actionBusy,
+                                enabled = feedEnabled,
                                 onSwipeRight = viewModel::onSwipeToApply,
                                 onSwipeLeft = viewModel::onSwipeToPass,
                                 onVerDetalles = { onOpenJobDetail(currentOffer.id) })
@@ -199,13 +214,102 @@ fun HomeScreen(
                             ActionButtons(
                                 onPostular = viewModel::onSwipeToApply,
                                 onPasar = viewModel::onSwipeToPass,
-                                enabled = !actionBusy)
+                                enabled = feedEnabled)
                         }
                     }
                 else ->
                     Spacer(modifier = Modifier.height(0.dp))
             }
         }
+    }
+}
+
+@Composable
+fun ApplySuccessDialog(
+    info: ApplySuccessInfo,
+    onViewApplication: () -> Unit,
+    onBackToOffers: () -> Unit
+) {
+    Dialog(onDismissRequest = onBackToOffers) {
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = White),
+            modifier = Modifier.fillMaxWidth()) {
+              Column(
+                  modifier = Modifier.padding(24.dp),
+                  horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "Postulación exitosa",
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = CyanPrimary,
+                        textAlign = TextAlign.Center)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "Has postulado a ${info.title}",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        textAlign = TextAlign.Center)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Column(
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFFF5F5F5))
+                                .padding(14.dp)) {
+                          Text(info.company, fontSize = 15.sp, color = Color.Gray)
+                          Spacer(modifier = Modifier.height(4.dp))
+                          Text(
+                              "${info.communeName} · ${info.modality}",
+                              fontSize = 14.sp,
+                              color = Color.Gray)
+                          Spacer(modifier = Modifier.height(4.dp))
+                          Text(
+                              "$${info.salary}",
+                              fontSize = 15.sp,
+                              fontWeight = FontWeight.Bold,
+                              color = Color.DarkGray)
+                          Text(
+                              "${info.experienceYears} años de experiencia requerida",
+                              fontSize = 13.sp,
+                              color = Color.Gray)
+                          if (info.matchPercentage != null) {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                "Match: ${info.matchPercentage.toInt()}%",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = CyanPrimary)
+                          }
+                          if (info.description.isNotBlank()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                info.description,
+                                fontSize = 13.sp,
+                                color = Color.DarkGray,
+                                maxLines = 3,
+                                overflow = TextOverflow.Ellipsis)
+                          }
+                        }
+                    Spacer(modifier = Modifier.height(20.dp))
+                    Button(
+                        onClick = onViewApplication,
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = OrangeAccent, contentColor = White),
+                        shape = RoundedCornerShape(10.dp)) {
+                          Text("Ver postulación", fontWeight = FontWeight.Bold)
+                        }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    OutlinedButton(
+                        onClick = onBackToOffers,
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        shape = RoundedCornerShape(10.dp)) {
+                          Text("Volver a Ofertas", fontWeight = FontWeight.SemiBold, color = CyanPrimary)
+                        }
+                  }
+            }
     }
 }
 

@@ -53,6 +53,9 @@ public class CompanyJobDetailResponse {
 
   private final List<CompanyJobSkillItemResponse> skills;
 
+  @JsonProperty("applications_count")
+  private final long applicationsCount;
+
   public CompanyJobDetailResponse(
       long id,
       String companyCommercialName,
@@ -72,7 +75,8 @@ public class CompanyJobDetailResponse {
       String status,
       Instant publishedAt,
       List<Long> skillsIds,
-      List<CompanyJobSkillItemResponse> skills) {
+      List<CompanyJobSkillItemResponse> skills,
+      long applicationsCount) {
     this.id = id;
     this.companyCommercialName = companyCommercialName;
     this.title = title;
@@ -92,6 +96,7 @@ public class CompanyJobDetailResponse {
     this.publishedAt = publishedAt;
     this.skillsIds = skillsIds;
     this.skills = skills;
+    this.applicationsCount = applicationsCount;
   }
 
   public long getId() {
@@ -169,5 +174,9 @@ public class CompanyJobDetailResponse {
 
   public List<CompanyJobSkillItemResponse> getSkills() {
     return skills;
+  }
+
+  public long getApplicationsCount() {
+    return applicationsCount;
   }
 }

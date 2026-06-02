@@ -106,7 +106,7 @@ public class CandidateJobFeedService {
         skills,
         externalJobImageUrl(job),
         hasProtectedJobImage(job),
-        new CandidateJobMatchResponse(m.score(), m.explanationShort()));
+        new CandidateJobMatchResponse(m.score(), m.explanationShort(), m.breakdown()));
   }
 
   private CandidateJobDetailResponse toDetailItem(Job job, long candidateUserId) {
@@ -136,7 +136,7 @@ public class CandidateJobFeedService {
         skills,
         externalJobImageUrl(job),
         hasProtectedJobImage(job),
-        new CandidateJobDetailMatchResponse(m.score(), m.explanationFull()));
+        new CandidateJobDetailMatchResponse(m.score(), m.explanationFull(), m.breakdown()));
   }
 
   private List<CandidateJobSkillPreviewResponse> skillPreviews(long jobId, int max) {

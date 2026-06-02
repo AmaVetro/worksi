@@ -60,3 +60,10 @@ export async function updateJob(jobId, payload, imageFile) {
   const { data } = await api.patch(`/api/v1/company/jobs/${jobId}`, form);
   return data;
 }
+
+export async function listJobApplications(jobId, page = 1, size = 20) {
+  const { data } = await api.get(`/api/v1/company/jobs/${jobId}/applications`, {
+    params: { page, size, sort: "match_score,desc" },
+  });
+  return data;
+}

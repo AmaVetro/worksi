@@ -42,6 +42,21 @@ public class Application {
   @Column(name = "match_explanation", length = 500)
   private String matchExplanation;
 
+  @Column(name = "description_score", precision = 5, scale = 2)
+  private BigDecimal descriptionScore;
+
+  @Column(name = "title_score", precision = 5, scale = 2)
+  private BigDecimal titleScore;
+
+  @Column(name = "modality_score", precision = 5, scale = 2)
+  private BigDecimal modalityScore;
+
+  @Column(name = "workload_score", precision = 5, scale = 2)
+  private BigDecimal workloadScore;
+
+  @Column(name = "experience_score", precision = 5, scale = 2)
+  private BigDecimal experienceScore;
+
   @Column(name = "matched_at")
   private LocalDateTime matchedAt;
 
@@ -60,7 +75,12 @@ public class Application {
       long candidateUserId,
       long jobId,
       BigDecimal matchScore,
-      String matchExplanation) {
+      String matchExplanation,
+      BigDecimal descriptionScore,
+      BigDecimal titleScore,
+      BigDecimal modalityScore,
+      BigDecimal workloadScore,
+      BigDecimal experienceScore) {
     Application a = new Application();
     a.candidateUserId = candidateUserId;
     a.jobId = jobId;
@@ -71,6 +91,11 @@ public class Application {
     } else {
       a.matchExplanation = matchExplanation;
     }
+    a.descriptionScore = descriptionScore;
+    a.titleScore = titleScore;
+    a.modalityScore = modalityScore;
+    a.workloadScore = workloadScore;
+    a.experienceScore = experienceScore;
     a.matchedAt = LocalDateTime.now(ZoneOffset.UTC);
     return a;
   }
@@ -105,6 +130,26 @@ public class Application {
 
   public String getMatchExplanation() {
     return matchExplanation;
+  }
+
+  public BigDecimal getDescriptionScore() {
+    return descriptionScore;
+  }
+
+  public BigDecimal getTitleScore() {
+    return titleScore;
+  }
+
+  public BigDecimal getModalityScore() {
+    return modalityScore;
+  }
+
+  public BigDecimal getWorkloadScore() {
+    return workloadScore;
+  }
+
+  public BigDecimal getExperienceScore() {
+    return experienceScore;
   }
 
   public LocalDateTime getMatchedAt() {

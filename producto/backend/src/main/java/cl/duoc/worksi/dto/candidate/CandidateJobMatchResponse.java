@@ -1,5 +1,6 @@
 package cl.duoc.worksi.dto.candidate;
 
+import cl.duoc.worksi.dto.MatchBreakdownResponse;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class CandidateJobMatchResponse {
@@ -8,9 +9,14 @@ public class CandidateJobMatchResponse {
   @JsonProperty("explanation_short")
   private final String explanationShort;
 
-  public CandidateJobMatchResponse(Double score, String explanationShort) {
+  @JsonProperty("match_breakdown")
+  private final MatchBreakdownResponse matchBreakdown;
+
+  public CandidateJobMatchResponse(
+      Double score, String explanationShort, MatchBreakdownResponse matchBreakdown) {
     this.score = score;
     this.explanationShort = explanationShort;
+    this.matchBreakdown = matchBreakdown;
   }
 
   public Double getScore() {
@@ -19,5 +25,9 @@ public class CandidateJobMatchResponse {
 
   public String getExplanationShort() {
     return explanationShort;
+  }
+
+  public MatchBreakdownResponse getMatchBreakdown() {
+    return matchBreakdown;
   }
 }
