@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import { ViewApplicationsButton } from "../components/ApplicationsCountChip";
+import ApplicationMatchRow, { candidateFullName } from "../components/ApplicationMatchRow";
 import {
   getJob,
   getJobImageBlob,
@@ -20,15 +22,10 @@ const WORKLOAD_LABELS = {
   OTHER: "Otro",
 };
 
-function candidateName(preview) {
-  if (!preview) return "Postulante";
-  const parts = [preview.first_name, preview.last_name_paternal].filter(Boolean);
-  return parts.length > 0 ? parts.join(" ") : "Postulante";
-}
-
 export default function RecruiterJobDetail() {
   const { jobId } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [job, setJob] = useState(null);
   const [error, setError] = useState("");
   const [imageSrc, setImageSrc] = useState(null);
@@ -48,7 +45,6 @@ export default function RecruiterJobDetail() {
     };
     setImageSrc(null);
     revoke();
-    setFlipped(false);
     getJob(jobId)
       .then(async (j) => {
         if (cancelled) return;
@@ -84,6 +80,15 @@ export default function RecruiterJobDetail() {
     };
   }, [jobId]);
 
+  useEffect(() => {
+    if (!jobId) return;
+    const showList = searchParams.has("postulaciones");
+    setFlipped(showList);
+    if (showList) {
+      loadApplications();
+    }
+  }, [jobId, searchParams]);
+
   const loadApplications = () => {
     if (!jobId) return;
     setAppsError("");
@@ -99,10 +104,19 @@ export default function RecruiterJobDetail() {
   };
 
   const handleFlip = () => {
-    if (!flipped) {
+    if (flipped) {
+      setSearchParams({}, { replace: true });
+      setFlipped(false);
+    } else {
+      setSearchParams({ postulaciones: "1" }, { replace: true });
       loadApplications();
+      setFlipped(true);
     }
-    setFlipped((f) => !f);
+  };
+
+  const backFromApplicationsList = () => {
+    setSearchParams({}, { replace: true });
+    setFlipped(false);
   };
 
   const regionLine = job
@@ -132,20 +146,17 @@ export default function RecruiterJobDetail() {
               type="button"
               className="secondary-btn recruiter-job-detail-toolbar-btn"
               onClick={() =>
-                flipped ? setFlipped(false) : navigate("/recruiter/ofertas")
+                flipped ? backFromApplicationsList() : navigate("/recruiter/ofertas")
               }
             >
               {flipped ? "Volver al detalle" : "Volver al listado"}
             </button>
             {!error && jobId && !flipped && (
               <>
-                <button
-                  type="button"
-                  className="primary-btn recruiter-applications-btn"
+                <ViewApplicationsButton
+                  count={appsCount}
                   onClick={handleFlip}
-                >
-                  Ver postulaciones ({appsCount})
-                </button>
+                />
                 <button
                   type="button"
                   className="secondary-btn recruiter-job-detail-toolbar-btn"
@@ -269,15 +280,11 @@ export default function RecruiterJobDetail() {
                   <ul className="applications-back-list">
                     {applications.map((app) => (
                       <li key={app.application_id} className="applications-back-row">
-                        <div>
-                          <strong>{candidateName(app.candidate_preview)}</strong>
-                          <div style={{ fontSize: 13, color: "#64748b" }}>
-                            Match:{" "}
-                            {app.match_score != null
-                              ? `${Math.round(app.match_score)}%`
-                              : "—"}{" "}
-                            · {app.status}
-                          </div>
+                        <div className="applications-back-row-main">
+                          <strong className="applications-back-name">
+                            {candidateFullName(app.candidate_preview)}
+                          </strong>
+                          <ApplicationMatchRow score={app.match_score} />
                         </div>
                         <button
                           type="button"

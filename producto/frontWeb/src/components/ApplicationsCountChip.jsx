@@ -1,4 +1,4 @@
-function ApplicationsIcon({ className }) {
+export function ApplicationsIcon({ className }) {
   return (
     <svg
       className={className}
@@ -34,6 +34,24 @@ function ApplicationsIcon({ className }) {
         strokeLinecap="round"
       />
     </svg>
+  );
+}
+
+export function ViewApplicationsButton({ count, onClick }) {
+  const n = typeof count === "number" ? count : 0;
+
+  return (
+    <button
+      type="button"
+      className="applications-view-btn"
+      onClick={onClick}
+      title={`${n} postulación${n === 1 ? "" : "es"}`}
+      aria-label={`Ver postulaciones, ${n} recibida${n === 1 ? "" : "s"}`}
+    >
+      <span className="applications-view-btn__label">Ver postulaciones</span>
+      <span className="applications-count-chip__value">{n}</span>
+      <ApplicationsIcon className="applications-count-chip__icon" />
+    </button>
   );
 }
 

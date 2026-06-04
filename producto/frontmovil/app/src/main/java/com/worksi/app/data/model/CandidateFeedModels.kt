@@ -60,5 +60,6 @@ data class CandidateJobDetailJson(
 
 data class CandidateJobDetailMatchJson(
     val score: Double?,
-    val explanation: String?
+    val explanation: String?,
+    @Json(name = "match_breakdown") val matchBreakdown: MatchBreakdownJson? = null
 )

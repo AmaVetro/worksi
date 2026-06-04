@@ -2,14 +2,11 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { listJobApplications } from "../services/companyService";
-import { goBack } from "../utils/goBack";
+import ApplicationMatchRow, {
+  candidateFullName,
+  matchLevelFromScore,
+} from "../components/ApplicationMatchRow";
 import "../styles/Home.css";
-
-function candidateName(preview) {
-  if (!preview) return "Postulante";
-  const parts = [preview.first_name, preview.last_name_paternal].filter(Boolean);
-  return parts.length > 0 ? parts.join(" ") : "Postulante";
-}
 
 export default function RecruiterApplicationView() {
   const { jobId, applicationId } = useParams();
@@ -47,9 +44,8 @@ export default function RecruiterApplicationView() {
     };
   }, [jobId, applicationId]);
 
-  const name = candidateName(item?.candidate_preview);
-  const score =
-    item?.match_score != null ? `${Math.round(item.match_score)}%` : "—";
+  const name = candidateFullName(item?.candidate_preview);
+  const matchLevel = item ? matchLevelFromScore(item.match_score) : null;
 
   return (
     <div>
@@ -60,7 +56,9 @@ export default function RecruiterApplicationView() {
             <button
               type="button"
               className="secondary-btn recruiter-job-detail-toolbar-btn"
-              onClick={() => goBack(navigate)}
+              onClick={() =>
+                navigate(`/recruiter/ofertas/${jobId}?postulaciones=1`)
+              }
             >
               Volver
             </button>
@@ -69,20 +67,42 @@ export default function RecruiterApplicationView() {
           {item && (
             <article className="recruitment-card recruiter-job-detail-card">
               <h2 className="recruiter-job-detail-title">Ver postulación</h2>
-              <p className="recruiter-job-detail-company">
-                <strong>{name}</strong>
-              </p>
+              <div className="recruiter-application-candidate-header">
+                <p className="recruiter-job-detail-company recruiter-application-candidate-name">
+                  <strong>{name}</strong>
+                </p>
+                <div className="recruiter-application-header-actions">
+                  <button type="button" className="recruiter-match-btn">
+                    <span>Match</span>
+                    <svg
+                      className="recruiter-match-btn__star"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        fill="currentColor"
+                        d="M12 2l2.9 6.26 6.84.56-5.18 4.48 1.56 6.7L12 17.77l-6.12 3.23 1.56-6.7-5.18-4.48 6.84-.56L12 2z"
+                      />
+                    </svg>
+                  </button>
+                  <button type="button" className="recruiter-ver-perfil-btn">
+                    Ver perfil
+                  </button>
+                </div>
+              </div>
               {item.candidate_preview?.sector_name ? (
                 <p style={{ color: "#64748b", margin: "0 0 12px" }}>
                   Rubro: {item.candidate_preview.sector_name}
                 </p>
               ) : null}
-              <p style={{ margin: "8px 0" }}>
-                Estado: <strong>{item.status}</strong>
-              </p>
-              <p style={{ margin: "8px 0" }}>
-                Compatibilidad: <strong>{score}</strong>
-              </p>
+              {matchLevel ? (
+                <p
+                  className={`match-level-label match-level-label--${matchLevel.tone}`}
+                >
+                  {matchLevel.text}
+                </p>
+              ) : null}
+              <ApplicationMatchRow score={item.match_score} />
               {item.match_explanation ? (
                 <p
                   style={{

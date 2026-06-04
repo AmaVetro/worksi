@@ -14,6 +14,7 @@ public class CompanyJobListItemResponse {
   private final int salaryOffered;
 
   private final String modality;
+  private final String workload;
   private final String status;
 
   @JsonProperty("published_at")
@@ -31,6 +32,7 @@ public class CompanyJobListItemResponse {
       String companyCommercialName,
       int salaryOffered,
       String modality,
+      String workload,
       String status,
       Instant publishedAt,
       Instant createdAt,
@@ -40,6 +42,7 @@ public class CompanyJobListItemResponse {
     this.companyCommercialName = companyCommercialName;
     this.salaryOffered = salaryOffered;
     this.modality = modality;
+    this.workload = workload;
     this.status = status;
     this.publishedAt = publishedAt;
     this.createdAt = createdAt;
@@ -64,6 +67,10 @@ public class CompanyJobListItemResponse {
 
   public String getModality() {
     return modality;
+  }
+
+  public String getWorkload() {
+    return workload;
   }
 
   public String getStatus() {

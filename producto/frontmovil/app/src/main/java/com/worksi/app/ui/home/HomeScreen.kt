@@ -32,6 +32,8 @@ import com.worksi.app.data.api.RetrofitClient
 import com.worksi.app.data.local.SecureTokenStore
 import okhttp3.Headers
 import com.worksi.app.data.model.JobOffer
+import com.worksi.app.ui.components.CandidateMainBottomBar
+import com.worksi.app.ui.components.MainTab
 import com.worksi.app.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -112,47 +114,11 @@ fun HomeScreen(
             )
         },
         bottomBar = {
-            NavigationBar(containerColor = CyanPrimary) {
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onNavigateToProfile,
-                    icon = { Icon(Icons.Filled.Person, contentDescription = "Perfil", tint = White) },
-                    label = { Text("Perfil", color = White, fontSize = 12.sp) },
-                    colors = NavigationBarItemDefaults.colors(
-                        unselectedIconColor = White,
-                        unselectedTextColor = White,
-                        selectedIconColor = White,
-                        selectedTextColor = White,
-                        indicatorColor = CyanPrimary
-                    )
-                )
-                NavigationBarItem(
-                    selected = true,
-                    onClick = { },
-                    icon = { Icon(Icons.Filled.Home, contentDescription = "Home", tint = White) },
-                    label = { Text("Ofertas", color = White, fontSize = 12.sp) },
-                    colors = NavigationBarItemDefaults.colors(
-                        unselectedIconColor = White,
-                        unselectedTextColor = White,
-                        selectedIconColor = White,
-                        selectedTextColor = White,
-                        indicatorColor = CyanPrimary
-                    )
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onNavigateToApplications,
-                    icon = { Icon(Icons.Filled.Menu, contentDescription = "Menú principal", tint = White) },
-                    label = { Text("Postulaciones", color = White, fontSize = 12.sp) },
-                    colors = NavigationBarItemDefaults.colors(
-                        unselectedIconColor = White,
-                        unselectedTextColor = White,
-                        selectedIconColor = White,
-                        selectedTextColor = White,
-                        indicatorColor = CyanPrimary
-                    )
-                )
-            }
+            CandidateMainBottomBar(
+                selected = MainTab.Offers,
+                onProfile = onNavigateToProfile,
+                onOffers = { },
+                onApplications = onNavigateToApplications)
         }
     ) { innerPadding ->
         Column(

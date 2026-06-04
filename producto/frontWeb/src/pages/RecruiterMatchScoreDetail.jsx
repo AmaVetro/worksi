@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import { listJobApplications } from "../services/companyService";
-import { goBack } from "../utils/goBack";
 import "../styles/Home.css";
 
 const DIMENSIONS = [

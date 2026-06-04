@@ -6,6 +6,18 @@ import { listMyJobs } from "../services/companyService";
 import { goBack } from "../utils/goBack";
 import "../styles/Home.css";
 
+const MODALITY_LABELS = {
+  REMOTE: "Remoto",
+  HYBRID: "Híbrido",
+  ONSITE: "Presencial",
+};
+
+const WORKLOAD_LABELS = {
+  FULL_TIME: "Full time",
+  PART_TIME: "Part time",
+  OTHER: "Otro",
+};
+
 export default function RecruiterJobsList() {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
@@ -59,26 +71,19 @@ export default function RecruiterJobsList() {
                   <strong>{job.title}</strong>
                   <div style={{ fontSize: 13, color: "#64748b" }}>
                     {job.company_commercial_name} · ${job.salary_offered} ·{" "}
-                    {job.modality}
+                    {MODALITY_LABELS[job.modality] ?? job.modality} ·{" "}
+                    {WORKLOAD_LABELS[job.workload] ?? job.workload}
                   </div>
                 </div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    flexWrap: "wrap",
-                  }}
-                >
+                <div className="recruiter-jobs-list-actions">
                   <ApplicationsCountChip count={job.applications_count} />
                   <button
-                  type="button"
-                  className="secondary-btn"
-                  style={{ marginTop: 0, alignSelf: "center" }}
-                  onClick={() => navigate(`/recruiter/ofertas/${job.id}`)}
-                >
-                  Ir a ver oferta
-                </button>
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() => navigate(`/recruiter/ofertas/${job.id}`)}
+                  >
+                    Ir a ver oferta
+                  </button>
                 </div>
               </div>
             ))}

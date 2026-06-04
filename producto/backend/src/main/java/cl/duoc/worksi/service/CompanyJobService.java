@@ -440,6 +440,7 @@ public class CompanyJobService {
         job.getCompanyCommercialName(),
         job.getSalaryOffered(),
         job.getModality().name(),
+        job.getWorkload().name(),
         job.getStatus().name(),
         published,
         created,

@@ -59,7 +59,7 @@ private val SALARY_RANGE_F = 300_000f..8_000_000f
 private val SALARY_SLIDER_DEFAULT = 1_000_000f..2_500_000f
 private const val MAX_YEARS_EXPERIENCE = 50
 
-private val MatchingNoticeBackground = Color(0x1AF97316)
+private val MatchingNoticeBackground = Color.White
 private val MatchingNoticeBorder = Color(0x59F97316)
 private val MatchingNoticeText = Color(0xFFC2410C)
 

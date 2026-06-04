@@ -95,7 +95,9 @@ public class CompanyApplicationsService {
           sectorRepository.findById(profile.getSectorId()).map(Sector::getName).orElse("");
     }
     String firstName = profile != null ? profile.getFirstName() : "";
+    String middleName = profile != null ? profile.getMiddleName() : "";
     String lastName = profile != null ? profile.getLastNamePaternal() : "";
+    String lastNameMaternal = profile != null ? profile.getLastNameMaternal() : "";
     Instant applied =
         app.getAppliedAt() != null
             ? app.getAppliedAt().atZone(ZoneOffset.UTC).toInstant()
@@ -113,7 +115,8 @@ public class CompanyApplicationsService {
         score,
         app.getMatchExplanation(),
         breakdown,
-        new CompanyApplicationCandidatePreviewResponse(firstName, lastName, sectorName));
+        new CompanyApplicationCandidatePreviewResponse(
+            firstName, middleName, lastName, lastNameMaternal, sectorName));
   }
 
   private Map<Long, CandidateProfile> loadProfiles(List<Application> apps) {

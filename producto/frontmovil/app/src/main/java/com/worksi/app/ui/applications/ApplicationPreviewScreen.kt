@@ -33,18 +33,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.worksi.app.ui.components.MatchScoreRow
+import com.worksi.app.ui.components.modalityLabel
 import com.worksi.app.ui.theme.CyanPrimary
 import com.worksi.app.ui.theme.White
 
 private val PageBackground = Color(0xFFF5F5F5)
 private val MutedText = Color(0xFF757575)
-
-private fun statusLabel(status: String): String =
-    when (status) {
-      "VIEWED" -> "Vista por empresa"
-      "APPLIED" -> "Postulada"
-      else -> status
-    }
+private val DetailSpacing = 12.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -96,24 +92,25 @@ fun ApplicationPreviewScreen(
                       modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(16.dp)) {
                           Text(d.jobTitle, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                          Spacer(modifier = Modifier.height(DetailSpacing))
                           Text(d.companyCommercialName, color = MutedText)
-                          Spacer(modifier = Modifier.height(8.dp))
-                          Text("Sueldo: $${d.salaryOffered}")
-                          Text("Comuna: ${d.communeName}")
-                          Text("Modalidad: ${d.modality}")
-                          Text("Exp. requerida: ${d.yearsExperienceRequired} años")
-                          if (d.matchScore != null) {
-                            Text(
-                                "Match: ${kotlin.math.round(d.matchScore).toInt()}%",
-                                color = CyanPrimary,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(top = 8.dp))
-                          }
+                          Spacer(modifier = Modifier.height(DetailSpacing))
+                          Text("Sueldo: $${d.salaryOffered}", color = MutedText)
+                          Spacer(modifier = Modifier.height(DetailSpacing))
+                          Text("Comuna: ${d.communeName}", color = MutedText)
+                          Spacer(modifier = Modifier.height(DetailSpacing))
                           Text(
-                              "Estado: ${statusLabel(d.status)}",
-                              color = CyanPrimary,
-                              fontWeight = FontWeight.SemiBold,
-                              modifier = Modifier.padding(top = 4.dp))
+                              "Modalidad: ${modalityLabel(d.modality)}",
+                              color = MutedText)
+                          Spacer(modifier = Modifier.height(DetailSpacing))
+                          Text(
+                              "Exp. requerida: ${d.yearsExperienceRequired} años",
+                              color = MutedText)
+                          Spacer(modifier = Modifier.height(DetailSpacing))
+                          MatchScoreRow(
+                              score = d.matchScore,
+                              barWidth = 120.dp,
+                              labelColor = CyanPrimary)
                           if (d.description.isNotBlank()) {
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(d.description, color = MutedText, fontSize = 14.sp)

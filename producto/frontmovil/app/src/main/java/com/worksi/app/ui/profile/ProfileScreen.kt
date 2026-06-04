@@ -23,9 +23,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Person
+import com.worksi.app.ui.components.CandidateMainBottomBar
+import com.worksi.app.ui.components.MainTab
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
@@ -36,9 +35,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -101,26 +97,11 @@ fun ProfileScreen(
                 colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = CyanPrimary))
         },
         bottomBar = {
-            NavigationBar(containerColor = CyanPrimary) {
-                NavigationBarItem(
-                    selected = true,
-                    onClick = { },
-                    icon = { Icon(Icons.Filled.Person, contentDescription = null, tint = White) },
-                    label = { Text("Perfil", color = White, fontSize = 12.sp) },
-                    colors = profileNavColors())
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onNavigateToHome,
-                    icon = { Icon(Icons.Filled.Home, contentDescription = null, tint = White) },
-                    label = { Text("Home", color = White, fontSize = 12.sp) },
-                    colors = profileNavColors())
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onNavigateToApplications,
-                    icon = { Icon(Icons.Filled.Menu, contentDescription = null, tint = White) },
-                    label = { Text("Postulaciones", color = White, fontSize = 12.sp) },
-                    colors = profileNavColors())
-            }
+            CandidateMainBottomBar(
+                selected = MainTab.Profile,
+                onProfile = { },
+                onOffers = onNavigateToHome,
+                onApplications = onNavigateToApplications)
         }) { innerPadding ->
         Column(
             modifier =
@@ -386,7 +367,10 @@ private fun SkillsBlock(skillNames: List<String>) {
 
 @Composable
 private fun ProfileChip(label: String) {
-    Surface(shape = RoundedCornerShape(16.dp), color = ChipBackground) {
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = ChipBackground,
+        border = BorderStroke(1.dp, ChipText)) {
         Text(
             text = label,
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
@@ -395,12 +379,3 @@ private fun ProfileChip(label: String) {
             fontWeight = FontWeight.Medium)
     }
 }
-
-@Composable
-private fun profileNavColors() =
-    NavigationBarItemDefaults.colors(
-        unselectedIconColor = White,
-        unselectedTextColor = White,
-        selectedIconColor = White,
-        selectedTextColor = White,
-        indicatorColor = CyanPrimary)
