@@ -17,7 +17,6 @@ import RecruiterJobCreate from "../pages/RecruiterJobCreate";
 import RecruiterJobDetail from "../pages/RecruiterJobDetail";
 import RecruiterJobEdit from "../pages/RecruiterJobEdit";
 import RecruiterApplicationView from "../pages/RecruiterApplicationView";
-import RecruiterMatchScoreDetail from "../pages/RecruiterMatchScoreDetail";
 
 function AppRoutes() {
   return (
@@ -94,15 +93,7 @@ function AppRoutes() {
           }
         />
         <Route
-          path="/recruiter/ofertas/:jobId/postulaciones/:applicationId/score"
-          element={
-            <PrivateRoute roles={["RECRUITER"]}>
-              <RecruiterMatchScoreDetail />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/recruiter/ofertas/:jobId/postulaciones/:applicationId"
+          path="/recruiter/ofertas/:jobId/postulaciones/:applicationId/*"
           element={
             <PrivateRoute roles={["RECRUITER"]}>
               <RecruiterApplicationView />

@@ -6,6 +6,9 @@ import cl.duoc.worksi.dto.company.CompanyJobCreatedResponse;
 import cl.duoc.worksi.dto.company.CompanyJobDetailResponse;
 import cl.duoc.worksi.dto.company.CompanyJobListItemResponse;
 import cl.duoc.worksi.dto.company.CompanyJobSkillItemResponse;
+import cl.duoc.worksi.dto.company.CompanyJobStatsResponse;
+import cl.duoc.worksi.dto.company.CompanyJobStatusPatchRequest;
+import cl.duoc.worksi.dto.company.CompanyJobStatusResponse;
 import cl.duoc.worksi.dto.company.CompanyProfileImagePatchRequest;
 import cl.duoc.worksi.dto.company.CompanyProfileImageResponse;
 import cl.duoc.worksi.dto.company.RecruiterCompanyProfileResponse;
@@ -31,8 +34,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -234,6 +240,7 @@ public class CompanyJobService {
     job.setImageUrl(trimNull(req.getImageUrl()));
     job.setStatus(JobStatus.ACTIVE);
     job.setPublishedAt(publishedAt);
+    job.setClosingDate(req.getClosingDate());
     String semantic =
         JobSemanticText.build(job.getTitle(), job.getDescription(), modality, workload);
     if (semantic.isBlank()) {
@@ -288,7 +295,7 @@ public class CompanyJobService {
       return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
     }
     Job job = opt.get();
-    if (job.getPublishedByUserId() == null || !job.getPublishedByUserId().equals(recruiterUserId)) {
+    if (!isOwnedByRecruiter(job, recruiterUserId) || job.getStatus() == JobStatus.DELETED) {
       return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
     }
     ResponseEntity<?> v = validateJobPayload(req);
@@ -312,6 +319,7 @@ public class CompanyJobService {
     job.setYearsExperienceRequired(req.getYearsExperienceRequired());
     job.setModality(modality);
     job.setWorkload(workload);
+    job.setClosingDate(req.getClosingDate());
     if (image == null || image.isEmpty()) {
       String urlFromJson = trimNull(req.getImageUrl());
       if (urlFromJson != null) {
@@ -342,15 +350,35 @@ public class CompanyJobService {
     return ResponseEntity.ok(toDetail(jobRepository.findById(jobId).orElse(job)));
   }
 
-  public ResponseEntity<?> listMyJobs(long recruiterUserId, int page, int size, String sort) {
+  public ResponseEntity<?> listMyJobs(
+      long recruiterUserId, int page, int size, String sort, String statusFilter) {
     if (!recruiterProfileRepository.existsById(recruiterUserId)) {
       return err(HttpStatus.FORBIDDEN, "FORBIDDEN", "Sesion no autorizada como reclutador");
     }
     int p = Math.max(1, page);
     int sz = Math.min(100, Math.max(1, size));
     Pageable pageable = PageRequest.of(p - 1, sz, parseSort(sort));
-    Page<Job> result =
-        jobRepository.findByStatusAndPublishedByUserId(JobStatus.ACTIVE, recruiterUserId, pageable);
+    Page<Job> result;
+    if (isClosingDueListFilter(statusFilter)) {
+      LocalDate today = LocalDate.now(ZoneId.of("America/Santiago"));
+      result =
+          jobRepository.findDueForClosingByPublishedByUserId(
+              recruiterUserId,
+              List.of(JobStatus.ACTIVE, JobStatus.INACTIVE),
+              today,
+              pageable);
+    } else {
+      JobStatus listStatus = parseListStatusFilter(statusFilter);
+      if (listStatus == null) {
+        return err(
+            HttpStatus.BAD_REQUEST,
+            "VALIDATION_ERROR",
+            "status debe ser ACTIVE, INACTIVE o CLOSING_DUE");
+      }
+      result =
+          jobRepository.findByStatusAndPublishedByUserId(
+              listStatus, recruiterUserId, pageable);
+    }
     List<CompanyJobListItemResponse> items =
         result.getContent().stream().map(this::toListItem).toList();
     PageResponse<CompanyJobListItemResponse> body =
@@ -359,28 +387,99 @@ public class CompanyJobService {
     return ResponseEntity.ok(body);
   }
 
+  public ResponseEntity<?> getMyJobStats(long recruiterUserId) {
+    if (!recruiterProfileRepository.existsById(recruiterUserId)) {
+      return err(HttpStatus.FORBIDDEN, "FORBIDDEN", "Sesion no autorizada como reclutador");
+    }
+    long activeCount =
+        jobRepository.countByStatusAndPublishedByUserId(JobStatus.ACTIVE, recruiterUserId);
+    long inactiveCount =
+        jobRepository.countByStatusAndPublishedByUserId(JobStatus.INACTIVE, recruiterUserId);
+    ZoneId businessZone = ZoneId.of("America/Santiago");
+    ZonedDateTime todayStart =
+        ZonedDateTime.now(businessZone).toLocalDate().atStartOfDay(businessZone);
+    ZonedDateTime tomorrowStart = todayStart.plusDays(1);
+    LocalDateTime publishedFromUtc =
+        todayStart.withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
+    LocalDateTime publishedToUtcExclusive =
+        tomorrowStart.withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
+    long publishedTodayCount =
+        jobRepository
+            .countByStatusAndPublishedByUserIdAndPublishedAtGreaterThanEqualAndPublishedAtLessThan(
+                JobStatus.ACTIVE,
+                recruiterUserId,
+                publishedFromUtc,
+                publishedToUtcExclusive);
+    return ResponseEntity.ok(
+        new CompanyJobStatsResponse(activeCount, inactiveCount, publishedTodayCount));
+  }
+
   public ResponseEntity<?> getMyJob(long recruiterUserId, long jobId) {
-    Optional<Job> opt = jobRepository.findById(jobId);
-    if (opt.isEmpty()) {
+    Optional<Job> job = loadOwnedJob(recruiterUserId, jobId);
+    if (job.isEmpty()) {
       return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
     }
-    Job job = opt.get();
-    if (job.getPublishedByUserId() == null || !job.getPublishedByUserId().equals(recruiterUserId)) {
-      return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
-    }
-    return ResponseEntity.ok(toDetail(job));
+    return ResponseEntity.ok(toDetail(job.get()));
   }
 
   public ResponseEntity<?> getMyJobImage(long recruiterUserId, long jobId) {
+    Optional<Job> job = loadOwnedJob(recruiterUserId, jobId);
+    if (job.isEmpty()) {
+      return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
+    }
+    return serveStoredJobImageBytes(job.get());
+  }
+
+  @Transactional
+  public ResponseEntity<?> patchMyJobStatus(
+      long recruiterUserId, long jobId, CompanyJobStatusPatchRequest body) {
+    if (body == null || body.getStatus() == null || body.getStatus().isBlank()) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "status obligatorio");
+    }
     Optional<Job> opt = jobRepository.findById(jobId);
     if (opt.isEmpty()) {
       return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
     }
     Job job = opt.get();
-    if (job.getPublishedByUserId() == null || !job.getPublishedByUserId().equals(recruiterUserId)) {
+    if (!isOwnedByRecruiter(job, recruiterUserId)) {
       return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
     }
-    return serveStoredJobImageBytes(job);
+    if (job.getStatus() == JobStatus.DELETED) {
+      return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
+    }
+    JobStatus newStatus;
+    try {
+      newStatus = JobStatus.valueOf(body.getStatus().trim().toUpperCase(Locale.ROOT));
+    } catch (IllegalArgumentException e) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "status invalido");
+    }
+    if (newStatus != JobStatus.ACTIVE && newStatus != JobStatus.INACTIVE) {
+      return err(
+          HttpStatus.BAD_REQUEST,
+          "VALIDATION_ERROR",
+          "status debe ser ACTIVE o INACTIVE");
+    }
+    job.setStatus(newStatus);
+    jobRepository.save(job);
+    return ResponseEntity.ok(new CompanyJobStatusResponse(job.getId(), job.getStatus().name()));
+  }
+
+  @Transactional
+  public ResponseEntity<?> deleteMyJob(long recruiterUserId, long jobId) {
+    Optional<Job> opt = jobRepository.findById(jobId);
+    if (opt.isEmpty()) {
+      return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
+    }
+    Job job = opt.get();
+    if (!isOwnedByRecruiter(job, recruiterUserId)) {
+      return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
+    }
+    if (job.getStatus() == JobStatus.DELETED) {
+      return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
+    }
+    job.setStatus(JobStatus.DELETED);
+    jobRepository.save(job);
+    return ResponseEntity.ok(new CompanyJobStatusResponse(job.getId(), job.getStatus().name()));
   }
 
   public ResponseEntity<?> getActiveJobImageForCandidate(long jobId) {
@@ -444,6 +543,7 @@ public class CompanyJobService {
         job.getStatus().name(),
         published,
         created,
+        job.getClosingDate(),
         companyApplicationsService.countVisibleApplications(job.getId()));
   }
 
@@ -484,6 +584,10 @@ public class CompanyJobService {
         job.getPublishedAt() != null
             ? job.getPublishedAt().atZone(ZoneOffset.UTC).toInstant()
             : Instant.EPOCH;
+    Instant created =
+        job.getCreatedAt() != null
+            ? job.getCreatedAt().atZone(ZoneOffset.UTC).toInstant()
+            : published;
     return new CompanyJobDetailResponse(
         job.getId(),
         job.getCompanyCommercialName(),
@@ -502,6 +606,8 @@ public class CompanyJobService {
         prot,
         job.getStatus().name(),
         published,
+        created,
+        job.getClosingDate(),
         skillIdsOrdered,
         skillsOut,
         companyApplicationsService.countVisibleApplications(job.getId()));
@@ -545,7 +651,46 @@ public class CompanyJobService {
     if (skills.size() != skillIds.size()) {
       return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "skill_id invalido o inactivo");
     }
+    if (req.getClosingDate() == null) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "closing_date obligatorio");
+    }
     return null;
+  }
+
+  private Optional<Job> loadOwnedJob(long recruiterUserId, long jobId) {
+    Optional<Job> opt = jobRepository.findById(jobId);
+    if (opt.isEmpty()) {
+      return Optional.empty();
+    }
+    Job job = opt.get();
+    if (!isOwnedByRecruiter(job, recruiterUserId) || job.getStatus() == JobStatus.DELETED) {
+      return Optional.empty();
+    }
+    return Optional.of(job);
+  }
+
+  private static boolean isOwnedByRecruiter(Job job, long recruiterUserId) {
+    return job.getPublishedByUserId() != null
+        && job.getPublishedByUserId().equals(recruiterUserId);
+  }
+
+  private static boolean isClosingDueListFilter(String raw) {
+    return raw != null && "CLOSING_DUE".equalsIgnoreCase(raw.trim());
+  }
+
+  private static JobStatus parseListStatusFilter(String raw) {
+    if (raw == null || raw.isBlank()) {
+      return JobStatus.ACTIVE;
+    }
+    try {
+      JobStatus st = JobStatus.valueOf(raw.trim().toUpperCase(Locale.ROOT));
+      if (st == JobStatus.ACTIVE || st == JobStatus.INACTIVE) {
+        return st;
+      }
+      return null;
+    } catch (IllegalArgumentException e) {
+      return null;
+    }
   }
 
   private static String trimNull(String s) {

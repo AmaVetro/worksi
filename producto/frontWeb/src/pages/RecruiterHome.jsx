@@ -4,8 +4,9 @@ import Navbar from "../components/Navbar";
 import {
   getRecruiterCompanyProfile,
   getRecruiterCompanyProfileImageBlob,
-  listMyJobs,
+  getMyJobStats,
 } from "../services/companyService";
+import loginImage from "../assets/images/login-bg.jpg";
 import "../styles/Home.css";
 
 function readUser() {
@@ -29,7 +30,11 @@ function recruiterFullName(user) {
 export default function RecruiterHome() {
   const navigate = useNavigate();
   const user = readUser();
-  const [jobsTotal, setJobsTotal] = useState(0);
+  const [jobsActive, setJobsActive] = useState(null);
+  const [jobsInactive, setJobsInactive] = useState(null);
+  const [jobsPublishedToday, setJobsPublishedToday] = useState(null);
+  const [matchsTotal, setMatchsTotal] = useState(0);
+  const [matchsToday, setMatchsToday] = useState(0);
   const [commercialName, setCommercialName] = useState("");
   const [corporateEmail, setCorporateEmail] = useState("");
   const [logoUrl, setLogoUrl] = useState(null);
@@ -51,16 +56,22 @@ export default function RecruiterHome() {
       setCommercialName("");
       setCorporateEmail("");
 
-      const jobsPromise = listMyJobs(1, 20).catch(() => null);
+      const jobsPromise = getMyJobStats().catch(() => null);
       const profilePromise = getRecruiterCompanyProfile().catch(() => null);
-      const [jobsData, profile] = await Promise.all([jobsPromise, profilePromise]);
+      const [jobStats, profile] = await Promise.all([jobsPromise, profilePromise]);
       if (cancelled) return;
 
-      if (jobsData) {
-        setJobsTotal(jobsData.total_items ?? 0);
+      if (jobStats) {
+        setJobsActive(jobStats.active_count ?? 0);
+        setJobsInactive(jobStats.inactive_count ?? 0);
+        setJobsPublishedToday(jobStats.published_today_count ?? 0);
       } else {
-        setJobsTotal(0);
+        setJobsActive(0);
+        setJobsInactive(0);
+        setJobsPublishedToday(0);
       }
+      setMatchsTotal(0);
+      setMatchsToday(0);
 
       if (profile) {
         setCommercialName(
@@ -106,67 +117,78 @@ export default function RecruiterHome() {
       <Navbar />
       <div className="home-container">
         <div className="home-content">
-          <div className="user-card" style={{ maxWidth: "100%" }}>
-            {logoUrl ? (
-              <img
-                className="user-logo-img"
-                src={logoUrl}
-                alt=""
-                width={96}
-                height={96}
-              />
-            ) : (
-              <div className="user-logo">Empresa</div>
-            )}
-            <div>
-              <strong>{commercialName || "—"}</strong>
-              {corporateEmail ? (
-                <p style={{ margin: "4px 0 0", color: "#555", fontSize: "0.95rem" }}>
-                  Correo corporativo:{" "}
-                  <a href={`mailto:${corporateEmail}`}>{corporateEmail}</a>
-                </p>
-              ) : null}
-              {recruiterFullName(user) ? (
-                <p style={{ margin: "8px 0 0", color: "#333", fontWeight: 600 }}>
-                  {recruiterFullName(user)}
-                </p>
-              ) : null}
-              <p style={{ margin: "6px 0 0", color: "#555" }}>
-                {user.email} — Reclutador
-              </p>
-            </div>
+          <div className="recruiter-home-banner">
+            <img src={loginImage} alt="" />
           </div>
-
-          <div className="home-grid">
-            <div className="recruitment-card">
-              <div className="card-header">
-                <h3>Reclutamiento</h3>
-                <span onClick={() => navigate("/recruiter/reclutamiento")}>
-                  Ir a módulo
-                </span>
-              </div>
-              <div className="card-content">
-                <p>
-                  Ofertas publicadas
-                  <span className="dots"></span>
-                  <strong>{jobsTotal}</strong>
+          <div className="user-card recruiter-home-user-card">
+            <div className="recruiter-home-profile">
+              {logoUrl ? (
+                <img
+                  className="user-logo-img"
+                  src={logoUrl}
+                  alt=""
+                  width={96}
+                  height={96}
+                />
+              ) : (
+                <div className="user-logo">Empresa</div>
+              )}
+              <div>
+                <strong>{commercialName || "—"}</strong>
+                {corporateEmail ? (
+                  <p style={{ margin: "4px 0 0", color: "#555", fontSize: "0.95rem" }}>
+                    Correo corporativo:{" "}
+                    <a href={`mailto:${corporateEmail}`}>{corporateEmail}</a>
+                  </p>
+                ) : null}
+                {recruiterFullName(user) ? (
+                  <p style={{ margin: "8px 0 0", color: "#333", fontWeight: 600 }}>
+                    {recruiterFullName(user)}
+                  </p>
+                ) : null}
+                <p style={{ margin: "6px 0 0", color: "#555" }}>
+                  {user.email} — Reclutador
                 </p>
+              </div>
+            </div>
+            <div className="recruiter-home-visors">
+              <button
+                type="button"
+                className="recruiter-home-visor recruiter-home-visor--jobs recruiter-home-visor--clickable"
+                onClick={() => navigate("/recruiter/ofertas")}
+              >
+                <span className="recruiter-home-visor__label">Ofertas Totales</span>
+                <div className="recruiter-home-visor__job-stats">
+                  <div className="recruiter-home-visor__job-stat">
+                    <span className="recruiter-home-visor__value">
+                      {jobsActive === null ? "…" : jobsActive}
+                    </span>
+                    <span className="recruiter-home-visor__stat-label">Activas</span>
+                  </div>
+                  <div className="recruiter-home-visor__job-stat">
+                    <span className="recruiter-home-visor__value recruiter-home-visor__value--inactive">
+                      {jobsInactive === null ? "…" : jobsInactive}
+                    </span>
+                    <span className="recruiter-home-visor__stat-label">Inactivas</span>
+                  </div>
+                </div>
+              </button>
+              <div className="recruiter-home-visor">
+                <span className="recruiter-home-visor__label">Publicadas Hoy</span>
+                <span className="recruiter-home-visor__value">
+                  {jobsPublishedToday === null ? "…" : jobsPublishedToday}
+                </span>
               </div>
               <button
                 type="button"
-                className="primary-btn"
-                onClick={() => navigate("/recruiter/ofertas")}
+                className="recruiter-home-visor recruiter-home-visor--clickable"
               >
-                Ir a ver
+                <span className="recruiter-home-visor__label">Matchs Totales</span>
+                <span className="recruiter-home-visor__value">{matchsTotal}</span>
               </button>
-            </div>
-
-            <div className="actions-container">
-              <div className="action-card">
-                <p>Matchs</p>
-                <button type="button" className="secondary-btn">
-                  Ir a ver
-                </button>
+              <div className="recruiter-home-visor">
+                <span className="recruiter-home-visor__label">Matchs Hoy</span>
+                <span className="recruiter-home-visor__value">{matchsToday}</span>
               </div>
             </div>
           </div>

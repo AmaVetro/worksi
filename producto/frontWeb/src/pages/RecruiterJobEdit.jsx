@@ -8,6 +8,10 @@ import {
   fetchSectors,
   fetchSkillsBySector,
 } from "../services/catalogService";
+import {
+  formatJobDateDisplay,
+  toDateInputValue,
+} from "../utils/formatJobDate";
 import "../styles/AdminForms.css";
 
 function emptyErrors() {
@@ -21,6 +25,7 @@ function emptyErrors() {
     years_experience_required: "",
     modality: "",
     workload: "",
+    closing_date: "",
     skills: "",
     sector_skills: "",
     image_file: "",
@@ -58,7 +63,9 @@ export default function RecruiterJobEdit() {
     years_experience_required: "",
     modality: "REMOTE",
     workload: "FULL_TIME",
+    closing_date: "",
   });
+  const [creationDateLabel, setCreationDateLabel] = useState("—");
   const [jobImageFile, setJobImageFile] = useState(null);
   const [fieldErrors, setFieldErrors] = useState(emptyErrors());
   const [apiError, setApiError] = useState("");
@@ -89,7 +96,11 @@ export default function RecruiterJobEdit() {
           years_experience_required: String(job.years_experience_required ?? ""),
           modality: job.modality || "REMOTE",
           workload: job.workload || "FULL_TIME",
+          closing_date: toDateInputValue(job.closing_date),
         });
+        setCreationDateLabel(
+          formatJobDateDisplay(job.created_at || job.published_at)
+        );
         const rid = String(job.region_id ?? "");
         setRegionId(rid);
         setSelectedSkillIds(new Set(skillIds));
@@ -197,6 +208,7 @@ export default function RecruiterJobEdit() {
     req("years_experience_required");
     req("modality");
     req("workload");
+    req("closing_date");
     if (!sectorForSkills) {
       e.sector_skills = "Seleccione rubro para skills";
       ok = false;
@@ -232,6 +244,7 @@ export default function RecruiterJobEdit() {
         years_experience_required: Number(form.years_experience_required),
         modality: form.modality,
         workload: form.workload,
+        closing_date: form.closing_date,
         skills_ids: Array.from(selectedSkillIds),
       };
       await updateJob(jobId, payload, jobImageFile);
@@ -405,6 +418,27 @@ export default function RecruiterJobEdit() {
                   <option value="PART_TIME">Part time</option>
                   <option value="OTHER">Otro</option>
                 </select>
+              </label>
+              <label>
+                Fecha creación
+                <input
+                  type="text"
+                  value={creationDateLabel}
+                  disabled
+                  readOnly
+                  aria-readonly="true"
+                />
+              </label>
+              <label>
+                Fecha cierre
+                <input
+                  type="date"
+                  value={form.closing_date}
+                  onChange={(e) => setField("closing_date", e.target.value)}
+                />
+                {fieldErrors.closing_date && (
+                  <span className="error-field">{fieldErrors.closing_date}</span>
+                )}
               </label>
               <label className="full">
                 Rubro para elegir skills (catálogo)

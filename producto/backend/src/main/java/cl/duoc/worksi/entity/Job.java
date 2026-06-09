@@ -11,6 +11,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -67,6 +68,9 @@ public class Job {
 
   @Column(name = "published_at")
   private LocalDateTime publishedAt;
+
+  @Column(name = "closing_date")
+  private LocalDate closingDate;
 
   @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
   private LocalDateTime createdAt;
@@ -136,6 +140,10 @@ public class Job {
     return publishedAt;
   }
 
+  public LocalDate getClosingDate() {
+    return closingDate;
+  }
+
   public LocalDateTime getCreatedAt() {
     return createdAt;
   }
@@ -198,5 +206,9 @@ public class Job {
 
   public void setPublishedAt(LocalDateTime publishedAt) {
     this.publishedAt = publishedAt;
+  }
+
+  public void setClosingDate(LocalDate closingDate) {
+    this.closingDate = closingDate;
   }
 }

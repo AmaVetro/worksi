@@ -9,7 +9,8 @@ Nota: al iniciar el proyecto en entorno de pruebas existen listas maestras para 
 
 
 Pantalla "al abrir sitio web":
-- Muestra el formulario de inicio de sesión: correo electrónico y contraseña, y el logo o marca de la página. No hay registro público ni botón para crear cuenta. Debajo de la contraseña puede mostrarse “¿Olvidaste tu contraseña?” (ver pantallas de recuperación más abajo).
+- Ruta web actual: /.
+- Muestra el formulario de inicio de sesión: correo electrónico y contraseña, subtítulo “Empresas”, y el logo o marca de la página. No hay registro público ni botón para crear cuenta. Debajo de la contraseña, enlace “¿Olvidaste tu contraseña?” → /recovery/forgot (mismo flujo de recuperación descrito más abajo; no requiere haber alcanzado el bloqueo por intentos fallidos).
 - Requisitos antes de enviar: formato válido de correo y contraseña no vacía.
 - Botón "Iniciar sesión" → POST /api/v1/auth/login
 - Tras un inicio de sesión correcto: si quien entra es el administrador del sistema, se muestra la pantalla "Portal administración sistema"; si es un reclutador de empresa, se muestra la pantalla "Inicio" y el resto de la sesión de empresa usando en cada pantalla los endpoints listados más abajo (rutas /api/v1/company/…).
@@ -18,30 +19,47 @@ Pantalla "al abrir sitio web":
 
 
 Recuperación de contraseña (reclutador de empresa; el administrador puede usar el mismo flujo si aplica):
-- Regla MVP alineada a Flujo Pantallas App Móvil y Contrato Unificado API — versión 1.7+: el **bloqueo a 4 intentos fallidos es real**. Lo demás hasta la nueva contraseña es **maqueta**: **no se genera ni se entrega** al usuario un **código** real para recuperar la cuenta; pantallas «Enviar código», «Ingresar código» y «Reenviar» son **solo UI** — los botones **no implementan recuperación efectiva por código**. El usuario **avanza** escribiendo **cualquier valor** en el campo de código. La **única parte obligatoria y real** es la pantalla de **nueva contraseña** (POST /api/v1/auth/password-recovery/reset): ahí la clave debe persistirse al instante en backend. Referencia técnica de request/verify en Contrato no define OTP real para el usuario en MVP.
+- Regla MVP alineada a Flujo Pantallas App Móvil y Contrato Unificado API — versión 1.15: el **bloqueo a 4 intentos fallidos es real**. Lo demás hasta la nueva contraseña es **maqueta**: **no se genera ni se entrega** al usuario un **código** real para recuperar la cuenta; pantallas «Enviar código», «Ingresar código» y «Reenviar» son **solo UI** — los botones **no implementan recuperación efectiva por código**. El usuario **avanza** escribiendo **cualquier valor** en el campo de código. La **única parte obligatoria y real** es la pantalla de **nueva contraseña** (POST /api/v1/auth/password-recovery/reset): ahí la clave debe persistirse al instante en backend. Referencia técnica de request/verify en Contrato no define OTP real para el usuario en MVP.
 
-Pantalla "Recuperar contraseña" (tras 4 intentos fallidos) → Mensaje "Excediste el límite de intentos. Por nuestros lineamientos de seguridad, deberás recuperar tu contraseña", botón "Recuperar contraseña" → pantalla "Olvidé mi contraseña".
+Pantalla "Recuperar contraseña" (tras 4 intentos fallidos):
+- Ruta web actual: /recovery/locked.
+- Mensaje "Excediste el límite de intentos. Por nuestros lineamientos de seguridad, deberás recuperar tu contraseña", botón "Recuperar contraseña" → /recovery/forgot.
 
-Pantalla "Olvidé mi contraseña" → Textos y campo correo; botón "Enviar código" (MVP: **no funcional** como generación/envío de código). Avance a pantalla "Ingresa tu código" sin código real.
+Pantalla "Olvidé mi contraseña":
+- Ruta web actual: /recovery/forgot.
+- Textos y campo correo; botón "Enviar código" (MVP: **no funcional** como generación/envío de código real al usuario). Avance a /recovery/code sin código real.
 
-Pantalla "Ingresa tu código" → Campo y botones como en móvil; **cualquier entrada** permite continuar a "Nueva contraseña"; **sin** validación de OTP real en producto MVP.
+Pantalla "Ingresa tu código":
+- Ruta web actual: /recovery/code.
+- Campo y botones como en móvil; **cualquier entrada** permite continuar a /recovery/new-password; **sin** validación de OTP real en producto MVP.
 
-Pantalla "Nueva contraseña" → Campo nueva contraseña; textos de política (misma que Contrato). Botón "Aceptar" → POST /api/v1/auth/password-recovery/reset; éxito → "Confirmar en Bandeja".
+Pantalla "Nueva contraseña":
+- Ruta web actual: /recovery/new-password.
+- Campo nueva contraseña; textos de política (misma que Contrato). Botón "Aceptar" → POST /api/v1/auth/password-recovery/reset; éxito → /recovery/confirm.
 
-Pantalla "Confirmar en bandeja" → Mensaje **simulado** sobre correo; contraseña **ya aplicada**. Botón "Volver a Log In" → pantalla "al abrir sitio web".
+Pantalla "Confirmar en bandeja":
+- Ruta web actual: /recovery/confirm.
+- Mensaje **simulado** sobre correo; contraseña **ya aplicada**. Botón "Volver a Log In" → /.
 
 
 
 Pantalla "Portal administración sistema":
 - Solo para quien inició sesión como administrador del sistema.
-- En la implementación web actual la navegación del administrador usa una barra superior (navbar) con accesos: Inicio, Empresas, Reclutadores, Configuración, y control de "Cerrar sesión" (equivalente a "Log out") que limpia la sesión en el navegador y vuelve a la pantalla "al abrir sitio web".
-- Desde Inicio el administrador ve un panel con accesos a las acciones principales (incluye tarjetas o bloques para ir a registrar empresa y registrar reclutadores, coherentes con las rutas Empresas y Reclutadores). Puede existir además un bloque de resumen tipo "Reclutamiento" u ofertas con valor fijo o de maquetación hasta que se conecte a datos reales de negocio para ese rol; no sustituye las pantallas de alta de empresa y reclutadores descritas más abajo.
-- Las altas de ficha empresa y de reclutadores se realizan desde las vistas enlazadas a Empresas y Reclutadores (formularios según secciones "Registrar empresa" y "Registrar reclutadores" de este documento).
+- Ruta web actual: /home.
+- En la implementación web actual la navegación del administrador usa una barra superior (navbar) con accesos: Inicio (/home), Empresas (/companies), Reclutadores (/recruiters), Configuración (/settings), y botón "Cerrar sesión". Al pulsarlo aparece un modal con el texto "¿Desea cerrar sesión?" y botones "Cancelar" y "Cerrar Sesión"; al confirmar, se limpia token/user en localStorage y se vuelve a /.
+- Desde Inicio el administrador ve un panel con accesos a las acciones principales: bloque "Reclutamiento" con el total de ofertas activas del sistema (GET /api/v1/admin/jobs/stats → active_jobs_total) y botón "Gestionar Ofertas" (aún sin navegación); tarjetas "Registrar empresa" (IR → /companies) y "Registrar reclutador" (IR → /recruiters). No sustituye los formularios de alta descritos más abajo.
+- Las altas de ficha empresa y de reclutadores se realizan en /companies y /recruiters (formularios según secciones "Registrar empresa" y "Registrar reclutadores" de este documento).
+
+Pantalla "Configuración" (administrador):
+- Ruta web actual: /settings.
+- Placeholder en la implementación actual: texto "Configuración: sin requisitos en el flujo actual." Sin formularios ni acciones adicionales.
 
 
 
 Pantalla "Registrar empresa" (desde el portal del administrador):
+- Ruta web actual: /companies.
 - Quien usa el formulario debe haber iniciado sesión como administrador del sistema.
+- Botón "Volver" arriba (navegación hacia atrás en historial o fallback coherente con la app).
 - La empresa queda registrada solo como dato de negocio (ficha empresa) para poder vincular reclutadores; no se crea un usuario con rol de empresa ni credenciales de acceso para la empresa.
 - Campos obligatorios: rut (formato sin puntos con guión), nombre comercial, razón social, teléfono de contacto, correo corporativo de la empresa (contacto de la ficha; no es credencial de login), dirección, región (desplegable alimentado con GET /api/v1/catalogs/regions), comuna (desplegable alimentado con GET /api/v1/catalogs/regions/{region_id}/communes, solo comunas de la región elegida), sector o ámbito (GET /api/v1/catalogs/sectors), N° de trabajadores (aprox).
 - Campo opcional: imagen de empresa (archivo, por ejemplo PNG).
@@ -53,7 +71,9 @@ Pantalla "Registrar empresa" (desde el portal del administrador):
 
 
 Pantalla "Registrar reclutadores" (desde el portal del administrador):
+- Ruta web actual: /recruiters.
 - Quien usa el formulario debe haber iniciado sesión como administrador del sistema.
+- Botón "Volver" arriba (navegación hacia atrás en historial o fallback coherente con la app).
 - Campos obligatorios: nombre, apellido paterno, apellido materno, rut (formato sin puntos con guión), correo de acceso, contraseña (política obligatoria del sistema; mismo criterio que en pantalla “Nueva contraseña” de recuperación), celular, empresa (desplegable de empresas ya dadas de alta; listado con GET /api/v1/admin/companies?page=1&size=20 u otros valores de página y tamaño que use el listado; items incluyen commercial_name y corporate_email según Contrato), fecha de nacimiento.
 - Campo opcional: teléfono.
 - Si falta un obligatorio: mensaje rojo "Completa este campo".
@@ -62,44 +82,66 @@ Pantalla "Registrar reclutadores" (desde el portal del administrador):
 
 
 Pantalla "Inicio" (sesión de reclutador de empresa):
-- Dashboard. Menú de usuario arriba a la derecha con “Cerrar sesión”; en la cabecera se muestra el rol y el nombre completo del reclutador (nombre y dos apellidos) obtenidos de la respuesta de POST /api/v1/auth/login en el objeto user (first_name, last_name_paternal, last_name_maternal) cuando existan; si no hubiera esos datos persistidos, puede usarse el correo como respaldo de UX.
-- Comprobar sesión activa: GET /api/v1/auth/me
-- Cabecera navegable: Inicio / Reclutamiento.
-- Bloque con imagen y nombre comercial de la empresa vinculada al reclutador: GET /api/v1/company/profile (commercial_name, corporate_email, external_image_url, has_protected_image); si has_protected_image es true, cargar la imagen con GET /api/v1/company/profile/image (misma sesión, Authorization Bearer); si external_image_url no es null, puede mostrarse esa URL directamente. Complemento: datos del usuario reclutador (correo y rol) en el mismo bloque o debajo según diseño.
-- Bloque “Ofertas publicadas” con número y botón “Ir a ver” → pantalla “Ofertas publicadas”. Carga: GET /api/v1/company/jobs?page=1&size=20&sort=created_at,desc
-- Bloque “Matchs” con número de conversaciones activas (o matchs establecidos) y botón “Ir a ver” → pantalla “Matchs” (listado de chats del reclutador con candidatos). Carga: GET /api/v1/chat/conversations (o equivalente definido en Contrato)
+- Ruta web actual: /recruiter/home. Tras POST /api/v1/auth/login con rol RECRUITER, el cliente redirige aquí.
+- Dashboard. Barra superior (navbar): logo WorkSí, a la derecha “Reclutador · [nombre completo]” (first_name, last_name_paternal, last_name_maternal de la respuesta de login; si faltan, correo) y botón “Cerrar sesión”. Al pulsarlo aparece un modal “¿Desea cerrar sesión?” con botones “Cancelar” y “Cerrar Sesión”; al confirmar, limpia token/user en localStorage y vuelve al login.
+- Menú de navegación centrado: Inicio (activo en /recruiter/home) y Reclutamiento (activo en /recruiter/reclutamiento y rutas bajo /recruiter/ofertas).
+- Banner horizontal con imagen decorativa en la parte superior del contenido (sin endpoint asociado).
+- Recuadro principal en dos zonas:
+  - Izquierda — ficha empresa y reclutador: logo de empresa (GET /api/v1/company/profile: commercial_name, corporate_email, external_image_url, has_protected_image; si has_protected_image, binario GET /api/v1/company/profile/image); nombre comercial en negrita; línea “Correo corporativo: …”; nombre del reclutador; línea “[email] — Reclutador”.
+  - Derecha — cuatro visores en fila (recuadros celestes):
+    1) “Ofertas Totales” (clickeable; hover resaltado): debajo del título, dos números — “Activas” (teal) e “Inactivas” (rojo). Carga: GET /api/v1/company/jobs/stats (active_count, inactive_count). Al pulsar el visor → /recruiter/ofertas.
+    2) “Publicadas Hoy” (solo lectura): un número con ofertas publicadas el día calendario actual (America/Santiago). Carga: GET /api/v1/company/jobs/stats (published_today_count).
+    3) “Matchs Totales” (clickeable visualmente; sin navegación por ahora): número de matchs/conversaciones (MVP chat pendiente; en frontWeb actual valor fijo 0).
+    4) “Matchs Hoy” (solo lectura): matchs del día (MVP chat pendiente; en frontWeb actual valor fijo 0).
+- Para crear oferta o acceder a postulaciones por oferta, el reclutador usa el menú Reclutamiento.
 
 
 
 Pantalla "Reclutamiento":
-- Botones a “Ofertas Publicadas”, “Crear Oferta”, “Matchs” (texto del bloque; botón “Ir a ver” → pantalla “Matchs”, listado de chats del reclutador).
+- Ruta web actual: /recruiter/reclutamiento.
+- Tres tarjetas con botón “Ir” o “Ir a ofertas” (sin bloque Matchs en la implementación actual):
+  - “Ofertas publicadas” → /recruiter/ofertas (pantalla “Ofertas Publicadas”).
+  - “Crear oferta” → /recruiter/ofertas/nueva (pantalla “Crear Oferta”).
+  - “Postulaciones por oferta” → /recruiter/ofertas (mismo listado; desde cada oferta se accede a postulaciones en “Vista Oferta”).
+- Pantalla “Matchs” y acceso desde Reclutamiento: definidos más abajo; pendientes en frontWeb actual (sin ruta /recruiter/matchs).
 
 
 
 Pantalla “Ofertas Publicadas”:
-- Listado de ofertas: GET /api/v1/company/jobs?page=1&size=20&sort=created_at,desc
-- Por fila: a la derecha del botón “Ir a ver Oferta” se muestra el número de postulaciones recibidas por esa oferta (color de la barra de navegación) y, junto al número, un ícono que represente una postulación. El conteo puede obtenerse del listado de jobs si el backend expone applications_count por fila, o mediante GET /api/v1/company/jobs/{job_id}/applications con paginación mínima según Contrato.
-- Botón “Ir a ver Oferta” → pantalla “Vista Oferta”: GET /api/v1/company/jobs/{job_id}
+- Ruta web actual: /recruiter/ofertas.
+- Botón “Volver” arriba (navegación hacia atrás en historial o fallback coherente con la app).
+- Título “Ofertas publicadas” (verde #0f766e). A la derecha del título, tres filtros en botones (verde cuando activos, blanco cuando inactivos). Al entrar a la pantalla el filtro “Activas” viene seleccionado por defecto.
+  - “Activas”: listado con GET /api/v1/company/jobs?status=ACTIVE (desactiva el filtro “Por cerrar” si estaba encendido).
+  - “Inactivas”: listado con GET /api/v1/company/jobs?status=INACTIVE (desactiva el filtro “Por cerrar” si estaba encendido).
+  - “Por cerrar” (conmutador): al activarlo (verde) filtra con GET /api/v1/company/jobs?status=CLOSING_DUE — solo ofertas ACTIVE o INACTIVE cuya fecha de cierre es hoy o ya pasó (America/Santiago); al pulsar de nuevo se desactiva (blanco) y vuelve el listado según Activas/Inactivas seleccionado. No desactiva ni elimina ofertas automáticamente; es guía visual para que el reclutador actúe.
+- Listado: GET /api/v1/company/jobs con page, size y sort=created_at,desc (en frontWeb actual size=50 en la primera carga).
+- Por fila — datos: título; subtítulo con nombre comercial, sueldo, modalidad, carga horaria y “Fecha cierre: {fecha}” (formato DD/MM/AAAA).
+- Por fila — acciones (de izquierda a derecha): chip con número de postulaciones e ícono (applications_count del listado); botón “Ir a ver oferta” → /recruiter/ofertas/{job_id}; botón con ícono de encendido/apagado para activar o desactivar la oferta (verde con ícono blanco si ACTIVE; blanco con ícono rojo si INACTIVE) → PATCH /api/v1/company/jobs/{job_id}/status con body { "status": "ACTIVE" | "INACTIVE" }; botón con ícono X (borde y equis verdes) para eliminar → modal “¿Desea eliminar la oferta?” con botones “Cancelar” y “Eliminar”; al confirmar → DELETE /api/v1/company/jobs/{job_id} (marca la oferta DELETED y deja de aparecer en el listado).
+- Estados de oferta en backend: ACTIVE, INACTIVE y DELETED. La fecha de cierre no cambia el estado automáticamente; solo alimenta el filtro “Por cerrar” y la información mostrada al reclutador.
 
 
 
 Pantalla “Vista Oferta”:
+- Ruta web actual: /recruiter/ofertas/{job_id}. Query opcional ?postulaciones=1 mantiene el reverso de la card (listado de postulaciones) al recargar o volver desde “Ver postulación”.
 - Detalle de la oferta: GET /api/v1/company/jobs/{job_id}. La respuesta incluye nombres legibles region_name y commune_name, lista skills con id y name, y para la imagen de la oferta los mismos criterios que la ficha empresa: external_image_url si la imagen es URL http(s), o has_protected_image true si esta guardada como archivo en servidor; en ese ultimo caso el cliente debe cargar el binario con GET /api/v1/company/jobs/{job_id}/image (Authorization Bearer) para mostrarla (por ejemplo debajo del titulo en la UI). Si no hay imagen, no se muestra bloque de imagen.
-- Cabecera de acciones sobre la imagen de la oferta (entre los botones existentes): a la izquierda “Volver al listado”; al centro un botón celeste con el número de postulaciones recibidas y el texto “Ver postulaciones”; a la derecha “Editar oferta” (HU-16) → pantalla “Editar Oferta”.
-- Al pulsar “Ver postulaciones”, la card que muestra el detalle de la oferta gira (efecto reverso de la card) sin cambiar de ruta: en el reverso se muestra el título “Postulaciones” y debajo el listado de postulantes de esa oferta ordenado de mayor a menor porcentaje de matching: GET /api/v1/company/jobs/{job_id}/applications?page=1&size=20&sort=match_score,desc
-- Por fila del listado de postulaciones (reverso de la card), botón “Ver postulación” → pantalla “Ver postulación”.
-- Desde el reverso de la card debe poder volverse al frente (detalle de la oferta) con la misma interacción de giro o un control “Volver” coherente con el diseño.
+- Barra de acciones superior: a la izquierda “Volver al listado” (o “Volver al detalle” si está el reverso visible); al centro botón celeste con conteo de postulaciones y texto “Ver postulaciones”; a la derecha “Editar oferta” (HU-16) → /recruiter/ofertas/{job_id}/editar.
+- Al pulsar “Ver postulaciones”, la card gira al reverso en la misma ruta (se añade ?postulaciones=1): título “Postulaciones” y listado ordenado por match_score descendente: GET /api/v1/company/jobs/{job_id}/applications?page=1&size=20&sort=match_score,desc
+- Por fila del listado (reverso), botón “Ver postulación” → /recruiter/ofertas/{job_id}/postulaciones/{application_id}.
+- Desde el reverso, “Volver al detalle” quita el query y muestra de nuevo el frente de la card.
+- Debajo de la card (fuera de ella), solo con el frente visible (no en el reverso de postulaciones): barra con botón de encendido/apagado a la izquierda (misma lógica y estilos que en el listado; PATCH /api/v1/company/jobs/{job_id}/status); al centro “Fecha creación: {fecha}” y “Fecha cierre: {fecha}” en verde #0f766e (created_at y closing_date del detalle); botón X a la derecha para eliminar (modal y DELETE iguales que en el listado).
 
 
 
 Pantalla “Editar Oferta” (HU-16):
-- Mismos campos obligatorios y opcionales que “Crear Oferta”, precargados desde GET /api/v1/company/jobs/{job_id}.
+- Ruta web actual: /recruiter/ofertas/{job_id}/editar.
+- Mismos campos obligatorios y opcionales que “Crear Oferta”, precargados desde GET /api/v1/company/jobs/{job_id}, incluyendo “Fecha creación” (solo lectura, valor persistido created_at) y “Fecha cierre” (editable; closing_date obligatoria en el JSON data).
 - Botón “Guardar cambios” → PATCH /api/v1/company/jobs/{job_id} en multipart/form-data (parte data JSON + parte image opcional), alineado al Contrato Unificado API sección 19.2.
 - Tras éxito → vuelta a “Vista Oferta” con datos actualizados.
 
 
 
 Pantalla “Crear Oferta”:
+- Ruta web actual: /recruiter/ofertas/nueva.
 - Campos y requisitos a rellenar:
 - Nombre comercial de la empresa (obligatorio; puede precargarse con el nombre comercial de la empresa en sesión; no puede quedar vacío al publicar).
 - Título de la oferta (obligatorio).
@@ -110,22 +152,26 @@ Pantalla “Crear Oferta”:
 - Skills (obligatorio; elegir al menos 3).
 - Modalidad: Remoto, Híbrido o Presencial (obligatorio).
 - Carga horaria: Full Time, Part Time u Otro (obligatorio).
+- Fecha creación (obligatorio en formulario; solo lectura con el día actual al crear; el backend persiste created_at al publicar).
+- Fecha cierre (obligatorio; campo date editable con mínimo el día actual al crear; se envía como closing_date en el JSON data; guía visual para el reclutador — no desactiva ni elimina la oferta al llegar esa fecha).
 - Imagen de la oferta (opcional; archivo PNG o JPEG desde el equipo, no URL pegada en MVP web).
 - Todo lo anterior es obligatorio salvo la imagen. Si falta algo, mismo criterio de mensajes rojos "Completa este campo" donde corresponda.
-- Botón “Publicar” → confirmación; al confirmar → POST /api/v1/company/jobs en multipart/form-data (parte data JSON con los campos de la oferta y parte image opcional con el archivo), alineado al Contrato Unificado API.
+- Botón “Publicar” → confirmación del navegador; al confirmar → POST /api/v1/company/jobs en multipart/form-data (parte data JSON con los campos de la oferta, incluido closing_date, y parte image opcional con el archivo), alineado al Contrato Unificado API.
 
 
 
 Pantalla “Ver postulación”:
+- Ruta web actual: /recruiter/ofertas/{job_id}/postulaciones/{application_id}.
 - Se accede desde el reverso de la card en “Vista Oferta” (botón “Ver postulación” por fila).
-- Muestra el nombre del postulante, sus datos básicos de la postulación y el porcentaje de matching con esa oferta.
-- Botón “Detalle de Score” → pantalla “Detalle de Score” (HU-28).
-- Botón “Ver perfil de candidato” → pantalla “Perfil candidato (vista reclutador)”.
-- Botón “Volver” arriba a la izquierda → reverso de la card “Postulaciones” en “Vista Oferta” o navegación equivalente acorde a la implementación.
+- Muestra el nombre del postulante, rubro (sector_name si viene en candidate_preview), etiqueta de nivel de match, barra/porcentaje de matching y texto breve de explicación cuando el backend lo expone.
+- Botón “Detalle de Score” → /recruiter/ofertas/{job_id}/postulaciones/{application_id}/score (HU-28).
+- Botones “Match” y “Ver perfil” visibles en la implementación actual como UI; aún sin flujo completo hacia chat ni pantalla “Perfil candidato (vista reclutador)”.
+- Botón “Volver” arriba a la izquierda → /recruiter/ofertas/{job_id}?postulaciones=1 (reverso de postulaciones en “Vista Oferta”).
 - Datos: GET /api/v1/company/jobs/{job_id}/applications (item del postulante seleccionado; Contrato sección 26).
 
 
 Pantalla “Detalle de Score” (HU-28):
+- Ruta web actual: /recruiter/ofertas/{job_id}/postulaciones/{application_id}/score.
 - Muestra el porcentaje de matching final del postulante para esa oferta.
 - Debajo, cada variable tomada en cuenta para el porcentaje de match con su propia barra y porcentaje indicando cuánto cumplió con esa variable y cómo contribuye al matching final (dimensiones según Contrato Unificado API, match_breakdown: description, title, modality, workload, años de experiencia, y demás campos que exponga el contrato).
 - Botón “Volver” arriba a la izquierda → pantalla “Ver postulación”.
@@ -133,6 +179,7 @@ Pantalla “Detalle de Score” (HU-28):
 
 
 Pantalla “Perfil candidato (vista reclutador)”:
+- Pendiente en frontWeb actual (botón “Ver perfil” en “Ver postulación” sin navegación implementada).
 - Misma información y disposición que la pantalla “Perfil” de la app móvil para postulantes, pero en modo solo lectura: sin íconos de lápiz, sin controles de edición ni acciones para modificar CV, skills o preferencias.
 - En algún punto visible de la pantalla, botón “Establecer Match”.
 - Al pulsar “Establecer Match” → modal con texto “¿Desea establecer match con candidato [nombre del candidato]?” y botones “Sí” y “Cancelar”.
@@ -143,13 +190,15 @@ Pantalla “Perfil candidato (vista reclutador)”:
 
 
 Pantalla “Matchs”:
+- Pendiente en frontWeb actual (sin ruta ni pantalla implementada). En Inicio, el visor “Matchs Totales” es clickeable (estilo hover) pero aún no navega a ninguna ruta.
 - Listado de conversaciones (chats) que el reclutador tiene con candidatos tras haber establecido match. Solo el reclutador que inició cada conversación y el candidato correspondiente pueden ver esos mensajes.
-- Se accede desde “Inicio” (bloque Matchs → “Ir a ver”) o desde “Reclutamiento” (bloque Matchs → “Ir a ver”).
+- Diseño objetivo: navegación desde el visor “Matchs Totales” en Inicio (y eventualmente “Matchs Hoy”) o desde Reclutamiento cuando exista el bloque Matchs.
 - Por fila: identificación del candidato (nombre) y acceso al hilo. Al pulsar una fila → pantalla “Chat con candidato”.
 - Carga: GET /api/v1/chat/conversations (Contrato).
 
 
 Pantalla “Chat con candidato”:
+- Pendiente en frontWeb actual.
 - Hilo de mensajes entre el reclutador en sesión y el candidato del match. El reclutador ve el nombre del candidato.
 - Campo para escribir mensaje y botón enviar; historial con polling o refresco periódico según MVP de mensajería (Contrato / endpoints POST y GET de mensajes).
 - Botón “Volver” arriba a la izquierda → pantalla “Matchs”.

@@ -9,6 +9,7 @@ import cl.duoc.worksi.entity.CandidateProfile;
 import cl.duoc.worksi.entity.Job;
 import cl.duoc.worksi.entity.Sector;
 import cl.duoc.worksi.entity.enums.ApplicationStatus;
+import cl.duoc.worksi.entity.enums.JobStatus;
 import cl.duoc.worksi.repository.ApplicationRepository;
 import cl.duoc.worksi.repository.CandidateProfileRepository;
 import cl.duoc.worksi.repository.JobRepository;
@@ -81,6 +82,9 @@ public class CompanyApplicationsService {
     }
     Job job = opt.get();
     if (job.getPublishedByUserId() == null || !job.getPublishedByUserId().equals(recruiterUserId)) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Oferta no encontrada");
+    }
+    if (job.getStatus() == JobStatus.DELETED) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Oferta no encontrada");
     }
     return job;

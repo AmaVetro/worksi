@@ -2,6 +2,7 @@ package cl.duoc.worksi.dto.company;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
+import java.time.LocalDate;
 
 public class CompanyJobListItemResponse {
   private final long id;
@@ -23,6 +24,9 @@ public class CompanyJobListItemResponse {
   @JsonProperty("created_at")
   private final Instant createdAt;
 
+  @JsonProperty("closing_date")
+  private final LocalDate closingDate;
+
   @JsonProperty("applications_count")
   private final long applicationsCount;
 
@@ -36,6 +40,7 @@ public class CompanyJobListItemResponse {
       String status,
       Instant publishedAt,
       Instant createdAt,
+      LocalDate closingDate,
       long applicationsCount) {
     this.id = id;
     this.title = title;
@@ -46,6 +51,7 @@ public class CompanyJobListItemResponse {
     this.status = status;
     this.publishedAt = publishedAt;
     this.createdAt = createdAt;
+    this.closingDate = closingDate;
     this.applicationsCount = applicationsCount;
   }
 
@@ -83,6 +89,10 @@ public class CompanyJobListItemResponse {
 
   public Instant getCreatedAt() {
     return createdAt;
+  }
+
+  public LocalDate getClosingDate() {
+    return closingDate;
   }
 
   public long getApplicationsCount() {

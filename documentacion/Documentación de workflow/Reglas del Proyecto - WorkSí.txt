@@ -11,9 +11,9 @@ Objetivo: centralizar reglas esenciales para que cualquier integrante encuentre 
 - HU opcionales actuales (fuera del compromiso obligatorio del MVP; solo si sobra tiempo; orden según Sprint oficiales):
   - HU-24 Guardar oferta
   - HU-14 Cancelar postulación
-  - HU-18 Activar/desactivar oferta (descartada del diseño actual por estado único ACTIVE)
+  - HU-18 Cierre automático de oferta al llegar fecha límite (excluido del MVP; reemplazado por closing_date + filtro CLOSING_DUE; activar/desactivar manual vía HU-17)
   - HU-22 Eliminación de cuenta
-- Plan obligatorio MVP incluye entre otras: HU-16 (editar oferta, Sprint 8), HU-28 (detalle score matching reclutador, Sprint 8), HU-17 (eliminar oferta, Sprint 9), HU-29–HU-31 (match/chat, Sprint 11); ver Sprint oficiales y Contrato Unificado API.
+- Plan obligatorio MVP incluye entre otras: HU-16 (editar oferta, Sprint 8), HU-28 (detalle score matching reclutador, Sprint 8), HU-17 (activar/desactivar y eliminar oferta, Sprint 9), HU-29–HU-31 (match/chat, Sprint 11); ver Sprint oficiales, Flujo Pantallas App Web y Contrato Unificado API v1.15.
 - Se debe evitar a toda costa la sobreingeniería siempre en todo el proyecto y priorizar el ahorro de tiempo, dejar un MVP funcional con los aspectos core y solo los aspectos suficientes, no sobre ingeniería.
 
 ============================================================
@@ -90,7 +90,7 @@ Objetivo: centralizar reglas esenciales para que cualquier integrante encuentre 
 - Persistencia de contraseña en BD: siempre como hash BCrypt (o algoritmo estándar equivalente) y nunca en texto plano.
 - Política de contraseña en texto claro (alta de cuenta, alta de reclutador, cambio o restablecimiento): mínimo 10 caracteres; al menos una mayúscula, al menos una minúscula, al menos un símbolo y al menos un número (alineado a HU, Flujos y Contrato Unificado API).
 - En app móvil de postulantes, login con email y contraseña.
-- En app móvil de postulantes y en web de administrador/reclutadores (ADMIN y RECRUITER), tras 4 intentos fallidos se bloquea el acceso y se deriva al flujo de pantallas de recuperación (Contrato MVP v1.7+).
+- En app móvil de postulantes y en web de administrador/reclutadores (ADMIN y RECRUITER), tras 4 intentos fallidos se bloquea el acceso y se deriva al flujo de pantallas de recuperación (Contrato MVP v1.15).
 - Recuperación MVP: sin código OTP real para el usuario; pasos previos solo maqueta; única parte real la nueva contraseña persistida en backend; sin correo real.
 
 ============================================================
@@ -171,7 +171,7 @@ Objetivo: centralizar reglas esenciales para que cualquier integrante encuentre 
 - Fairness (HU-09) antes de score (HU-07) y explicación breve (HU-08, plantilla mínima).
 - Swipe y postulación (HU-11, HU-12) cuando existan ofertas y contrato de matching operativo (cv_text + job_text).
 - Listado de postulaciones del candidato (HU-13) después de existir postulaciones; cancelación (HU-14) es opcional fuera del plan obligatorio.
-- Vista empresa / postulantes (HU-19) y estado VIEWED automático al abrir detalle (HU-23, Sprint 9) después del flujo de postulación; HU-17 eliminar oferta (Sprint 9); match y chat (HU-29–HU-31, Sprint 11); orden por compatibilidad (HU-20) en etapa de consolidación (actores RECRUITER según Contrato).
+- Vista empresa / postulantes (HU-19) y estado VIEWED automático al abrir detalle (HU-23, Sprint 9) después del flujo de postulación; HU-17 ciclo de vida oferta activar/desactivar/eliminar (Sprint 9; PATCH status + DELETE soft delete); match y chat (HU-29–HU-31, Sprint 11); orden por compatibilidad (HU-20) en etapa de consolidación (actores RECRUITER según Contrato).
 - Editar perfil (HU-05) en etapa tardía sin bloquear el núcleo; edición de skills de perfil no redefine el score sin cambio de CV u oferta.
 - Cierre, E2E y demo concentrados en Sprint 13; HU opcionales (14, 18, 22) no condicionan el flujo obligatorio del MVP; HU-16 y HU-28 son obligatorias en Sprint 8.
 

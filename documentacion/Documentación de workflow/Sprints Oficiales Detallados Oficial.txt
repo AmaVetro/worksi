@@ -84,7 +84,7 @@ ANTES DEL SPRINT 1 — ACUERDOS QUE TODO EL EQUIPO DEBE ENTENDER
 
 7) Lista oficial “solo si sobra tiempo” (no planificar como bloqueante)
 - HU-14 Cancelar postulación
-- HU-18 Activar/desactivar oferta (descartada del diseño actual por estado único ACTIVE)
+- HU-18 Cierre automático de oferta al llegar fecha límite (excluido del MVP; reemplazado por closing_date + filtro CLOSING_DUE; activar/desactivar manual vía HU-17)
 - HU-22 Eliminación de cuenta
 
 
@@ -228,7 +228,7 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 2
 1) HU-03 Login
 - POST /api/v1/auth/login único para web (ADMIN y RECRUITER) y candidato donde aplique Contrato.
 - Respuesta JWT solo access token con claims rol CANDIDATE | ADMIN | RECRUITER.
-- Tras 4 intentos fallidos bloqueo y derivación a pantallas de recuperación MVP (sin código real; Contrato v1.7+).
+- Tras 4 intentos fallidos bloqueo y derivación a pantallas de recuperación MVP (sin código real; Contrato v1.15).
 - Credenciales incorrectas 401 mensaje seguro sin filtrar existencia correo más allá práctica común Contrato.
 - Logout lado cliente donde exista cliente (elimina token, estado no autenticado).
 - Persistencia token en cliente: documentar opción equipo (web/mobile mínimo).
@@ -443,7 +443,8 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 5
 - Campos obligatorios Contrato HU-15 Flujo Pantallas: company_commercial_name; title;
   description único texto largo (no hay tabla requirements persistida aparte ni segundo recuadro);
   region_id y commune_id coherentes catálogo; salary_offered y years_experience_required obligatorios;
-  modality y workload enums; skills_ids entre 3 y 8 en job_skills.
+  modality y workload enums; closing_date obligatorio (YYYY-MM-DD); skills_ids entre 3 y 8 en job_skills.
+  Status inicial ACTIVE; estados dominio ACTIVE | INACTIVE | DELETED (Contrato v1.15).
 - Opcional por oferta image_url/imagen archivo según Flujo Contrato si el equipo ya modela esa parte en Sprint 8 UI.
 - job_text construido en backend para IA concatena únicamente title + description + modality + workload (no incluye skills,
   salary_offered ni company_commercial_name en esa cadena). years_experience_required entra al score como dimensión experience_score, no dentro de job_text.
@@ -631,7 +632,7 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 7
 - Login con bloqueo tras 4 intentos fallidos y derivación a recuperación en ambos frontends (móvil y web):
   implementación MVP acorde a HU-03 y Flujo Pantallas.
 - Recuperación MVP: sin correo real; sin OTP entregado al usuario; pasos de código son maqueta (cualquier texto avanza); única parte real al fijar nueva contraseña — misma política que en registro
-  (mínimo 10 caracteres; al menos una mayúscula, al menos una minúscula, al menos un símbolo y al menos un número), alineada a HU sin épicas, Flujos y Contrato v1.7+.
+  (mínimo 10 caracteres; al menos una mayúscula, al menos una minúscula, al menos un símbolo y al menos un número), alineada a HU sin épicas, Flujos y Contrato v1.15.
 - Registro de candidato y perfil puede estar parcial si ya existe por API, pero debe
   ser coherente: lo crítico de este sprint es swipe + confirmación + consumo
   de score.
@@ -726,8 +727,8 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 8
 - Desde lista, ver detalle resumido + estado + botón ir a oferta en feed.
 
 3) Web reclutador complemento HU-15
-- Listados mismos filtros sólo-ofertas-publicadas-por-el-reclutador autenticado según Contrato.
-- Forms publish flow campos opcionales requeridos región/coherencias skills 3–8.
+- Listados GET /api/v1/company/jobs con filtro status ACTIVE | INACTIVE | CLOSING_DUE; stats GET /api/v1/company/jobs/stats en inicio según Flujo Pantallas App Web.
+- Forms publish flow: closing_date obligatorio; región/coherencias comunas; skills 3–8; fechas creación/cierre en crear/editar/detalle según Flujo.
 
 4) HU-19 (mínimo Sprint 8) Ver postulantes por oferta
 - GET /api/v1/company/jobs/{job_id}/applications con auth sólo reclutador publicador (Contrato sección 26).
@@ -771,13 +772,13 @@ SPRINT 9 — SEMANA 1 - 7 Junio DE 2026
 Esfuerzo total estimado del equipo: 18 horas.
 Contenido oficial: complemento HU-19 + HU-23 VIEWED al abrir detalle (no al listar reverso card) +
 pulimiento navegaciones web segunda mitad panel errores campo “Completa este campo”
-según Sprint oficiales Flujo Contrato + HU-17 Eliminar oferta (RECRUITER) + HU-25 Ver empresas
+según Sprint oficiales Flujo Contrato + HU-17 ciclo de vida oferta activar/desactivar/eliminar (RECRUITER) + HU-25 Ver empresas
 registradas (ADMIN) + HU-26 Ver reclutadores registrados (ADMIN), según HU sin épicas.
 (No repetir HU-19 mínimo Sprint 8: card flip y GET applications ya entregados.)
 
 Objetivo del sprint en una frase:
 Reclutador completa HU-19 (Ver postulación con enlaces HU-28, perfil solo lectura, botón Establecer Match para HU-29 Sprint 11)
-y VIEWED automático HU-23; puede eliminar ofertas HU-17; administrador dispone de listados HU-25 y HU-26.
+y VIEWED automático HU-23; puede activar/desactivar y eliminar ofertas HU-17 (PATCH status + DELETE soft delete); administrador dispone de listados HU-25 y HU-26.
 
 ------------------------------------------------------------
 A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 9
@@ -797,10 +798,11 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 9
 3) Pulimiento errores navegaciones web segunda mitad HU (incluye formularios panel reclutador/admin)
 - Mensajes “Completa este campo” alineados formularios web portal según HU sin épicas Flujo donde aplique tiempo restante equipo.
 
-4) HU-17 Eliminar oferta
-- Acción eliminar oferta en portal RECRUITER (vista detalle o listado según diseño acordado).
-- Confirmación previa antes de persistir baja o retiro de visibilidad según regla de negocio acordada en backend.
-- Tras eliminar: oferta no visible para candidatos en feed ni detalle.
+4) HU-17 Ciclo de vida de oferta (activar/desactivar y eliminar)
+- Activar/desactivar: PATCH /api/v1/company/jobs/{job_id}/status con { "status": "ACTIVE" | "INACTIVE" }; botón encendido/apagado en listado y detalle (Flujo Pantallas App Web).
+- Eliminar: DELETE /api/v1/company/jobs/{job_id} (soft delete → DELETED); modal «¿Desea eliminar la oferta?» en listado y detalle.
+- Filtro «Por cerrar» en listado: GET /api/v1/company/jobs?status=CLOSING_DUE (guía visual; no cambia estados automáticamente).
+- Tras eliminar o desactivar: oferta no visible para candidatos en feed (solo ACTIVE).
 - Postulaciones previas no deben romper integridad (conservar historial o regla documentada en servicio).
 
 5) HU-25 Ver empresas registradas
@@ -821,7 +823,7 @@ B) DESGLOSE ULTRA DETALLADO
 B1) Lógica automática VIEWED en backend al abrir detalle de postulación HU-23 (2 horas).
 B2) Web UI «Ver postulación» + «Perfil postulantes» solo lectura + botón Establecer Match (HU-19 complemento; HU-23 VIEWED al abrir detalle) (4 horas).
 B3) Ensayo permisos cruzados: recruiter compañía A vs job empresa B debe 403; segundo reclutador misma company_id no lista job ajeno sólo Contrato reclutador publicador (1 hora).
-B4) HU-17: endpoint o regla DELETE/PATCH retiro oferta + UI confirmación reclutador (3 horas).
+B4) HU-17: PATCH /api/v1/company/jobs/{job_id}/status + DELETE soft delete + filtros listado + UI confirmación reclutador (3 horas).
 B5) HU-25: pantalla listado empresas ADMIN + GET /api/v1/admin/companies en UI (2 a 3 horas).
 B6) HU-26: GET listado reclutadores backend + pantalla ADMIN (3 a 4 horas).
 
@@ -905,7 +907,7 @@ SPRINT 11 — SEMANA 15 - 21 Junio DE 2026 (SPRINT PESADO)
 ================================================================================
 Esfuerzo total estimado del equipo: 18 horas.
 Contenido oficial (orden lógico: backend chat → HU-29 → HU-30 → HU-31):
-- Backend chat MVP (Contrato Unificado API v1.13 secciones 28–33).
+- Backend chat MVP (Contrato Unificado API v1.15 secciones 28–33).
 - HU-29 Establecer match con candidato (reclutador).
 - HU-30 Chatear con candidatos (match) (reclutador).
 - HU-31 Responder match y chatear con empresa (candidato).
@@ -1029,7 +1031,7 @@ Contenido oficial (cierre MVP; contenido que antes estaba en Sprint 11):
 - Corrección de bugs críticos.
 - Checklist de calidad previo al cierre.
 - Chequeo explícito de regla de matching: mismo CV + misma oferta → mismo resultado aunque solo cambien skills de perfil o job_skills.
-- Pasada integración Spring ↔ FastAPI acotada; Postman rutas prioritarias Spring, IA POST /match y chat según Contrato v1.13.
+- Pasada integración Spring ↔ FastAPI acotada; Postman rutas prioritarias Spring, IA POST /match y chat según Contrato v1.15.
 - Demo stakeholder incluyendo match/chat si Sprint 11 cerrado.
 - HU-22 permanece sólo tiempo extra backlog.
 
@@ -1092,7 +1094,7 @@ Sprint 5 — Tika; HU-15 crear oferta RECRUITER modelo Contrato actual; PATCH /a
 Sprint 6 — HU-09 fairness; HU-07 score; HU-08 explicación; contrato técnico POST /match (FastAPI) con cv_text y job_text.
 Sprint 7 — Web MVP React+Vite login ADMIN/RECRUITER, panel empresa/reclutadores, shell reclutador; HU-11 HU-12 opcional UI recuperación MVP (maqueta + nueva contraseña real).
 Sprint 8 — HU-13; portal reclutador HU-15; PATCH imagen si backlog; HU-19 mínimo (card flip, Ver postulación básica); HU-28 «Detalle de Score»; HU-16 editar oferta.
-Sprint 9 — HU-19 complemento (Ver postulación completa, perfil solo lectura, botón Establecer Match); HU-23 VIEWED; pulimiento errores web; HU-17; HU-25/HU-26 listados ADMIN.
+Sprint 9 — HU-19 complemento (Ver postulación completa, perfil solo lectura, botón Establecer Match); HU-23 VIEWED; pulimiento errores web; HU-17 ciclo de vida oferta; HU-25/HU-26 listados ADMIN.
 Sprint 10 — HU-20 orden descendente HU-05 perfil HU-24 guardar oferta HU-27 eliminar empresas/reclutadores ADMIN + copy seguridad/consentimiento.
 Sprint 11 — HU-29 establecer match; HU-30 chatear reclutador; HU-31 responder match y chatear candidato (vista Chats unificada con pendientes tras «Ver después»).
 Sprint 12 — Tests críticos backend/IA (Tika, fairness, POST /match, score, integración esencial + chat mínimo) + optimización velocidad IA + CI/CD pipeline suite crítica.
@@ -1101,7 +1103,7 @@ Sprint 13 — E2E Docker; bugs críticos; invariante matching; Postman + demo st
 ================================================================================
 APÉNDICE B — BACKLOG “SOLO SI SOBRA TIEMPO” (NO BLOQUEA MVP)
 ================================================================================
-HU-14, HU-18 (descartada por estado único ACTIVE), HU-22
+HU-14, HU-18 (cierre automático por fecha; reemplazado por closing_date + CLOSING_DUE), HU-22
 
 ================================================================================
 FIN DEL DOCUMENTO

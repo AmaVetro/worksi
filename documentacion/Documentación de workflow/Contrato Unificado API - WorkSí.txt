@@ -1,5 +1,5 @@
 CONTRATO UNIFICADO DE INTEGRACION - WORKSI
-Version: 1.13
+Version: 1.15
 Estado: Oficial para desarrollo paralelo (Backend + Web + Android)
 
 
@@ -11,8 +11,39 @@ OBJETIVO
 
 ALCANCE
 - Incluye: endpoints, autenticacion, registro candidato (incluido un solo request de alta con consentimiento), perfiles, catalogos, CV, ofertas, matching, swipe, postulaciones, chat y match reclutador-candidato (MVP mensajeria), vistas empresa, alta empresa y reclutadores por administrador del sistema (web MVP).
-- Incluye en plan obligatorio MVP: HU-16 (editar oferta reclutador, Sprint 8), HU-17 (eliminar oferta, Sprint 9), HU-28 (detalle score matching reclutador, Sprint 8), HU-29–HU-31 (match/chat, Sprint 11) y mensajeria minima post-match (Flujo Pantallas App Web / Flujo Pantallas App Movil) con endpoints de esta seccion.
-- Excluye del MVP obligatorio: HU-14, HU-18 (descartada del diseño actual por estado único ACTIVE), HU-22, HU-24.
+- Incluye en plan obligatorio MVP: HU-16 (editar oferta reclutador, Sprint 8), HU-17 (activar/desactivar y eliminar oferta reclutador — implementado en web actual), HU-28 (detalle score matching reclutador, Sprint 8), HU-29–HU-31 (match/chat, Sprint 11) y mensajeria minima post-match (Flujo Pantallas App Web / Flujo Pantallas App Movil) con endpoints de esta seccion.
+- Excluye del MVP obligatorio: HU-14, HU-18 (cierre automatico de oferta al llegar fecha limite; reemplazado por closing_date informativa + filtro CLOSING_DUE), HU-22, HU-24.
+
+
+ENDPOINTS CONSUMIDOS POR FRONTWEB WEB (implementacion actual producto/frontWeb)
+- Autenticacion y recuperacion (publicos):
+  - POST /api/v1/auth/login
+  - POST /api/v1/auth/password-recovery/request
+  - POST /api/v1/auth/password-recovery/verify
+  - POST /api/v1/auth/password-recovery/reset
+- Administrador (Bearer ADMIN):
+  - POST /api/v1/admin/companies (multipart: data + image opcional)
+  - GET /api/v1/admin/companies?page&size&sort
+  - POST /api/v1/admin/recruiters
+  - GET /api/v1/admin/jobs/stats
+- Catalogos (publicos; formularios admin y ofertas):
+  - GET /api/v1/catalogs/regions
+  - GET /api/v1/catalogs/regions/{region_id}/communes
+  - GET /api/v1/catalogs/sectors
+  - GET /api/v1/catalogs/sectors/{sector_id}/skills
+- Reclutador (Bearer RECRUITER):
+  - GET /api/v1/company/profile
+  - GET /api/v1/company/profile/image (binario cuando has_protected_image)
+  - GET /api/v1/company/jobs/stats
+  - GET /api/v1/company/jobs?page&size&sort&status (status: ACTIVE | INACTIVE | CLOSING_DUE; frontWeb usa size=50 en primera carga del listado)
+  - POST /api/v1/company/jobs (multipart: data + image opcional)
+  - GET /api/v1/company/jobs/{job_id}
+  - GET /api/v1/company/jobs/{job_id}/image (binario cuando has_protected_image)
+  - PATCH /api/v1/company/jobs/{job_id} (multipart: data + image opcional; HU-16)
+  - PATCH /api/v1/company/jobs/{job_id}/status (body { "status": "ACTIVE" | "INACTIVE" })
+  - DELETE /api/v1/company/jobs/{job_id} (soft delete → DELETED)
+  - GET /api/v1/company/jobs/{job_id}/applications?page&size&sort (frontWeb usa size=100 al resolver una postulacion concreta)
+- Aun no consumidos por frontWeb (definidos en contrato para movil u otras pantallas web futuras): GET /api/v1/auth/me, PATCH /api/v1/company/profile/image, PATCH /api/v1/company/applications/{application_id}/viewed, rutas /api/v1/candidate/*, rutas /api/v1/chat/*.
 
 
 ARQUITECTURA OBLIGATORIA
@@ -89,7 +120,7 @@ ENUMS OFICIALES
 - role: CANDIDATE | ADMIN | RECRUITER
 - modality: REMOTE | HYBRID | ONSITE
 - workload: FULL_TIME | PART_TIME | OTHER
-- job_status: ACTIVE
+- job_status: ACTIVE | INACTIVE | DELETED
 - application_status: APPLIED | VIEWED | CANCELLED
 - swipe_action: PASS | APPLY
 
@@ -207,14 +238,26 @@ ENDPOINTS DE AUTENTICACION
 }
 
 
-2.2) Listar empresas (administrador del sistema)
+2.2) Estadisticas de ofertas activas (administrador del sistema)
+- GET /api/v1/admin/jobs/stats
+- Auth: Bearer ADMIN
+- Reglas:
+  - active_jobs_total: total de ofertas con status ACTIVE en todo el sistema (todas las empresas/reclutadores).
+- Response 200:
+{
+  "active_jobs_total": 42
+}
+- Uso en frontWeb: bloque "Reclutamiento" en /home (portal administrador).
+
+
+2.3) Listar empresas (administrador del sistema)
 - GET /api/v1/admin/companies?page=1&size=20&sort=created_at,desc
 - Auth: Bearer ADMIN
 - Response 200 (formato paginado estandar):
 - items minimos por fila para desplegable "Registrar reclutadores": company_id, commercial_name, corporate_email (y opcionalmente legal_name, rut).
 
 
-2.3) Alta reclutador (administrador del sistema) — Flujo web MVP
+2.4) Alta reclutador (administrador del sistema) — Flujo web MVP
 - POST /api/v1/admin/recruiters
 - Auth: Bearer ADMIN
 - Content-Type: application/json
@@ -538,18 +581,21 @@ OFERTAS (EMPRESA)
   "modality": "HYBRID",
   "workload": "FULL_TIME",
   "skills_ids": [1,2,3],
+  "closing_date": "2026-12-31",
   "image_url": null
 }
+- closing_date: obligatorio; formato ISO date YYYY-MM-DD (tipo DATE en BD). Guia visual para el reclutador; no desactiva ni elimina la oferta automaticamente al llegar esa fecha.
 - Reglas imagen:
   - Si parte image viene con archivo no vacio: debe ser PNG o JPEG; el backend guarda bajo worksi.storage.job-images (por defecto bajo el mismo arbol que WORKSI_CV_STORAGE_DIR en Docker: subcarpeta job-images) y persiste en jobs.image_url la ruta absoluta del archivo (mismo criterio operativo que imagen de empresa en alta admin).
   - Si no hay parte image: opcionalmente image_url en el JSON puede ser URL http(s) u omitirse/null sin imagen.
   - Si hay parte image, esta tiene prioridad sobre image_url del JSON para lo que quede guardado en jobs.image_url.
 - Validaciones (sobre JSON data):
-  - company_commercial_name, title, description, region_id, commune_id, salary_offered, years_experience_required, modality, workload obligatorios; image_url en JSON opcional si no hay archivo.
+  - company_commercial_name, title, description, region_id, commune_id, salary_offered, years_experience_required, modality, workload, closing_date obligatorios; image_url en JSON opcional si no hay archivo.
   - skills_ids entre 3 y 8 (y minimo 3, alineado a Flujo Pantallas App Web).
+  - closing_date debe ser fecha valida; en frontWeb el campo date exige minimo el dia actual al crear.
 - No enviar ni persistir requirements.
 - Regla estado:
-  - para MVP obligatorio, se crea ACTIVE por defecto.
+  - se crea ACTIVE por defecto; created_at y published_at se persisten al publicar.
 - Response 201:
 {
   "id": 5001,
@@ -558,23 +604,53 @@ OFERTAS (EMPRESA)
 }
 
 18) Listar mis ofertas
-- GET /api/v1/company/jobs?page=1&size=20&sort=created_at,desc
+- GET /api/v1/company/jobs?page=1&size=20&sort=created_at,desc&status=ACTIVE
 - Auth: RECRUITER
-- Response item minimo (campos adicionales al detalle resumido):
+- Query param status (opcional; default ACTIVE):
+  - ACTIVE: solo ofertas activas del reclutador autenticado.
+  - INACTIVE: solo ofertas inactivas del reclutador autenticado.
+  - CLOSING_DUE: ofertas ACTIVE o INACTIVE del reclutador cuya closing_date es hoy o anterior (zona America/Santiago). No incluye DELETED. Filtro de guia visual; no cambia estados en backend.
+- Reglas:
+  - Nunca lista ofertas DELETED.
+  - frontWeb envia sort=created_at,desc; en listado usa size=50 en la primera carga.
+- Response item minimo (campos usados por frontWeb en listado):
 {
   "id": 5001,
   "title": "Desarrollador Backend Java",
+  "company_commercial_name": "Empresa X",
+  "salary_offered": 1400000,
+  "modality": "HYBRID",
+  "workload": "FULL_TIME",
   "status": "ACTIVE",
   "published_at": "2026-04-25T03:40:00Z",
+  "created_at": "2026-04-25T03:40:00Z",
+  "closing_date": "2026-12-31",
   "applications_count": 12
 }
 - applications_count: numero de postulaciones APPLIED o VIEWED asociadas a esa oferta (para UI en listado de ofertas web; Flujo Pantallas App Web).
+- closing_date en respuesta: formato YYYY-MM-DD (ISO date).
+
+18.1) Estadisticas de mis ofertas (dashboard reclutador)
+- GET /api/v1/company/jobs/stats
+- Auth: RECRUITER
+- Reglas:
+  - Solo cuenta ofertas publicadas por el reclutador autenticado (published_by_user_id). No incluye DELETED.
+  - active_count: ofertas con status ACTIVE del reclutador.
+  - inactive_count: ofertas con status INACTIVE del reclutador.
+  - published_today_count: ofertas ACTIVE cuya published_at cae en el dia calendario actual en zona America/Santiago (published_at persistido en UTC; el servidor traduce el rango del dia).
+- Response 200:
+{
+  "active_count": 5,
+  "inactive_count": 0,
+  "published_today_count": 2
+}
 
 19) Ver detalle oferta propia
 - GET /api/v1/company/jobs/{job_id}
 - Auth: RECRUITER
 - Regla autorizacion:
   - solo accede al job_id si la oferta fue publicada por ese mismo reclutador (titular RECRUITER de la sesion).
+  - ofertas DELETED responden 404 (no accesibles en detalle ni imagen).
 - Response 200 (ejemplo; alineado a creacion multipart seccion 17 cuando hay imagen de archivo en disco):
 {
   "id": 5001,
@@ -594,6 +670,8 @@ OFERTAS (EMPRESA)
   "has_protected_image": true,
   "status": "ACTIVE",
   "published_at": "2026-04-25T03:40:00Z",
+  "created_at": "2026-04-25T03:40:00Z",
+  "closing_date": "2026-12-31",
   "applications_count": 12,
   "skills_ids": [79, 77, 83],
   "skills": [
@@ -624,16 +702,58 @@ OFERTAS (EMPRESA)
 - Auth: RECRUITER
 - Content-Type: multipart/form-data (misma estructura que POST seccion 17)
 - Form-data:
-  - data (string JSON obligatorio): mismos campos editables que creacion (company_commercial_name, title, description, region_id, commune_id, salary_offered, years_experience_required, modality, workload, skills_ids; image_url en JSON opcional si no hay parte image).
+  - data (string JSON obligatorio): mismos campos editables que creacion (company_commercial_name, title, description, region_id, commune_id, salary_offered, years_experience_required, modality, workload, closing_date, skills_ids; image_url en JSON opcional si no hay parte image).
   - image (binario PNG o JPEG): opcional; si viene archivo, reemplaza imagen almacenada con misma regla que POST.
 - Reglas autorizacion:
   - solo el reclutador publicador de la oferta (misma titularidad que GET detalle).
+  - no aplica sobre ofertas DELETED (404).
 - Validaciones:
-  - mismas que POST seccion 17 (skills_ids 3..8, region_id/commune_id coherentes, etc.).
+  - mismas que POST seccion 17 (skills_ids 3..8, region_id/commune_id coherentes, closing_date obligatorio, etc.).
 - Reglas negocio:
-  - no cambia company_id ni published_by_user_id.
-  - status ACTIVE se mantiene salvo reglas futuras de HU-17.
+  - no cambia company_id, published_by_user_id ni created_at.
+  - status no se modifica por este PATCH; usar seccion 19.3 para ACTIVE/INACTIVE.
 - Response 200: mismo cuerpo que GET /api/v1/company/jobs/{job_id} (seccion 19) tras persistir cambios.
+
+
+19.3) Activar o desactivar oferta propia (HU-17 — ciclo de vida)
+- PATCH /api/v1/company/jobs/{job_id}/status
+- Auth: RECRUITER
+- Content-Type: application/json
+- Request:
+{
+  "status": "INACTIVE"
+}
+- Valores permitidos en status: ACTIVE | INACTIVE (no DELETED por este endpoint).
+- Reglas autorizacion:
+  - solo el reclutador publicador de la oferta.
+  - ofertas DELETED responden 404.
+- Reglas negocio:
+  - idempotente: enviar el mismo status ya persistido no falla.
+  - no altera closing_date ni fechas de publicacion.
+- Response 200:
+{
+  "id": 5001,
+  "status": "INACTIVE"
+}
+- Uso en frontWeb: boton encendido/apagado en listado /recruiter/ofertas y detalle /recruiter/ofertas/{job_id}.
+
+
+19.4) Eliminar oferta propia (HU-17 — soft delete)
+- DELETE /api/v1/company/jobs/{job_id}
+- Auth: RECRUITER
+- Reglas autorizacion:
+  - solo el reclutador publicador de la oferta.
+  - ofertas ya DELETED responden 404.
+- Reglas negocio:
+  - no borra fisicamente la fila; persiste status DELETED.
+  - la oferta deja de aparecer en GET /api/v1/company/jobs (cualquier filtro status).
+  - candidatos no deben ver ofertas DELETED en feed ni postular.
+- Response 200:
+{
+  "id": 5001,
+  "status": "DELETED"
+}
+- Uso en frontWeb: boton X con modal de confirmacion en listado y detalle de oferta.
 
 
 OFERTAS (CANDIDATO)
@@ -750,9 +870,10 @@ POSTULACIONES EMPRESA
 - GET /api/v1/company/jobs/{job_id}/applications?page=1&size=20&sort=match_score,desc
 - Auth: RECRUITER
 - Reglas:
-  - solo oferta propia (reclutador publicador).
+  - solo oferta propia (reclutador publicador); oferta DELETED responde 404.
   - orden por score descendente para HU-20.
   - cada item incluye match_score y match_breakdown para HU-28 (pantalla «Detalle de Score» / «Ver postulacion»).
+  - frontWeb usa size=100 al resolver una postulacion concreta en /recruiter/ofertas/{job_id}/postulaciones/{application_id} y en detalle de score.
 - Response 200 item ejemplo:
 {
   "application_id": 8001,
@@ -1049,6 +1170,7 @@ MATRIZ DE AUTORIZACION
   - POST /api/v1/admin/companies
   - GET /api/v1/admin/companies
   - POST /api/v1/admin/recruiters
+  - GET /api/v1/admin/jobs/stats
 - CANDIDATE (Bearer access_token rol CANDIDATE):
   - GET /api/v1/auth/me
   - GET /api/v1/candidate/profile
@@ -1074,8 +1196,11 @@ MATRIZ DE AUTORIZACION
   - PATCH /api/v1/company/profile/image
   - POST /api/v1/company/jobs
   - GET /api/v1/company/jobs
+  - GET /api/v1/company/jobs/stats
   - GET /api/v1/company/jobs/{job_id}
   - PATCH /api/v1/company/jobs/{job_id}
+  - PATCH /api/v1/company/jobs/{job_id}/status
+  - DELETE /api/v1/company/jobs/{job_id}
   - GET /api/v1/company/jobs/{job_id}/image
   - GET /api/v1/company/jobs/{job_id}/applications
   - PATCH /api/v1/company/applications/{application_id}/viewed
@@ -1091,13 +1216,16 @@ MATRIZ DE AUTORIZACION
 CHECKLIST DE INTEGRACION FINAL
 - Login candidato, reclutador y administrador operativos con JWT y POST /api/v1/auth/login (roles CANDIDATE, RECRUITER, ADMIN; sin usuario empresa ni rol COMPANY).
 - Registro candidato: un solo POST /api/v1/auth/register/candidate (multipart: data JSON + file PDF) con consent_given=true y todos los datos de identidad, perfil, skills y preferencias; consentimiento en "Uso de datos"; JWT CANDIDATE en la respuesta.
-- Web MVP empresa: alta empresa (datos negocio company_id, corporate_email obligatorio en ficha; sin login empresa) POST /api/v1/admin/companies (multipart) con ADMIN; listado GET /api/v1/admin/companies; alta reclutador POST /api/v1/admin/recruiters con company_id; login reclutador con mismo POST /api/v1/auth/login que admin (respuesta user con nombres para RECRUITER segun contrato).
+- Web MVP empresa: alta empresa (datos negocio company_id, corporate_email obligatorio en ficha; sin login empresa) POST /api/v1/admin/companies (multipart) con ADMIN; listado GET /api/v1/admin/companies; alta reclutador POST /api/v1/admin/recruiters con company_id; stats admin GET /api/v1/admin/jobs/stats (active_jobs_total); login reclutador con mismo POST /api/v1/auth/login que admin (respuesta user con nombres para RECRUITER segun contrato).
 - Lectura ficha empresa en sesion reclutador: GET /api/v1/company/profile (incluye commercial_name y corporate_email); imagen en disco: GET /api/v1/company/profile/image cuando has_protected_image.
 - Endpoint historico POST /api/v1/auth/register/company fuera del contrato MVP (ver seccion registro empresa no MVP).
 - CV PDF <= 1MB validado y almacenado.
-- Oferta creada con POST /api/v1/company/jobs multipart (data JSON + image opcional PNG/JPEG), company_commercial_name, sin requirements, salary_offered y years_experience_required obligatorios, skills 3..8.
-- Detalle oferta reclutador GET /api/v1/company/jobs/{job_id} con region_name, commune_name, skills (id y name) y campos de imagen external_image_url / has_protected_image; imagen en disco con GET /api/v1/company/jobs/{job_id}/image cuando has_protected_image.
-- Edicion oferta HU-16: PATCH /api/v1/company/jobs/{job_id} multipart (mismas reglas que POST).
+- Oferta creada con POST /api/v1/company/jobs multipart (data JSON + image opcional PNG/JPEG), company_commercial_name, closing_date obligatorio (YYYY-MM-DD), sin requirements, salary_offered y years_experience_required obligatorios, skills 3..8; status inicial ACTIVE.
+- Listado ofertas reclutador GET /api/v1/company/jobs con filtro status ACTIVE | INACTIVE | CLOSING_DUE; items con company_commercial_name, salary_offered, modality, workload, created_at, closing_date, applications_count.
+- Estadisticas dashboard reclutador GET /api/v1/company/jobs/stats (active_count, inactive_count, published_today_count; dia America/Santiago).
+- Detalle oferta reclutador GET /api/v1/company/jobs/{job_id} con region_name, commune_name, created_at, closing_date, skills (id y name) y campos de imagen external_image_url / has_protected_image; imagen en disco con GET /api/v1/company/jobs/{job_id}/image cuando has_protected_image.
+- Edicion oferta HU-16: PATCH /api/v1/company/jobs/{job_id} multipart (mismas reglas que POST, incluido closing_date).
+- Ciclo de vida oferta HU-17: PATCH /api/v1/company/jobs/{job_id}/status (ACTIVE|INACTIVE); DELETE /api/v1/company/jobs/{job_id} (soft delete DELETED).
 - Listado postulaciones empresa GET /api/v1/company/jobs/{job_id}/applications con match_score y match_breakdown por fila (HU-28 / Detalle de Score).
 - Chat MVP: POST /api/v1/chat/conversations (match + primer mensaje max 80), listado GET /api/v1/chat/conversations, pendiente candidato GET /api/v1/chat/conversations/pending, mensajes GET/POST /api/v1/chat/conversations/{conversation_id}/messages con polling after_message_id; solo participantes leen/escriben.
 - Feed candidato sin repeticion de ofertas.

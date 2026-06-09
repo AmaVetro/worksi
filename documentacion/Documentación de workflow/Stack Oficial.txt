@@ -223,11 +223,11 @@ PDF → texto (Tika) en backend → limpieza básica → fairness (spaCy/regex) 
 
 4. 📌 Backlog opcional (solo si sobra tiempo)
 HU-14: Cancelar postulación
-HU-18: Activar/desactivar oferta (descartada del diseño actual por estado único ACTIVE)
+HU-18: Cierre automático de oferta al llegar fecha límite (excluido del MVP; reemplazado por closing_date + filtro CLOSING_DUE)
 HU-22: Eliminación de cuenta
 HU-24: Guardar oferta
 
-Plan obligatorio MVP (Sprint oficiales): HU-16 editar oferta (Sprint 8); HU-28 detalle score matching reclutador (Sprint 8); HU-17 eliminar oferta (Sprint 9); HU-29–HU-31 match/chat (Sprint 11).
+Plan obligatorio MVP (Sprint oficiales): HU-16 editar oferta (Sprint 8); HU-28 detalle score matching reclutador (Sprint 8); HU-17 ciclo de vida oferta activar/desactivar/eliminar (Sprint 9); HU-29–HU-31 match/chat (Sprint 11). Referencia API y web: Contrato Unificado API v1.15 y Flujo Pantallas App Web.
 
 5. 🧪 Regla esencial de testing
 En frontends no se implementan tests automatizados ni carpetas de testing; quienes hacen web y móvil comprueban el producto a ojo, flujo a flujo. Sprint 12: tests automatizados de integración solo de funcionalidades más críticas (pipeline IA, seguridad auth, postulación, chat mínimo, integración Spring ↔ FastAPI) vía GitHub Actions. Sprint 13: pasada E2E manual, bugs críticos y demo. No se pide performance avanzada, suites E2E automatizadas en frontends ni cobertura de funcionalidades no críticas.

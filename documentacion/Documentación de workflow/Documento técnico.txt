@@ -35,8 +35,8 @@ Postulación rápida
 Gestión de perfil
 Match y chat con empresas (HU-31; vista «Chats»)
 4.2 Aplicación web (ADMIN y RECRUITER)
-Portal administrador: alta de ficha empresa (datos de negocio incluido correo corporativo de contacto; sin credencial de login para la empresa) y alta de reclutadores vinculados a company_id; listado de empresas.
-Portal reclutador: creación y gestión de ofertas bajo /api/v1/company/*, visualización de postulantes, orden por compatibilidad, marcado automático VIEWED al abrir detalle de postulación (HU-23), match y chat (HU-29–HU-31; ver Flujo Pantallas App Web y Contrato Unificado API).
+Portal administrador: alta de ficha empresa (datos de negocio incluido correo corporativo de contacto; sin credencial de login para la empresa) y alta de reclutadores vinculados a company_id; listado de empresas; stats GET /api/v1/admin/jobs/stats.
+Portal reclutador: inicio con visores GET /api/v1/company/jobs/stats; creación y gestión de ofertas bajo /api/v1/company/* (closing_date, filtros ACTIVE|INACTIVE|CLOSING_DUE, PATCH status, DELETE soft delete); visualización de postulantes, orden por compatibilidad, marcado automático VIEWED al abrir detalle de postulación (HU-23), match y chat (HU-29–HU-31; ver Flujo Pantallas App Web y Contrato Unificado API v1.15).
 5. USUARIOS OBJETIVO
 Candidatos
 Personas en búsqueda de empleo
@@ -200,7 +200,7 @@ El puente entre ambos se implementa con mapeo explícito (anotaciones/configurac
 12.1 Autenticación
 Registro candidato en app móvil vía POST /api/v1/auth/register/candidate (multipart) tras consentimiento; en web MVP no hay registro público de empresa: alta empresa y reclutadores solo por ADMIN (Contrato Unificado API).
 Login unificado web (ADMIN y RECRUITER) y login candidato (móvil): POST /api/v1/auth/login; JWT solo access token; roles oficiales CANDIDATE, ADMIN, RECRUITER (sin usuario empresa ni rol COMPANY).
-En app móvil de postulantes y en web (admin/reclutador): bloqueo tras 4 intentos fallidos de login y derivación a pantallas de recuperación (regla Contrato MVP v1.7+).
+En app móvil de postulantes y en web (admin/reclutador): bloqueo tras 4 intentos fallidos de login y derivación a pantallas de recuperación (regla Contrato MVP v1.15).
 En MVP la recuperación no usa código OTP real para el usuario: pantallas intermedias maqueta; solo la nueva contraseña persiste en backend; sin mensajes reales al correo.
 12.2 Módulo Candidatos
 CRUD perfil
@@ -210,10 +210,10 @@ Consentimiento obligatorio para uso de datos en pantalla "Uso de datos", que es 
 En app móvil de postulantes: carga de CV con límite de 1 MB
 En app móvil de postulantes: selección de skills con mínimo 3 y máximo 12 en el flujo de registro (pantallas previas a "Uso de datos", estado en cliente) o en edición de perfil autenticado
 12.3 Módulo Ofertas
-Crear (HU-15)
-Editar oferta reclutador HU-16 (Sprint 8; PATCH /api/v1/company/jobs/{job_id})
-Eliminar oferta HU-17 (Sprint 9; plan obligatorio MVP)
-Activar/desactivar (solo si sobra tiempo)
+Crear (HU-15; closing_date obligatorio; status inicial ACTIVE)
+Editar oferta reclutador HU-16 (Sprint 8; PATCH /api/v1/company/jobs/{job_id}; incluye closing_date)
+Ciclo de vida oferta HU-17 (Sprint 9; plan obligatorio MVP): activar/desactivar PATCH /api/v1/company/jobs/{job_id}/status (ACTIVE|INACTIVE); eliminar DELETE soft delete → DELETED
+Estados job_status: ACTIVE | INACTIVE | DELETED; filtro listado CLOSING_DUE (guía visual por closing_date; sin cierre automático — HU-18 excluido)
 12.4 Módulo Postulaciones
 Crear postulación
 Listar postulaciones
@@ -243,7 +243,7 @@ En pantalla de ofertas: swipe izquierda = pasar, swipe derecha = postular con co
 En postulaciones móviles (MVP): estados visibles APPLIED y VIEWED; CANCELLED queda para backlog opcional
 Web (ADMIN + RECRUITER)
 Login único sin registro público en landing; administrador inicial vía datos sembrados (password_hash); reclutadores creados por ADMIN con company_id.
-Panel administrador: registrar empresa (ficha) y registrar reclutadores; panel reclutador: ofertas (crear HU-15, editar HU-16 PATCH /api/v1/company/jobs/{job_id}, eliminar HU-17), postulantes, desglose score HU-28 (GET /api/v1/company/jobs/{job_id}/applications con match_breakdown), VIEWED automático HU-23, match/chat HU-29–HU-31, orden por compatibilidad (alinear a Flujo Pantallas App Web y Contrato Unificado API).
+Panel administrador: registrar empresa (ficha) y registrar reclutadores; stats GET /api/v1/admin/jobs/stats; panel reclutador: inicio con visores GET /api/v1/company/jobs/stats; ofertas (crear HU-15 con closing_date, listar con filtros ACTIVE|INACTIVE|CLOSING_DUE, editar HU-16, activar/desactivar y eliminar HU-17), postulantes, desglose score HU-28 (GET /api/v1/company/jobs/{job_id}/applications con match_breakdown), VIEWED automático HU-23, match/chat HU-29–HU-31, orden por compatibilidad (alinear a Flujo Pantallas App Web y Contrato Unificado API v1.15).
 14. INFRAESTRUCTURA
 
 Servicios en Docker:
@@ -283,13 +283,13 @@ Swipe funcional
 Gestión base de postulaciones (crear/listar)
 Explicación básica
 HU-16: Editar oferta (Sprint 8)
-HU-17: Eliminar oferta (Sprint 9)
+HU-17: Ciclo de vida oferta — activar/desactivar y eliminar (Sprint 9)
 HU-28: Detalle score matching reclutador (Sprint 8)
 HU-29–HU-31: Match y chat reclutador-candidato (Sprint 11)
 
 Solo si sobra tiempo (backlog opcional):
 HU-14: Cancelar postulación
-HU-18: Activar/desactivar oferta (descartada del diseño actual por estado único ACTIVE)
+HU-18: Cierre automático de oferta al llegar fecha límite (excluido; reemplazado por closing_date + CLOSING_DUE)
 HU-22: Eliminación de cuenta
 HU-24: Guardar oferta
 

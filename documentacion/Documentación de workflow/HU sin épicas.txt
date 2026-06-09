@@ -57,7 +57,7 @@ Criterios de aceptación:
 * Persistencia de sesión en cliente
 * Logout elimina sesión
 * En app móvil de postulantes y en web (admin/reclutador), tras 4 intentos fallidos
- se bloquea el acceso y se deriva al flujo de pantallas de recuperación de contraseña (Contrato — regla MVP v1.7+).
+ se bloquea el acceso y se deriva al flujo de pantallas de recuperación de contraseña (Contrato — regla MVP v1.15).
 * En MVP, la recuperación no es real salvo la pantalla de nueva contraseña: no se genera ni se exige validar un código OTP contra el usuario; las pantallas y botones de solicitar/ingresar/reenviar código son solo maqueta (el usuario debe poder avanzar con cualquier texto en el campo código); la única parte funcional obligatoria es confirmar nueva contraseña en backend (`password_hash`); no hay envío real de correo.
 
 
@@ -237,9 +237,10 @@ region_id y commune_id coherentes con catálogo
 salary_offered (obligatorio en API y modelo)
 years_experience_required (obligatorio en API y modelo)
 modality y workload conforme enums del contrato
+closing_date obligatorio (YYYY-MM-DD; guía visual; no cierra la oferta automáticamente al llegar esa fecha)
 skills_ids entre 3 y 8 asociadas a la oferta
 * Opcional: image_url por oferta (imagen propia del aviso).
-* Persistencia ACTIVE según MVP; estado único ACTIVE.
+* Status inicial ACTIVE al publicar; estados de oferta en dominio: ACTIVE, INACTIVE, DELETED (Contrato Unificado API v1.15).
 * En vistas resumidas del producto pueden mostrarse hasta 4 skills en el card; hasta 8 en detalle candidato según contrato.
 * El porcentaje final del producto combina las cinco dimensiones oficiales de matching (description, title, modality, workload, años de experiencia); ver Contrato Unificado API. job_text concatenado para llamadas IA no incluye job_skills, salary_offered ni company_commercial_name; years_experience_required entra como dimensión estructurada, no dentro de esa cadena.
 * Validación de campos
@@ -263,26 +264,29 @@ Criterios de aceptación:
 
 
 
-HU-17 — Eliminar oferta (Sprint 9 — plan obligatorio MVP)
+HU-17 — Ciclo de vida de oferta: activar/desactivar y eliminar (Sprint 9 — plan obligatorio MVP; implementado en web actual)
 Como reclutador (RECRUITER)
-* Quiero eliminar una oferta
-* Para retirar publicaciones
-Criterios de aceptación:
-* Eliminación confirmada
-* No visible para candidatos
-* No rompe postulaciones previas
+* Quiero activar, desactivar o eliminar una oferta
+* Para controlar su visibilidad y retirar publicaciones
+Criterios de aceptación (Flujo Pantallas App Web + Contrato Unificado API v1.15 secciones 19.3 y 19.4):
+* Activar/desactivar: PATCH /api/v1/company/jobs/{job_id}/status con body { "status": "ACTIVE" | "INACTIVE" }; botón encendido/apagado en listado y detalle de oferta.
+* Eliminar: DELETE /api/v1/company/jobs/{job_id} (soft delete → status DELETED); modal de confirmación previa en UI («¿Desea eliminar la oferta?»).
+* Tras eliminar o desactivar: oferta no visible para candidatos en feed ni detalle (solo ACTIVE en feed candidato).
+* Ofertas DELETED no aparecen en GET /api/v1/company/jobs (cualquier filtro status).
+* No rompe postulaciones previas (historial conservado).
+* Filtro «Por cerrar» en listado web: GET /api/v1/company/jobs?status=CLOSING_DUE (guía visual; no cambia estados automáticamente).
 
 
 
 
 
-HU-18 — Activar/desactivar oferta (SÓLO SI SOBRA TIEMPO, descartada del diseño actual por estado único ACTIVE)
+HU-18 — Cierre automático de oferta al llegar fecha límite (EXCLUIDO del MVP obligatorio)
 Como reclutador (RECRUITER)
-* Quiero activar o desactivar una oferta
-* Para controlar su visibilidad
+* Quiero que el sistema cierre la oferta automáticamente al llegar una fecha
+* Para no depender de acción manual
 Criterios de aceptación:
-* No aplica en el diseño actual (estado único ACTIVE)
-* Todas las ofertas del sistema son ACTIVE
+* No aplica en el diseño actual (Contrato v1.15 y Flujo Pantallas App Web).
+* Reemplazado por closing_date informativa en crear/editar oferta y filtro CLOSING_DUE en listado; el reclutador activa/desactiva o elimina manualmente (HU-17).
 
 
 
@@ -478,7 +482,7 @@ HU-29 — Establecer match con candidato (Sprint 11 — plan obligatorio MVP)
 Como reclutador (RECRUITER)
 * Quiero establecer match con un candidato que postuló a mi oferta
 * Para iniciar una conversación con ese postulante
-Criterios de aceptación (alineados a Flujo Pantallas App Web y Contrato Unificado API v1.13 sección 28):
+Criterios de aceptación (alineados a Flujo Pantallas App Web y Contrato Unificado API v1.15 sección 28):
 * Solo el reclutador puede iniciar el match; el candidato no crea la conversación.
 * Desde la pantalla «Perfil postulantes» (HU-19), botón visible «Establecer Match».
 * Al pulsarlo: modal «¿Desea establecer match con candidato [nombre]?» con botones «Sí» y «Cancelar»; «Cancelar» cierra el modal sin cambios.
@@ -495,7 +499,7 @@ HU-30 — Chatear con candidatos (match) (Sprint 11 — plan obligatorio MVP)
 Como reclutador (RECRUITER)
 * Quiero ver mis matchs y chatear con los candidatos con los que establecí match
 * Para comunicarme con postulantes de interés
-Criterios de aceptación (alineados a Flujo Pantallas App Web y Contrato Unificado API v1.13 secciones 29–33):
+Criterios de aceptación (alineados a Flujo Pantallas App Web y Contrato Unificado API v1.15 secciones 29–33):
 * En Inicio y Reclutamiento del portal reclutador: bloque «Matchs» con botón «Ir a ver» (sustituye el acceso antiguo a postulaciones en esos bloques; las postulaciones se consultan desde la oferta, HU-19).
 * Pantalla «Matchs»: listado de conversaciones del reclutador en sesión vía GET /api/v1/chat/conversations; por fila identificación del candidato y acceso al hilo.
 * Pantalla «Chat con candidato»: historial de mensajes, campo para escribir y enviar; mensajes posteriores al primero respetan límite del contrato (p. ej. 500 caracteres); refresco periódico de nuevos mensajes (MVP sin WebSockets ni notificaciones push).
@@ -512,7 +516,7 @@ HU-31 — Responder match y chatear con empresa (Sprint 11 — plan obligatorio 
 Como candidato
 * Quiero saber cuando una empresa quiere hacer match conmigo y poder chatear con ella
 * Para responder al interés del reclutador y conversar sobre la oportunidad, incluso más tarde si pospuse la decisión
-Criterios de aceptación (alineados a Flujo Pantallas App Móvil y Contrato Unificado API v1.13 secciones 29–32):
+Criterios de aceptación (alineados a Flujo Pantallas App Móvil y Contrato Unificado API v1.15 secciones 29–32):
 * El acceso a todos los chats y matchs pendientes es mediante la vista «Chats» (ícono de mensajería en pantalla Ofertas, HU-10).
 * Tras login exitoso, si hay match pendiente (reclutador ya envió primer mensaje y el candidato aún no ha respondido): modal a pantalla completa «¡Una empresa quiere hacer match contigo!» con nombre comercial de la empresa (no nombre del reclutador), botón «Responder Chat» y arriba «Ver después».
 * «Responder Chat» abre directamente el chat de esa conversación concreta (pantalla «Chat con empresa»).

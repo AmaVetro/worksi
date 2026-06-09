@@ -44,7 +44,7 @@ Estas HU no forman parte del compromiso del MVP ni consumen las semanas numerada
 
 ●    HU-14 — Cancelar postulación (candidato).
 
-●    HU-18 — Activar/desactivar oferta (descartada del diseño actual por estado único ACTIVE).
+●    HU-18 — Cierre automático de oferta al llegar fecha límite (excluido del MVP; reemplazado por closing_date + filtro CLOSING_DUE; activar/desactivar manual vía HU-17).
 
 ●    HU-22 — Eliminación de cuenta (política de datos y archivos asociados).
 
@@ -68,7 +68,7 @@ Sprint 2:   13 - 19 Abril 2026
 
 Esfuerzo total estimado del equipo: 10 h.
 Contenido:
-●    HU-03 — Login unificado POST /api/v1/auth/login, logout en cliente donde aplique; JWT solo access token; claims CANDIDATE | ADMIN | RECRUITER. Bloqueo tras 4 intentos fallidos y derivación a pantallas de recuperación (MVP: sin código OTP real para usuario; Contrato v1.7+ y Flujos).
+●    HU-03 — Login unificado POST /api/v1/auth/login, logout en cliente donde aplique; JWT solo access token; claims CANDIDATE | ADMIN | RECRUITER. Bloqueo tras 4 intentos fallidos y derivación a pantallas de recuperación (MVP: sin código OTP real para usuario; Contrato v1.15 y Flujos).
 ●    HU-02 — Alta empresa y reclutadores (modelo oficial): sin registro público ni rol COMPANY en MVP web. Como ADMIN autenticado: POST /api/v1/admin/companies (multipart, datos negocio con corporate_email obligatorio; sin clave ni cuenta de login empresa), GET /api/v1/admin/companies para desplegable, POST /api/v1/admin/recruiters con company_id existente + password reclutador bajo política. Referencia HU sin épicas y Contrato Oficial del repositorio.
 ●    Persistencia sólo password_hash para usuarios con login (nunca plaintext en BD ni en alta empresa desde panel admin).
 ●    Opcional tiempo restante en la semana: soporte backend mínimo para cierre de recuperación (persistir nueva contraseña) alineado Contrato MVP si aún falta; endpoints request/verify son referencia/evolución, no OTP real para usuario en MVP.
@@ -100,7 +100,7 @@ Sprint 5 (Sprint pesado):   4 - 10 Mayo 2026
 Esfuerzo total estimado del equipo: 10 h.
 Contenido:
 ●    Apache Tika en Spring Boot sobre CV almacenado; post procesamiento texto mínimo (saltos, ruido básico) para camino hacia fairness posterior.
-●    HU-15 — Crear oferta por RECRUITER (Contrato): company_commercial_name obligatorio en payload, description único texto largo (sin tabla separada requirements), region_id + commune_id coherentes catálogo, salary_offered y years_experience_required obligatorios, modality + workload enums, skills 3–8; job_text concatenado title/description/modality/workload hacia IA; years_experience_required como dimensión experience_score; PATCH /api/v1/company/profile/image para marca employer fuera texto semántico.
+●    HU-15 — Crear oferta por RECRUITER (Contrato v1.15): company_commercial_name obligatorio en payload, description único texto largo (sin tabla separada requirements), region_id + commune_id coherentes catálogo, salary_offered y years_experience_required obligatorios, closing_date obligatorio, modality + workload enums, skills 3–8; status inicial ACTIVE; job_text concatenado title/description/modality/workload hacia IA; years_experience_required como dimensión experience_score; PATCH /api/v1/company/profile/image para marca employer fuera texto semántico.
 ●    HU-10 — Feed o listados candidatos (GET candidate jobs feed / vistas mínimas) consumiendo ACTIVE.
 Equilibrio: insumos listos para fairness + IA semana siguiente.
 
@@ -155,7 +155,7 @@ Contenido (reclutador: complemento HU-19 y VIEWED sobre listado Sprint 8; no rep
 ●    HU-19 (complemento Sprint 9) — Pantalla «Ver postulación» con botones «Detalle de Score» (HU-28) y «Ver perfil de candidato»; «Perfil postulantes» solo lectura (igual app móvil sin edición); botón visible «Establecer Match» (flujo funcional HU-29 en Sprint 11); pulimiento navegaciones web.
 ●    HU-23 — Marcar VIEWED automático al abrir «Ver postulación» o «Perfil postulantes» (reclutador publicador); no al listar reverso de la card ni acción manual en UI.
 ●    Pulimiento navegaciones web segunda mitad HU panel (mensajes errores campo “Completa este campo”).
-●    HU-17 — Eliminar oferta (RECRUITER; confirmación previa; deja de ser visible para candidatos; no rompe postulaciones previas según HU sin épicas).
+●    HU-17 — Ciclo de vida de oferta (RECRUITER; activar/desactivar PATCH /api/v1/company/jobs/{job_id}/status; eliminar DELETE soft delete DELETED; confirmación previa en UI; deja de ser visible para candidatos; no rompe postulaciones previas según HU sin épicas y Flujo Pantallas App Web).
 ●    HU-25 — Ver empresas registradas (ADMIN; vista listado con GET /api/v1/admin/companies; datos mínimos comercial, corporate_email, teléfono, región, comuna, sector; vacío y errores manejados).
 ●    HU-26 — Ver reclutadores registrados (ADMIN; vista listado desde backend; nombre, apellidos, email, empresa asociada, rol; vacío y errores manejados).
 Equilibrio: operación empresa con APPLIED→VIEWED al abrir perfil postulante (HU-23); listado por oferta ya operativo desde Sprint 8; portal administrador con listados HU-25/HU-26 para gestión en Sprint 10.
@@ -181,7 +181,7 @@ Sprint 11 (Sprint pesado):  15 - 21 Junio 2026
 
 Esfuerzo total estimado del equipo: 18 h.
 Contenido (orden lógico: backend chat → HU-29 → HU-30 → HU-31):
-●    Migraciones BD y backend chat MVP (Contrato v1.13 secciones 28–33): POST /api/v1/chat/conversations, GET /api/v1/chat/conversations, GET /api/v1/chat/conversations/pending, GET/POST mensajes con polling after_message_id; permiso mínimo solo participantes.
+●    Migraciones BD y backend chat MVP (Contrato v1.15 secciones 28–33): POST /api/v1/chat/conversations, GET /api/v1/chat/conversations, GET /api/v1/chat/conversations/pending, GET/POST mensajes con polling after_message_id; permiso mínimo solo participantes.
 ●    HU-29 — Establecer match con candidato (reclutador): modal confirmación, primer mensaje max 80, éxito e «Ir al chat»; desde botón «Establecer Match» en perfil postulante (HU-19 Sprint 9).
 ●    HU-30 — Chatear con candidatos (match) (reclutador): bloques «Matchs» en Inicio y Reclutamiento («Ir a ver»); pantallas «Matchs» y «Chat con candidato» (polling).
 ●    HU-31 — Responder match y chatear con empresa (candidato): ícono mensajería en Ofertas (HU-10) → vista «Chats» única; modal post-login con «Responder Chat» o «Ver después»; «Chats» muestra conversaciones activas y matchs pendientes de revisar (pospuestos con «Ver después»); «Chat con empresa» (solo nombre comercial empresa).
@@ -205,7 +205,7 @@ Contenido (contenido anterior del Sprint 11 — cierre MVP):
 ●    Integración E2E: candidato móvil + flujo empresa con reclutadores creados por ADMIN en entorno único Docker; flujo match/chat incluido en demo si Sprint 11 cerrado; revisión checklist calidad Contrato oficial.
 ●    Bugs críticos recién detectados durante demo seca interna.
 ●    Validación invariante scoring: mismo CV + misma oferta → mismo resultado aún si solo cambian skills de perfil o skills listados job (persistiendo campos de dimensiones de score invariantes).
-●    Pasada integración backend Spring ↔ FastAPI acotada; Postman rutas prioritarias Spring y chat según Contrato v1.13.
+●    Pasada integración backend Spring ↔ FastAPI acotada; Postman rutas prioritarias Spring y chat según Contrato v1.15.
 ●    HU-22 queda opcional backlog (sección sólo tiempo extra).
 ●    Demo stakeholder: admin alta empresa/reclutadores, reclutador publica oferta, candidato registra, swipe + post, reclutador ve postulación (HU-19), Detalle de Score (HU-28), establece match (HU-29), chat bidireccional (HU-30/HU-31; candidato pospone con «Ver después» y retoma desde «Chats»).
 ●    Preparación entrega stakeholder.
@@ -236,7 +236,7 @@ LÓGICA DE DESARROLLO (RESUMEN)
 
 ●    HU-13 Sprint 8 (HU-19 mínimo card flip + listado postulantes, HU-28 «Detalle de Score», HU-16 editar oferta); Sprint 9 complemento HU-19 (Ver postulación completa, perfil solo lectura, botón Establecer Match) + HU-23 VIEWED + HU-17 + HU-25 + HU-26; Sprint 10 HU-20 HU-05 HU-24 HU-27; Sprint 11 HU-29 HU-30 HU-31 (match + chat); Sprint 12 tests críticos + optimización IA + CI/CD; cierre Sprint 13 E2E + demo.
 
-●    HU-16, HU-17, HU-24, HU-25, HU-26, HU-27, HU-28 y HU-29–HU-31 pasan a plan obligatorio MVP (Sprints 8–11). Sprint 8: HU-19 mínimo + HU-28 + HU-16; Sprint 9: HU-19 complemento + HU-23 + HU-17 + HU-25 + HU-26; Sprint 10: HU-20, HU-05, HU-24, HU-27; Sprint 11: HU-29, HU-30, HU-31. Backlog opcional salvo HU-14, HU-18, HU-22.
+●    HU-16, HU-17, HU-24, HU-25, HU-26, HU-27, HU-28 y HU-29–HU-31 pasan a plan obligatorio MVP (Sprints 8–11). Sprint 8: HU-19 mínimo + HU-28 + HU-16; Sprint 9: HU-19 complemento + HU-23 + HU-17 + HU-25 + HU-26; Sprint 10: HU-20, HU-05, HU-24, HU-27; Sprint 11: HU-29, HU-30, HU-31. Backlog opcional salvo HU-14, HU-18 (cierre automático por fecha), HU-22.
 
 ●    HU opcionales backlog restante no bloquean ruta crítica.
 

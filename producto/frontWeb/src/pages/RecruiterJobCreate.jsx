@@ -9,6 +9,10 @@ import {
   fetchSkillsBySector,
 } from "../services/catalogService";
 import { goBack } from "../utils/goBack";
+import {
+  todayDateDisplayValue,
+  todayDateInputValue,
+} from "../utils/formatJobDate";
 import "../styles/AdminForms.css";
 
 function emptyErrors() {
@@ -22,6 +26,7 @@ function emptyErrors() {
     years_experience_required: "",
     modality: "",
     workload: "",
+    closing_date: "",
     skills: "",
     sector_skills: "",
     image_file: "",
@@ -46,7 +51,9 @@ export default function RecruiterJobCreate() {
     years_experience_required: "",
     modality: "REMOTE",
     workload: "FULL_TIME",
+    closing_date: "",
   });
+  const creationDateLabel = todayDateDisplayValue();
   const [jobImageFile, setJobImageFile] = useState(null);
   const [fieldErrors, setFieldErrors] = useState(emptyErrors());
   const [apiError, setApiError] = useState("");
@@ -142,6 +149,7 @@ export default function RecruiterJobCreate() {
     req("years_experience_required");
     req("modality");
     req("workload");
+    req("closing_date");
     if (!sectorForSkills) {
       e.sector_skills = "Seleccione rubro para skills";
       ok = false;
@@ -184,6 +192,7 @@ export default function RecruiterJobCreate() {
         years_experience_required: Number(form.years_experience_required),
         modality: form.modality,
         workload: form.workload,
+        closing_date: form.closing_date,
         skills_ids: Array.from(selectedSkillIds),
       };
       await createJob(payload, jobImageFile);
@@ -333,6 +342,22 @@ export default function RecruiterJobCreate() {
                   <option value="PART_TIME">Part time</option>
                   <option value="OTHER">Otro</option>
                 </select>
+              </label>
+              <label>
+                Fecha creación
+                <input type="text" value={creationDateLabel} disabled readOnly />
+              </label>
+              <label>
+                Fecha cierre
+                <input
+                  type="date"
+                  min={todayDateInputValue()}
+                  value={form.closing_date}
+                  onChange={(e) => setField("closing_date", e.target.value)}
+                />
+                {fieldErrors.closing_date && (
+                  <span className="error-field">{fieldErrors.closing_date}</span>
+                )}
               </label>
               <label className="full">
                 Rubro para elegir skills (catálogo)

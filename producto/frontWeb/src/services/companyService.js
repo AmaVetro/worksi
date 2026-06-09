@@ -12,10 +12,27 @@ export async function getRecruiterCompanyProfileImageBlob() {
   return data;
 }
 
-export async function listMyJobs(page = 1, size = 20) {
+export async function listMyJobs(page = 1, size = 20, status = "ACTIVE") {
   const { data } = await api.get("/api/v1/company/jobs", {
-    params: { page, size, sort: "created_at,desc" },
+    params: { page, size, sort: "created_at,desc", status },
   });
+  return data;
+}
+
+export async function patchJobStatus(jobId, status) {
+  const { data } = await api.patch(`/api/v1/company/jobs/${jobId}/status`, {
+    status,
+  });
+  return data;
+}
+
+export async function deleteJob(jobId) {
+  const { data } = await api.delete(`/api/v1/company/jobs/${jobId}`);
+  return data;
+}
+
+export async function getMyJobStats() {
+  const { data } = await api.get("/api/v1/company/jobs/stats");
   return data;
 }
 

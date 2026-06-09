@@ -2,6 +2,8 @@ package cl.duoc.worksi.repository;
 
 import cl.duoc.worksi.entity.Job;
 import cl.duoc.worksi.entity.enums.JobStatus;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,6 +16,23 @@ public interface JobRepository extends JpaRepository<Job, Long> {
 
   Page<Job> findByStatusAndPublishedByUserId(
       JobStatus status, Long publishedByUserId, Pageable pageable);
+
+  @Query(
+      "SELECT j FROM Job j WHERE j.publishedByUserId = :userId AND j.status IN :statuses"
+          + " AND j.closingDate IS NOT NULL AND j.closingDate <= :closingOnOrBefore")
+  Page<Job> findDueForClosingByPublishedByUserId(
+      @Param("userId") Long publishedByUserId,
+      @Param("statuses") Collection<JobStatus> statuses,
+      @Param("closingOnOrBefore") LocalDate closingOnOrBefore,
+      Pageable pageable);
+
+  long countByStatusAndPublishedByUserId(JobStatus status, Long publishedByUserId);
+
+  long countByStatusAndPublishedByUserIdAndPublishedAtGreaterThanEqualAndPublishedAtLessThan(
+      JobStatus status,
+      Long publishedByUserId,
+      LocalDateTime publishedAtStartInclusive,
+      LocalDateTime publishedAtEndExclusive);
 
   Page<Job> findByStatusOrderByCreatedAtDesc(JobStatus status, Pageable pageable);
 

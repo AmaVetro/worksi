@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import ConfirmModal from "./ConfirmModal";
 import "../styles/Navbar.css";
 
 function readUser() {
@@ -25,6 +27,7 @@ function Navbar() {
   const user = readUser();
   const role = user.role;
   const isRecruiterShell = location.pathname.startsWith("/recruiter");
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -52,11 +55,21 @@ function Navbar() {
             <span>
               {roleLabel} · {recruiterFullName(user) || user.email || ""}
             </span>
-            <button type="button" onClick={handleLogout}>
+            <button type="button" onClick={() => setLogoutModalOpen(true)}>
               Cerrar sesión
             </button>
           </div>
         </div>
+        <ConfirmModal
+          open={logoutModalOpen}
+          message="¿Desea cerrar sesión?"
+          confirmLabel="Cerrar Sesión"
+          onConfirm={() => {
+            setLogoutModalOpen(false);
+            handleLogout();
+          }}
+          onCancel={() => setLogoutModalOpen(false)}
+        />
         <div className="navbar-menu">
           <div
             className={`nav-item ${isActive("/recruiter/home") ? "active" : ""}`}
@@ -91,11 +104,21 @@ function Navbar() {
             {roleLabel}
             {user.email ? ` · ${user.email}` : ""}
           </span>
-          <button type="button" onClick={handleLogout}>
+          <button type="button" onClick={() => setLogoutModalOpen(true)}>
             Cerrar sesión
           </button>
         </div>
       </div>
+      <ConfirmModal
+        open={logoutModalOpen}
+        message="¿Desea cerrar sesión?"
+        confirmLabel="Cerrar Sesión"
+        onConfirm={() => {
+          setLogoutModalOpen(false);
+          handleLogout();
+        }}
+        onCancel={() => setLogoutModalOpen(false)}
+      />
       <div className="navbar-menu">
         <div
           className={`nav-item ${isActive("/home") ? "active" : ""}`}

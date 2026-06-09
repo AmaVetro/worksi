@@ -2,6 +2,7 @@ package cl.duoc.worksi.dto.company;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 
 public class CompanyJobDetailResponse {
@@ -48,6 +49,12 @@ public class CompanyJobDetailResponse {
   @JsonProperty("published_at")
   private final Instant publishedAt;
 
+  @JsonProperty("created_at")
+  private final Instant createdAt;
+
+  @JsonProperty("closing_date")
+  private final LocalDate closingDate;
+
   @JsonProperty("skills_ids")
   private final List<Long> skillsIds;
 
@@ -74,6 +81,8 @@ public class CompanyJobDetailResponse {
       boolean hasProtectedImage,
       String status,
       Instant publishedAt,
+      Instant createdAt,
+      LocalDate closingDate,
       List<Long> skillsIds,
       List<CompanyJobSkillItemResponse> skills,
       long applicationsCount) {
@@ -94,6 +103,8 @@ public class CompanyJobDetailResponse {
     this.hasProtectedImage = hasProtectedImage;
     this.status = status;
     this.publishedAt = publishedAt;
+    this.createdAt = createdAt;
+    this.closingDate = closingDate;
     this.skillsIds = skillsIds;
     this.skills = skills;
     this.applicationsCount = applicationsCount;
@@ -166,6 +177,14 @@ public class CompanyJobDetailResponse {
 
   public Instant getPublishedAt() {
     return publishedAt;
+  }
+
+  public Instant getCreatedAt() {
+    return createdAt;
+  }
+
+  public LocalDate getClosingDate() {
+    return closingDate;
   }
 
   public List<Long> getSkillsIds() {

@@ -37,7 +37,7 @@ export function ApplicationsIcon({ className }) {
   );
 }
 
-export function ViewApplicationsButton({ count, onClick }) {
+export function ViewApplicationsButton({ count, onClick, disabled = false }) {
   const n = typeof count === "number" ? count : 0;
 
   return (
@@ -45,6 +45,7 @@ export function ViewApplicationsButton({ count, onClick }) {
       type="button"
       className="applications-view-btn"
       onClick={onClick}
+      disabled={disabled}
       title={`${n} postulación${n === 1 ? "" : "es"}`}
       aria-label={`Ver postulaciones, ${n} recibida${n === 1 ? "" : "s"}`}
     >

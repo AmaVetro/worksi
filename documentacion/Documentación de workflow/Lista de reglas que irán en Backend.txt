@@ -5,7 +5,7 @@ poner triggers):
 
 
 
-Bloqueo de login en ambos frontends (móvil y web) tras 4 intentos y derivación a pantallas de recuperación (MVP Contrato v1.7+).
+Bloqueo de login en ambos frontends (móvil y web) tras 4 intentos y derivación a pantallas de recuperación (MVP Contrato v1.15).
 
 Recuperación MVP (móvil y web): bloqueo a 4 intentos real; pantallas de solicitud/ingreso/reenvío de «código» son maqueta — sin código OTP real para el usuario; avance con cualquier texto en el campo; único paso con persistencia obligatoria: nueva contraseña (`password_hash`); sin envío de correo real.
 
@@ -34,7 +34,7 @@ Fairness (regex + spaCy) antes de embeddings.
 Explicación de match simple y sin datos sensibles; desglose match_breakdown por dimensiones (HU-28 reclutador; GET /api/v1/company/jobs/{job_id}/applications).
 Edición de oferta reclutador HU-16: PATCH /api/v1/company/jobs/{job_id}.
 
-Reglas de publicación de oferta (solo ACTIVE, cuándo se publica y cómo se llena published_at).
+Reglas de publicación y ciclo de vida de oferta: status inicial ACTIVE al crear; published_at y created_at al publicar; closing_date obligatorio (DATE; no desactiva ni elimina automáticamente); estados ACTIVE | INACTIVE | DELETED; PATCH /api/v1/company/jobs/{job_id}/status (ACTIVE|INACTIVE); DELETE soft delete → DELETED; listado con filtro status ACTIVE | INACTIVE | CLOSING_DUE (CLOSING_DUE = closing_date hoy o anterior, zona America/Santiago; guía visual); feed candidato solo ACTIVE; GET /api/v1/company/jobs/stats (active_count, inactive_count, published_today_count) y GET /api/v1/admin/jobs/stats (active_jobs_total) según Contrato v1.15.
 
 Regla VIEWED automático (HU-23): al abrir detalle de postulación por application_id (pantallas «Ver postulación» o «Perfil postulantes»), el reclutador publicador dispara APPLIED → VIEWED en servidor; idempotente; no al listar postulantes ni al postular; no requiere botón manual en UI (la BD valida fechas; el cambio lo ejecuta backend, no el usuario con acción explícita).
 
