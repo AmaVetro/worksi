@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import { getJob, listJobApplications } from "../services/companyService";
+import { getJob, getJobApplication } from "../services/companyService";
 import ApplicationMatchRow, {
   candidateFullName,
   matchLevelFromScore,
@@ -53,19 +53,16 @@ export default function RecruiterApplicationView() {
   useEffect(() => {
     if (!jobId || !applicationId) return;
     let cancelled = false;
-    Promise.all([listJobApplications(jobId, 1, 100), getJob(jobId)])
-      .then(([data, job]) => {
+    Promise.all([getJobApplication(jobId, applicationId), getJob(jobId)])
+      .then(([application, job]) => {
         if (cancelled) return;
         setJobTitle(job?.title || "");
-        const found = (data.items || []).find(
-          (x) => String(x.application_id) === String(applicationId)
-        );
-        if (!found) {
+        if (!application) {
           setError("Postulación no encontrada");
           setItem(null);
           return;
         }
-        setItem(found);
+        setItem(application);
         setError("");
       })
       .catch((err) => {
@@ -217,7 +214,12 @@ export default function RecruiterApplicationView() {
                                 </button>
                                 <button
                                   type="button"
-                                  className="recruiter-ver-perfil-btn"
+                                  className="recruiter-ver-perfil-btn recruiter-ver-perfil-btn--active"
+                                  onClick={() =>
+                                    navigate(
+                                      `/recruiter/ofertas/${jobId}/postulaciones/${applicationId}/perfil`
+                                    )
+                                  }
                                 >
                                   Ver perfil
                                 </button>

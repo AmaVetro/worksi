@@ -1286,3 +1286,94 @@
 .score-bar-fill--none {
     background: #cbd5e1;
 }
+
+.recruiter-ver-perfil-btn--active {
+    cursor: pointer;
+}
+
+.recruiter-ver-perfil-btn--active:hover {
+    background: rgba(18, 143, 139, 0.08);
+}
+
+.recruiter-candidate-profile-card {
+    padding: 24px 28px 32px;
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+.recruiter-candidate-profile-subtitle {
+    margin: 10px 0 22px;
+    color: #64748b;
+    font-size: 0.95rem;
+}
+
+.recruiter-candidate-profile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.recruiter-candidate-profile-name {
+    margin: 0 0 8px;
+    font-size: 1.25rem;
+}
+
+.recruiter-candidate-profile-meta,
+.recruiter-candidate-profile-contact {
+    margin: 4px 0;
+    color: #475569;
+    font-size: 0.95rem;
+}
+
+.recruiter-establecer-match-btn:disabled {
+    opacity: 0.85;
+    cursor: not-allowed;
+}
+
+.recruiter-candidate-profile-section {
+    margin-bottom: 20px;
+}
+
+.recruiter-candidate-profile-section h3 {
+    margin: 0 0 8px;
+    font-size: 1rem;
+    color: #0f766e;
+}
+
+.recruiter-candidate-profile-section p {
+    margin: 0;
+    color: #334155;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+.recruiter-candidate-profile-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.recruiter-candidate-chip {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: #e0f2fe;
+    color: #0369a1;
+    font-size: 0.85rem;
+}
+
+.recruiter-candidate-chip--skill {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.recruiter-candidate-profile-muted {
+    color: #94a3b8;
+}
+
+.recruiter-candidate-profile-cv-btn {
+    margin-top: 14px;
+}

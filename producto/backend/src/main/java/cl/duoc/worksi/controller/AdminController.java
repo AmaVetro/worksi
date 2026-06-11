@@ -3,6 +3,7 @@ package cl.duoc.worksi.controller;
 import cl.duoc.worksi.dto.PageResponse;
 import cl.duoc.worksi.dto.admin.AdminCompanyListItem;
 import cl.duoc.worksi.dto.admin.AdminJobsStatsResponse;
+import cl.duoc.worksi.dto.admin.AdminRecruiterListItem;
 import cl.duoc.worksi.dto.admin.AdminRecruiterRequest;
 import cl.duoc.worksi.service.AdminCompanyService;
 import cl.duoc.worksi.service.AdminJobsStatsService;
@@ -52,6 +53,14 @@ public class AdminController {
   @PostMapping(value = "/recruiters", consumes = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<?> createRecruiter(@RequestBody AdminRecruiterRequest body) {
     return adminRecruiterService.createRecruiter(body);
+  }
+
+  @GetMapping("/recruiters")
+  public ResponseEntity<PageResponse<AdminRecruiterListItem>> listRecruiters(
+      @RequestParam(name = "page", defaultValue = "1") int page,
+      @RequestParam(name = "size", defaultValue = "20") int size,
+      @RequestParam(name = "sort", defaultValue = "created_at,desc") String sort) {
+    return adminRecruiterService.listRecruiters(page, size, sort);
   }
 
   @GetMapping("/jobs/stats")

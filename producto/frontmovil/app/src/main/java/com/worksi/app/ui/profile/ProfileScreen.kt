@@ -1,5 +1,8 @@
 package com.worksi.app.ui.profile
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -24,6 +27,7 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import com.worksi.app.ui.components.CandidateMainBottomBar
+import com.worksi.app.ui.components.CvViewerOverlay
 import com.worksi.app.ui.components.MainTab
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Settings
@@ -46,10 +50,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -57,6 +63,12 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.worksi.app.ui.theme.CyanPrimary
 import com.worksi.app.ui.theme.White
+import com.worksi.app.validation.PdfCvTextRules
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+private const val MAX_CV_BYTES = 1_000_000L
 
 private val PageBackground = Color(0xFFF8F8F8)
 private val ChipBackground = Color(0xFFE3F2FD)
@@ -74,6 +86,66 @@ fun ProfileScreen(
 ) {
     val state by viewModel.ui.collectAsState()
     var showMenu by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var pickValidating by remember { mutableStateOf(false) }
+
+    val saveCvLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.CreateDocument("application/pdf")) { uri ->
+            val bytes = state.cvPdfBytes ?: return@rememberLauncherForActivityResult
+            if (uri == null) return@rememberLauncherForActivityResult
+            context.contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
+        }
+
+    val pickCvLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+            if (uri == null) return@rememberLauncherForActivityResult
+            val resolver = context.contentResolver
+            val mime = resolver.getType(uri)
+            if (mime != null && mime != "application/pdf") {
+                return@rememberLauncherForActivityResult
+            }
+            val size = resolver.openFileDescriptor(uri, "r")?.use { it.statSize } ?: 0L
+            if (size <= 0L || size > MAX_CV_BYTES) {
+                return@rememberLauncherForActivityResult
+            }
+            var display: String? = null
+            resolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)
+                ?.use { c ->
+                    if (c.moveToFirst()) {
+                        val idx = c.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                        if (idx >= 0) display = c.getString(idx)
+                    }
+                }
+            scope.launch {
+                pickValidating = true
+                val outcome =
+                    withContext(Dispatchers.IO) {
+                        val bytes = resolver.openInputStream(uri)?.use { it.readBytes() }
+                        if (bytes == null) {
+                            "No se pudo leer el archivo"
+                        } else {
+                            val err = PdfCvTextRules.validatePdfBytes(bytes)
+                            if (err != null) {
+                                err
+                            } else {
+                                Pair(bytes, display ?: "cv.pdf")
+                            }
+                        }
+                    }
+                pickValidating = false
+                when (outcome) {
+                    is String -> viewModel.setCvModalError(outcome)
+                    is Pair<*, *> -> {
+                        @Suppress("UNCHECKED_CAST")
+                        val pair = outcome as Pair<ByteArray, String>
+                        viewModel.uploadCv(pair.first, pair.second)
+                    }
+                }
+            }
+        }
 
     Scaffold(
         topBar = {
@@ -165,7 +237,7 @@ fun ProfileScreen(
                     Spacer(Modifier.height(20.dp))
 
                     OutlinedButton(
-                        onClick = {},
+                        onClick = { viewModel.openCvModal() },
                         modifier = Modifier.fillMaxWidth().height(120.dp),
                         shape = RoundedCornerShape(12.dp),
                         border = BorderStroke(2.dp, CyanPrimary),
@@ -206,6 +278,16 @@ fun ProfileScreen(
             }
         }
     }
+
+    CvViewerOverlay(
+        visible = state.cvModalVisible,
+        loading = state.cvModalLoading || pickValidating,
+        errorMessage = state.cvModalError,
+        pdfBytes = state.cvPdfBytes,
+        onClose = { viewModel.closeCvModal() },
+        onDownload = { saveCvLauncher.launch(state.cvFilename) },
+        onChangeCv = { pickCvLauncher.launch(arrayOf("application/pdf")) },
+        uploadBusy = state.cvUploading)
 }
 
 @Composable

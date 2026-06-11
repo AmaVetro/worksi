@@ -84,3 +84,28 @@ export async function listJobApplications(jobId, page = 1, size = 20) {
   });
   return data;
 }
+
+export async function getJobApplication(jobId, applicationId) {
+  const { data } = await api.get(
+    `/api/v1/company/jobs/${jobId}/applications/${applicationId}`
+  );
+  return data;
+}
+
+export async function getCandidateProfileForApplication(jobId, applicationId) {
+  const { data } = await api.get(
+    `/api/v1/company/jobs/${jobId}/applications/${applicationId}/candidate-profile`
+  );
+  return data;
+}
+
+export async function getApplicationCvFile(jobId, applicationId, download = false) {
+  const response = await api.get(
+    `/api/v1/company/jobs/${jobId}/applications/${applicationId}/cv/file`,
+    {
+      params: download ? { download: true } : {},
+      responseType: "blob",
+    }
+  );
+  return response;
+}

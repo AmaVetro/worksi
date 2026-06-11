@@ -7,7 +7,9 @@ import RecoveryCode from "../pages/recovery/RecoveryCode";
 import RecoveryNewPassword from "../pages/recovery/RecoveryNewPassword";
 import RecoveryConfirm from "../pages/recovery/RecoveryConfirm";
 import PrivateRoute from "../components/PrivateRoute";
+import AdminCompaniesList from "../pages/AdminCompaniesList";
 import AdminRegisterCompany from "../pages/AdminRegisterCompany";
+import AdminRecruitersList from "../pages/AdminRecruitersList";
 import AdminRegisterRecruiter from "../pages/AdminRegisterRecruiter";
 import AdminSettingsPlaceholder from "../pages/AdminSettingsPlaceholder";
 import RecruiterHome from "../pages/RecruiterHome";
@@ -17,6 +19,7 @@ import RecruiterJobCreate from "../pages/RecruiterJobCreate";
 import RecruiterJobDetail from "../pages/RecruiterJobDetail";
 import RecruiterJobEdit from "../pages/RecruiterJobEdit";
 import RecruiterApplicationView from "../pages/RecruiterApplicationView";
+import RecruiterCandidateProfile from "../pages/RecruiterCandidateProfile";
 
 function AppRoutes() {
   return (
@@ -40,12 +43,28 @@ function AppRoutes() {
           path="/companies"
           element={
             <PrivateRoute roles={["ADMIN"]}>
+              <AdminCompaniesList />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/companies/nueva"
+          element={
+            <PrivateRoute roles={["ADMIN"]}>
               <AdminRegisterCompany />
             </PrivateRoute>
           }
         />
         <Route
           path="/recruiters"
+          element={
+            <PrivateRoute roles={["ADMIN"]}>
+              <AdminRecruitersList />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/recruiters/nueva"
           element={
             <PrivateRoute roles={["ADMIN"]}>
               <AdminRegisterRecruiter />
@@ -89,6 +108,14 @@ function AppRoutes() {
           element={
             <PrivateRoute roles={["RECRUITER"]}>
               <RecruiterJobCreate />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/recruiter/ofertas/:jobId/postulaciones/:applicationId/perfil"
+          element={
+            <PrivateRoute roles={["RECRUITER"]}>
+              <RecruiterCandidateProfile />
             </PrivateRoute>
           }
         />

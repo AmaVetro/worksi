@@ -1,6 +1,7 @@
 package com.worksi.app.ui.profile
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.worksi.app.data.api.ApiErrorParser
 import com.worksi.app.data.api.RetrofitClient
@@ -15,6 +16,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.NumberFormat
 import java.util.Locale
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 
 data class ProfileUiState(
     val isLoading: Boolean = true,
@@ -29,11 +33,18 @@ data class ProfileUiState(
     val yearsExperienceLine: String = "",
     val modalities: List<String> = emptyList(),
     val workloads: List<String> = emptyList(),
-    val skills: List<CandidateProfileSkillJson> = emptyList()
+    val skills: List<CandidateProfileSkillJson> = emptyList(),
+    val cvModalVisible: Boolean = false,
+    val cvModalLoading: Boolean = false,
+    val cvModalError: String? = null,
+    val cvPdfBytes: ByteArray? = null,
+    val cvFilename: String = "cv.pdf",
+    val cvUploading: Boolean = false
 )
 
-class ProfileViewModel : ViewModel() {
+class ProfileViewModel(application: Application) : AndroidViewModel(application) {
     private val profileApi = RetrofitClient.candidateProfileApi
+    private val cvApi = RetrofitClient.candidateCvApi
     private val catalogApi = RetrofitClient.catalogApi
 
     private val _ui = MutableStateFlow(ProfileUiState())
@@ -159,4 +170,92 @@ class ProfileViewModel : ViewModel() {
             "OTHER" -> "Otro"
             else -> code
         }
+
+    fun openCvModal() {
+        viewModelScope.launch {
+            _ui.value =
+                _ui.value.copy(
+                    cvModalVisible = true,
+                    cvModalLoading = true,
+                    cvModalError = null,
+                    cvPdfBytes = null)
+            val err =
+                withContext(Dispatchers.IO) {
+                    try {
+                        val metaResp = cvApi.getCurrentCv()
+                        if (!metaResp.isSuccessful) {
+                            return@withContext ApiErrorParser.message(metaResp)
+                        }
+                        val meta = metaResp.body() ?: return@withContext "Respuesta vacía"
+                        val fileResp = cvApi.getCurrentCvFile()
+                        if (!fileResp.isSuccessful) {
+                            return@withContext ApiErrorParser.message(fileResp)
+                        }
+                        val bytes = fileResp.body()?.bytes()
+                        if (bytes == null || bytes.isEmpty()) {
+                            return@withContext "CV vacío"
+                        }
+                        _ui.value =
+                            _ui.value.copy(
+                                cvFilename = meta.originalFilename.ifBlank { "cv.pdf" },
+                                cvPdfBytes = bytes)
+                        null
+                    } catch (e: Exception) {
+                        e.message ?: "Error de red"
+                    }
+                }
+            _ui.value = _ui.value.copy(cvModalLoading = false, cvModalError = err)
+        }
+    }
+
+    fun closeCvModal() {
+        _ui.value =
+            _ui.value.copy(
+                cvModalVisible = false,
+                cvModalLoading = false,
+                cvModalError = null,
+                cvPdfBytes = null)
+    }
+
+    fun setCvModalError(message: String?) {
+        _ui.value = _ui.value.copy(cvModalError = message)
+    }
+
+    fun uploadCv(pdfBytes: ByteArray, filename: String) {
+        viewModelScope.launch {
+            _ui.value = _ui.value.copy(cvUploading = true, cvModalError = null)
+            val err =
+                withContext(Dispatchers.IO) {
+                    try {
+                        val safeName =
+                            filename.takeIf { it.lowercase(Locale.ROOT).endsWith(".pdf") }
+                                ?: "cv.pdf"
+                        val part =
+                            MultipartBody.Part.createFormData(
+                                "file",
+                                safeName,
+                                pdfBytes.toRequestBody("application/pdf".toMediaType()))
+                        val resp = cvApi.uploadCv(part)
+                        if (!resp.isSuccessful) {
+                            ApiErrorParser.message(resp)
+                        } else {
+                            val body = resp.body()
+                            if (body == null) {
+                                "Respuesta vacía"
+                            } else {
+                                _ui.value =
+                                    _ui.value.copy(
+                                        cvFilename = body.originalFilename.ifBlank { safeName },
+                                        cvPdfBytes = pdfBytes,
+                                        cvModalLoading = false)
+                                null
+                            }
+                        }
+                    } catch (e: Exception) {
+                        e.message ?: "Error de red"
+                    }
+                }
+            _ui.value = _ui.value.copy(cvUploading = false, cvModalError = err)
+        }
+    }
 }

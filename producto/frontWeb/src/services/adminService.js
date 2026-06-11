@@ -51,6 +51,13 @@ export async function createRecruiter(payload) {
   return data;
 }
 
+export async function listRecruiters(page = 1, size = 50) {
+  const { data } = await api.get("/api/v1/admin/recruiters", {
+    params: { page, size, sort: "created_at,desc" },
+  });
+  return data;
+}
+
 export async function getActiveJobsTotal() {
   const { data } = await api.get("/api/v1/admin/jobs/stats");
   const raw = data?.active_jobs_total ?? data?.activeJobsTotal;

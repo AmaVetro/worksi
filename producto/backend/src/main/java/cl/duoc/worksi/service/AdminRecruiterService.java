@@ -1,7 +1,10 @@
 package cl.duoc.worksi.service;
 
+import cl.duoc.worksi.dto.PageResponse;
 import cl.duoc.worksi.dto.admin.AdminRecruiterCreatedResponse;
+import cl.duoc.worksi.dto.admin.AdminRecruiterListItem;
 import cl.duoc.worksi.dto.admin.AdminRecruiterRequest;
+import cl.duoc.worksi.entity.Company;
 import cl.duoc.worksi.entity.RecruiterProfile;
 import cl.duoc.worksi.entity.User;
 import cl.duoc.worksi.entity.enums.UserRole;
@@ -14,6 +17,11 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -115,6 +123,62 @@ public class AdminRecruiterService {
         .body(
             new AdminRecruiterCreatedResponse(
                 user.getId(), UserRole.RECRUITER.name(), user.getEmail(), req.getCompanyId()));
+  }
+
+  public ResponseEntity<PageResponse<AdminRecruiterListItem>> listRecruiters(
+      int page, int size, String sort) {
+    int p = Math.max(1, page);
+    int sz = Math.min(100, Math.max(1, size));
+    Pageable pageable = PageRequest.of(p - 1, sz, parseSort(sort));
+    Page<RecruiterProfile> result = recruiterProfileRepository.findAll(pageable);
+    Map<Long, User> users =
+        userRepository
+            .findAllById(
+                result.getContent().stream().map(RecruiterProfile::getUserId).toList())
+            .stream()
+            .collect(Collectors.toMap(User::getId, u -> u));
+    Map<Long, Company> companies =
+        companyRepository
+            .findAllById(
+                result.getContent().stream().map(RecruiterProfile::getCompanyId).toList())
+            .stream()
+            .collect(Collectors.toMap(Company::getId, c -> c));
+    List<AdminRecruiterListItem> items =
+        result.getContent().stream()
+            .map(
+                rp -> {
+                  User u = users.get(rp.getUserId());
+                  Company co = companies.get(rp.getCompanyId());
+                  return new AdminRecruiterListItem(
+                      rp.getUserId(),
+                      u != null ? u.getEmail() : "",
+                      UserRole.RECRUITER.name(),
+                      rp.getFirstName(),
+                      rp.getLastNamePaternal(),
+                      rp.getLastNameMaternal(),
+                      rp.getCompanyId(),
+                      co != null ? co.getCommercialName() : "");
+                })
+            .toList();
+    return ResponseEntity.ok(
+        new PageResponse<>(
+            items, p, result.getSize(), result.getTotalElements(), result.getTotalPages()));
+  }
+
+  private static Sort parseSort(String raw) {
+    if (raw == null || raw.isBlank()) {
+      return Sort.by(Sort.Direction.DESC, "userId");
+    }
+    String[] parts = raw.split(",");
+    String field = parts[0].trim();
+    Sort.Direction dir =
+        parts.length > 1 && "asc".equalsIgnoreCase(parts[1].trim())
+            ? Sort.Direction.ASC
+            : Sort.Direction.DESC;
+    if ("created_at".equals(field)) {
+      field = "userId";
+    }
+    return Sort.by(dir, field);
   }
 
   private static ResponseEntity<Map<String, Object>> error(

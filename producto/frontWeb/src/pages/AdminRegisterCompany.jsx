@@ -132,7 +132,7 @@ export default function AdminRegisterCompany() {
       };
       await createCompany(payload, image);
       window.alert("Registro de empresa exitoso");
-      navigate("/home");
+      navigate("/companies");
     } catch (err) {
       const msg =
         err.response?.data?.error?.message || "Error al registrar empresa";

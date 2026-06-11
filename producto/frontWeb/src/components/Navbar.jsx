@@ -127,13 +127,23 @@ function Navbar() {
           Inicio
         </div>
         <div
-          className={`nav-item ${isActive("/companies") ? "active" : ""}`}
+          className={`nav-item ${
+            location.pathname === "/companies" ||
+            location.pathname.startsWith("/companies/")
+              ? "active"
+              : ""
+          }`}
           onClick={() => navigate("/companies")}
         >
           Empresas
         </div>
         <div
-          className={`nav-item ${isActive("/recruiters") ? "active" : ""}`}
+          className={`nav-item ${
+            location.pathname === "/recruiters" ||
+            location.pathname.startsWith("/recruiters/")
+              ? "active"
+              : ""
+          }`}
           onClick={() => navigate("/recruiters")}
         >
           Reclutadores

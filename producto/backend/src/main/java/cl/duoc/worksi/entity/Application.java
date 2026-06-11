@@ -167,4 +167,12 @@ public class Application {
   public LocalDateTime getUpdatedAt() {
     return updatedAt;
   }
+
+  public void markViewedIfApplied() {
+    if (status != ApplicationStatus.APPLIED) {
+      return;
+    }
+    status = ApplicationStatus.VIEWED;
+    viewedAt = LocalDateTime.now(ZoneOffset.UTC);
+  }
 }

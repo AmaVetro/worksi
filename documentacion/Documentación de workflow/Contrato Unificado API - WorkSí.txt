@@ -1,5 +1,5 @@
 CONTRATO UNIFICADO DE INTEGRACION - WORKSI
-Version: 1.15
+Version: 1.16
 Estado: Oficial para desarrollo paralelo (Backend + Web + Android)
 
 
@@ -25,6 +25,7 @@ ENDPOINTS CONSUMIDOS POR FRONTWEB WEB (implementacion actual producto/frontWeb)
   - POST /api/v1/admin/companies (multipart: data + image opcional)
   - GET /api/v1/admin/companies?page&size&sort
   - POST /api/v1/admin/recruiters
+  - GET /api/v1/admin/recruiters?page&size&sort
   - GET /api/v1/admin/jobs/stats
 - Catalogos (publicos; formularios admin y ofertas):
   - GET /api/v1/catalogs/regions
@@ -42,8 +43,13 @@ ENDPOINTS CONSUMIDOS POR FRONTWEB WEB (implementacion actual producto/frontWeb)
   - PATCH /api/v1/company/jobs/{job_id} (multipart: data + image opcional; HU-16)
   - PATCH /api/v1/company/jobs/{job_id}/status (body { "status": "ACTIVE" | "INACTIVE" })
   - DELETE /api/v1/company/jobs/{job_id} (soft delete → DELETED)
-  - GET /api/v1/company/jobs/{job_id}/applications?page&size&sort (frontWeb usa size=100 al resolver una postulacion concreta)
-- Aun no consumidos por frontWeb (definidos en contrato para movil u otras pantallas web futuras): GET /api/v1/auth/me, PATCH /api/v1/company/profile/image, PATCH /api/v1/company/applications/{application_id}/viewed, rutas /api/v1/candidate/*, rutas /api/v1/chat/*.
+  - GET /api/v1/company/jobs/{job_id}/applications?page&size&sort
+  - GET /api/v1/company/jobs/{job_id}/applications/{application_id} (detalle postulacion; dispara VIEWED HU-23)
+  - GET /api/v1/company/jobs/{job_id}/applications/{application_id}/candidate-profile (perfil postulante solo lectura HU-19)
+  - GET /api/v1/company/jobs/{job_id}/applications/{application_id}/cv (metadatos CV postulante)
+  - GET /api/v1/company/jobs/{job_id}/applications/{application_id}/cv/file (binario PDF; query download=true opcional)
+- Aun no consumidos por frontWeb (definidos en contrato para otras pantallas futuras): GET /api/v1/auth/me, PATCH /api/v1/company/profile/image, PATCH /api/v1/company/applications/{application_id}/viewed (alternativa manual; MVP usa VIEWED automatico en GET detalle/perfil), rutas /api/v1/chat/*.
+- Endpoints candidato (/api/v1/candidate/* incl. CV): consumidos por frontmovil; ver secciones 12–16 y matriz CANDIDATE.
 
 
 ARQUITECTURA OBLIGATORIA
@@ -254,7 +260,10 @@ ENDPOINTS DE AUTENTICACION
 - GET /api/v1/admin/companies?page=1&size=20&sort=created_at,desc
 - Auth: Bearer ADMIN
 - Response 200 (formato paginado estandar):
-- items minimos por fila para desplegable "Registrar reclutadores": company_id, commercial_name, corporate_email (y opcionalmente legal_name, rut).
+- items minimos por fila:
+  - Desplegable «Registrar reclutadores»: company_id, commercial_name, corporate_email (y opcionalmente legal_name, rut).
+  - Listado HU-25 (/companies): commercial_name, corporate_email, phone, region_name, commune_name, sector_name.
+- Uso en frontWeb: /companies (listado) y /recruiters/nueva (desplegable empresa).
 
 
 2.4) Alta reclutador (administrador del sistema) — Flujo web MVP
@@ -284,6 +293,26 @@ ENDPOINTS DE AUTENTICACION
   "email": "reclutador@dominio.cl",
   "company_id": 201
 }
+
+
+2.5) Listar reclutadores (administrador del sistema)
+- GET /api/v1/admin/recruiters?page=1&size=20&sort=created_at,desc
+- Auth: Bearer ADMIN
+- Reglas:
+  - Solo usuarios con role RECRUITER vinculados a recruiter_profiles.
+  - Paginacion estandar (page base 1, size default 20, max 100).
+- Response 200 item ejemplo:
+{
+  "user_id": 301,
+  "email": "reclutador@dominio.cl",
+  "role": "RECRUITER",
+  "first_name": "Ana",
+  "last_name_paternal": "Rojas",
+  "last_name_maternal": "Soto",
+  "company_id": 201,
+  "company_commercial_name": "Empresa X"
+}
+- Uso en frontWeb: /recruiters (listado HU-26).
 
 
 
@@ -538,6 +567,10 @@ PERFIL Y CV CANDIDATO (CUENTA CREADA O LOGIN, JWT CANDIDATE, YA DENTRO DE LA APP
 - Validaciones:
   - solo PDF.
   - max 1MB.
+- Reglas:
+  - Marca el CV anterior del candidato como no current (is_current=false) y persiste el nuevo como current.
+  - Dispara extraccion de texto (Tika) para matching posterior.
+- Uso en frontmovil: pantalla Perfil, boton «Cambiar CV» (mismo criterio PDF que registro).
 - Response 201:
 {
   "cv_id": 9001,
@@ -551,12 +584,21 @@ PERFIL Y CV CANDIDATO (CUENTA CREADA O LOGIN, JWT CANDIDATE, YA DENTRO DE LA APP
 15) Obtener CV actual (metadatos)
 - GET /api/v1/candidate/cv/current
 - Auth: CANDIDATE
+- Response 200:
+{
+  "cv_id": 9001,
+  "original_filename": "CV_Juan.pdf",
+  "file_size_bytes": 345678,
+  "is_current": true,
+  "uploaded_at": "2026-04-25T03:30:00Z"
+}
 
 
 16) Descargar CV actual
 - GET /api/v1/candidate/cv/current/file
 - Auth: CANDIDATE
-- Response: application/pdf
+- Response: application/pdf (Content-Disposition inline con original_filename).
+- Uso en frontmovil: modal «Tu CV» (visualizar y descargar).
 
 
 OFERTAS (EMPRESA)
@@ -873,7 +915,7 @@ POSTULACIONES EMPRESA
   - solo oferta propia (reclutador publicador); oferta DELETED responde 404.
   - orden por score descendente para HU-20.
   - cada item incluye match_score y match_breakdown para HU-28 (pantalla «Detalle de Score» / «Ver postulacion»).
-  - frontWeb usa size=100 al resolver una postulacion concreta en /recruiter/ofertas/{job_id}/postulaciones/{application_id} y en detalle de score.
+  - no dispara VIEWED (HU-23); solo lectura de listado.
 - Response 200 item ejemplo:
 {
   "application_id": 8001,
@@ -899,7 +941,70 @@ POSTULACIONES EMPRESA
 }
 - Notas:
   - match_breakdown obligatorio cuando exista match_score calculado; si no hay score, match_breakdown puede ser null y la UI HU-28 muestra estado vacio/error visible.
-  - candidate_preview: campos minimos para listado; detalle ampliado de perfil puede reutilizar los mismos datos o ampliarse en iteracion posterior sin romper este contrato.
+  - candidate_preview: campos minimos para listado; detalle ampliado en seccion 26.2.
+
+
+26.1) Ver detalle de postulacion (reclutador)
+- GET /api/v1/company/jobs/{job_id}/applications/{application_id}
+- Auth: RECRUITER
+- Reglas:
+  - solo oferta propia (reclutador publicador); application_id debe pertenecer al job_id; estados visibles APPLIED o VIEWED; oferta DELETED responde 404.
+  - al abrir este detalle el backend marca APPLIED → VIEWED si corresponde (HU-23); idempotente.
+  - no sustituye al listado seccion 26; frontWeb lo usa en /recruiter/ofertas/{job_id}/postulaciones/{application_id} («Ver postulacion» y «Detalle de Score»).
+- Response 200: mismo cuerpo que un item del listado seccion 26 (application_id, candidate_user_id, status, applied_at, viewed_at, match_score, match_explanation, match_breakdown, candidate_preview).
+
+
+26.2) Perfil postulante solo lectura (reclutador)
+- GET /api/v1/company/jobs/{job_id}/applications/{application_id}/candidate-profile
+- Auth: RECRUITER
+- Reglas:
+  - mismas reglas de titularidad y visibilidad que 26.1.
+  - al abrir este perfil el backend marca APPLIED → VIEWED si corresponde (HU-23); idempotente.
+  - solo lectura: misma informacion de perfil candidato que GET /api/v1/candidate/profile, mas nombres de catalogo resueltos (region_name, commune_name, sector_name); sin datos de edicion ni consentimiento.
+- Response 200 ejemplo:
+{
+  "user_id": 1201,
+  "first_name": "Juan",
+  "middle_name": null,
+  "last_name_paternal": "Perez",
+  "last_name_maternal": "Lopez",
+  "phone": "+56912345678",
+  "email": "juan@correo.cl",
+  "region_name": "Metropolitana",
+  "commune_name": "Santiago",
+  "sector_name": "Tecnologia",
+  "profile_summary": "Texto",
+  "salary_expected_min": 700000,
+  "salary_expected_max": 1200000,
+  "years_experience": 3,
+  "preferred_modalities": ["REMOTE", "HYBRID"],
+  "preferred_workloads": ["FULL_TIME"],
+  "skills": [
+    { "id": 10, "name": "Integracion de APIs REST" }
+  ]
+}
+- Uso en frontWeb: /recruiter/ofertas/{job_id}/postulaciones/{application_id}/perfil (HU-19 complemento Sprint 9).
+
+
+26.3) Metadatos CV del postulante (reclutador)
+- GET /api/v1/company/jobs/{job_id}/applications/{application_id}/cv
+- Auth: RECRUITER
+- Reglas:
+  - mismas reglas de titularidad que 26.1.
+  - devuelve el CV current del candidato postulante (candidate_cvs.is_current=true).
+- Response 200: mismo cuerpo que seccion 15 (cv_id, original_filename, file_size_bytes, is_current, uploaded_at).
+- Response 404 si el candidato no tiene CV current.
+
+
+26.4) Descargar o visualizar CV del postulante (reclutador)
+- GET /api/v1/company/jobs/{job_id}/applications/{application_id}/cv/file
+- Auth: RECRUITER
+- Query opcional: download=true|false (default false).
+  - false: Content-Disposition inline (visualizacion en modal web).
+  - true: Content-Disposition attachment (descarga).
+- Response: application/pdf (bytes del CV current del postulante).
+- Reglas: mismas reglas de titularidad que 26.1; 404 si no hay CV.
+- Uso en frontWeb: modal «Ver CV» en perfil postulante reclutador.
 
 
 27) Marcar postulacion como VIEWED
@@ -909,7 +1014,8 @@ POSTULACIONES EMPRESA
 - Reglas:
   - solo el reclutador publicador de la oferta asociada.
   - idempotente: si ya VIEWED, mantener VIEWED.
-  - en producto MVP el backend dispara esta transicion automaticamente al abrir el detalle de la postulacion (HU-23; GET detalle o equivalente al entrar a «Ver postulacion» / «Perfil postulantes»); no al listar postulantes de la oferta ni al postular el candidato; no requiere boton manual en UI.
+  - en producto MVP el backend dispara esta transicion automaticamente al abrir el detalle de la postulacion (HU-23; GET seccion 26.1 o GET seccion 26.2 al entrar a «Ver postulacion» / «Perfil postulantes»); no al listar postulantes de la oferta (seccion 26) ni al postular el candidato; no requiere boton manual en UI.
+  - PATCH manual (este endpoint) queda como alternativa idempotente; frontWeb MVP no lo consume directamente.
 - Response 200:
 {
   "application_id": 8001,
@@ -1170,6 +1276,7 @@ MATRIZ DE AUTORIZACION
   - POST /api/v1/admin/companies
   - GET /api/v1/admin/companies
   - POST /api/v1/admin/recruiters
+  - GET /api/v1/admin/recruiters
   - GET /api/v1/admin/jobs/stats
 - CANDIDATE (Bearer access_token rol CANDIDATE):
   - GET /api/v1/auth/me
@@ -1203,6 +1310,10 @@ MATRIZ DE AUTORIZACION
   - DELETE /api/v1/company/jobs/{job_id}
   - GET /api/v1/company/jobs/{job_id}/image
   - GET /api/v1/company/jobs/{job_id}/applications
+  - GET /api/v1/company/jobs/{job_id}/applications/{application_id}
+  - GET /api/v1/company/jobs/{job_id}/applications/{application_id}/candidate-profile
+  - GET /api/v1/company/jobs/{job_id}/applications/{application_id}/cv
+  - GET /api/v1/company/jobs/{job_id}/applications/{application_id}/cv/file
   - PATCH /api/v1/company/applications/{application_id}/viewed
   - POST /api/v1/chat/conversations
   - GET /api/v1/chat/conversations
@@ -1216,10 +1327,10 @@ MATRIZ DE AUTORIZACION
 CHECKLIST DE INTEGRACION FINAL
 - Login candidato, reclutador y administrador operativos con JWT y POST /api/v1/auth/login (roles CANDIDATE, RECRUITER, ADMIN; sin usuario empresa ni rol COMPANY).
 - Registro candidato: un solo POST /api/v1/auth/register/candidate (multipart: data JSON + file PDF) con consent_given=true y todos los datos de identidad, perfil, skills y preferencias; consentimiento en "Uso de datos"; JWT CANDIDATE en la respuesta.
-- Web MVP empresa: alta empresa (datos negocio company_id, corporate_email obligatorio en ficha; sin login empresa) POST /api/v1/admin/companies (multipart) con ADMIN; listado GET /api/v1/admin/companies; alta reclutador POST /api/v1/admin/recruiters con company_id; stats admin GET /api/v1/admin/jobs/stats (active_jobs_total); login reclutador con mismo POST /api/v1/auth/login que admin (respuesta user con nombres para RECRUITER segun contrato).
+- Web MVP empresa: alta empresa (datos negocio company_id, corporate_email obligatorio en ficha; sin login empresa) POST /api/v1/admin/companies (multipart) con ADMIN; listado GET /api/v1/admin/companies (HU-25); alta reclutador POST /api/v1/admin/recruiters con company_id; listado GET /api/v1/admin/recruiters (HU-26); stats admin GET /api/v1/admin/jobs/stats (active_jobs_total); login reclutador con mismo POST /api/v1/auth/login que admin (respuesta user con nombres para RECRUITER segun contrato).
 - Lectura ficha empresa en sesion reclutador: GET /api/v1/company/profile (incluye commercial_name y corporate_email); imagen en disco: GET /api/v1/company/profile/image cuando has_protected_image.
 - Endpoint historico POST /api/v1/auth/register/company fuera del contrato MVP (ver seccion registro empresa no MVP).
-- CV PDF <= 1MB validado y almacenado.
+- CV PDF <= 1MB validado y almacenado; candidato: POST/GET /api/v1/candidate/cv/* (frontmovil Perfil); reclutador: GET .../applications/{application_id}/cv y .../cv/file (frontWeb «Ver CV»).
 - Oferta creada con POST /api/v1/company/jobs multipart (data JSON + image opcional PNG/JPEG), company_commercial_name, closing_date obligatorio (YYYY-MM-DD), sin requirements, salary_offered y years_experience_required obligatorios, skills 3..8; status inicial ACTIVE.
 - Listado ofertas reclutador GET /api/v1/company/jobs con filtro status ACTIVE | INACTIVE | CLOSING_DUE; items con company_commercial_name, salary_offered, modality, workload, created_at, closing_date, applications_count.
 - Estadisticas dashboard reclutador GET /api/v1/company/jobs/stats (active_count, inactive_count, published_today_count; dia America/Santiago).
@@ -1227,11 +1338,12 @@ CHECKLIST DE INTEGRACION FINAL
 - Edicion oferta HU-16: PATCH /api/v1/company/jobs/{job_id} multipart (mismas reglas que POST, incluido closing_date).
 - Ciclo de vida oferta HU-17: PATCH /api/v1/company/jobs/{job_id}/status (ACTIVE|INACTIVE); DELETE /api/v1/company/jobs/{job_id} (soft delete DELETED).
 - Listado postulaciones empresa GET /api/v1/company/jobs/{job_id}/applications con match_score y match_breakdown por fila (HU-28 / Detalle de Score).
+- Detalle postulacion GET /api/v1/company/jobs/{job_id}/applications/{application_id} y perfil postulante GET .../candidate-profile (HU-19 Sprint 9); VIEWED automatico al abrir (HU-23).
 - Chat MVP: POST /api/v1/chat/conversations (match + primer mensaje max 80), listado GET /api/v1/chat/conversations, pendiente candidato GET /api/v1/chat/conversations/pending, mensajes GET/POST /api/v1/chat/conversations/{conversation_id}/messages con polling after_message_id; solo participantes leen/escriben.
 - Feed candidato sin repeticion de ofertas.
 - Swipe PASS/APPLY funcionando.
 - Postulacion APPLIED creada solo al confirmar.
-- VIEWED automatico en servidor al abrir detalle de postulacion (HU-23); no al listar ni al postular.
+- VIEWED automatico en servidor al abrir detalle de postulacion GET 26.1 o perfil GET 26.2 (HU-23); no al listar (seccion 26) ni al postular.
 - Orden por score descendente en vistas empresa.
 - Invariante de score verificada (skills no alteran score).
 - Recuperacion MVP: bloqueo a 4 intentos real con derivacion a pantallas; sin codigo OTP real para usuario; maqueta en solicitud/ingreso de codigo; solo persistencia real al confirmar nueva contraseña (`password_hash`).

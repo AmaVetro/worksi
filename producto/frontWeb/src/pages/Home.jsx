@@ -58,12 +58,12 @@ function Home() {
                 <div className="actions-container">
 
                 <div className="action-card">
-                    <p>Registrar empresa</p>
+                    <p>Ver empresas</p>
                     <button type="button" className="secondary-btn" onClick={() => navigate("/companies")}>IR</button>
                 </div>
 
                 <div className="action-card">
-                    <p>Registrar reclutador</p>
+                    <p>Ver reclutadores</p>
                     <button type="button" className="secondary-btn" onClick={() => navigate("/recruiters")}>IR</button>
                 </div>
 

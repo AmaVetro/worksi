@@ -4,7 +4,10 @@ import cl.duoc.worksi.dto.PageResponse;
 import cl.duoc.worksi.dto.admin.AdminCompanyCreatedResponse;
 import cl.duoc.worksi.dto.admin.AdminCompanyDataRequest;
 import cl.duoc.worksi.dto.admin.AdminCompanyListItem;
+import cl.duoc.worksi.entity.Commune;
 import cl.duoc.worksi.entity.Company;
+import cl.duoc.worksi.entity.Region;
+import cl.duoc.worksi.entity.Sector;
 import cl.duoc.worksi.repository.CommuneRepository;
 import cl.duoc.worksi.repository.CompanyRepository;
 import cl.duoc.worksi.repository.RegionRepository;
@@ -131,16 +134,7 @@ public class AdminCompanyService {
     Pageable pageable = PageRequest.of(p - 1, sz, parseSort(sort));
     Page<Company> result = companyRepository.findAll(pageable);
     List<AdminCompanyListItem> items =
-        result.getContent().stream()
-            .map(
-                c ->
-                    new AdminCompanyListItem(
-                        c.getId(),
-                        c.getCommercialName(),
-                        c.getLegalName(),
-                        c.getRut(),
-                        c.getCorporateEmail()))
-            .toList();
+        result.getContent().stream().map(this::toListItem).toList();
     PageResponse<AdminCompanyListItem> body =
         new PageResponse<>(
             items, p, result.getSize(), result.getTotalElements(), result.getTotalPages());
@@ -192,6 +186,29 @@ public class AdminCompanyService {
       return error(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "commune_id no coincide con region");
     }
     return null;
+  }
+
+  private AdminCompanyListItem toListItem(Company c) {
+    String regionName =
+        regionRepository.findById(c.getRegionId()).map(Region::getName).orElse("");
+    String communeName =
+        communeRepository
+            .findById(c.getCommuneId())
+            .filter(cm -> cm.getRegionId().equals(c.getRegionId()))
+            .map(Commune::getName)
+            .orElse("");
+    String sectorName =
+        sectorRepository.findById(c.getSectorId()).map(Sector::getName).orElse("");
+    return new AdminCompanyListItem(
+        c.getId(),
+        c.getCommercialName(),
+        c.getLegalName(),
+        c.getRut(),
+        c.getCorporateEmail(),
+        c.getPhone(),
+        regionName,
+        communeName,
+        sectorName);
   }
 
   private static Sort parseSort(String raw) {

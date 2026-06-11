@@ -43,7 +43,7 @@ export default function AdminRegisterRecruiter() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (location.pathname !== "/recruiters") return;
+    if (location.pathname !== "/recruiters/nueva") return;
     let cancelled = false;
     listCompanies(1, 100)
       .then((data) => {
@@ -135,7 +135,7 @@ export default function AdminRegisterRecruiter() {
       }
       await createRecruiter(payload);
       window.alert("Registro de reclutador exitoso");
-      navigate("/home");
+      navigate("/recruiters");
     } catch (err) {
       const msg =
         err.response?.data?.error?.message || "Error al registrar reclutador";

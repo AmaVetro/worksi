@@ -4,7 +4,8 @@ RUN apt-get update
 RUN apt-get install -y --no-install-recommends build-essential
 RUN rm -rf /var/lib/apt/lists/*
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --default-timeout=300 torch --index-url https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache-dir --default-timeout=300 -r requirements.txt
 RUN python -m spacy download es_core_news_sm
 RUN ["python", "-c", "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"]
 COPY app ./app

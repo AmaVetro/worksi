@@ -120,4 +120,49 @@ public class CompanyController {
     return companyApplicationsService.listForJob(
         principal.getUser().getId(), jobId, page, size, sort);
   }
+
+  @GetMapping("/jobs/{job_id}/applications/{application_id}")
+  public ResponseEntity<?> getJobApplication(
+      @AuthenticationPrincipal UserPrincipal principal,
+      @PathVariable("job_id") long jobId,
+      @PathVariable("application_id") long applicationId) {
+    return companyApplicationsService.getApplicationDetail(
+        principal.getUser().getId(), jobId, applicationId);
+  }
+
+  @GetMapping("/jobs/{job_id}/applications/{application_id}/candidate-profile")
+  public ResponseEntity<?> getJobApplicationCandidateProfile(
+      @AuthenticationPrincipal UserPrincipal principal,
+      @PathVariable("job_id") long jobId,
+      @PathVariable("application_id") long applicationId) {
+    return companyApplicationsService.getCandidateProfileForApplication(
+        principal.getUser().getId(), jobId, applicationId);
+  }
+
+  @GetMapping("/jobs/{job_id}/applications/{application_id}/cv")
+  public ResponseEntity<?> getJobApplicationCandidateCv(
+      @AuthenticationPrincipal UserPrincipal principal,
+      @PathVariable("job_id") long jobId,
+      @PathVariable("application_id") long applicationId) {
+    return companyApplicationsService.getCandidateCvMetadataForApplication(
+        principal.getUser().getId(), jobId, applicationId);
+  }
+
+  @GetMapping("/jobs/{job_id}/applications/{application_id}/cv/file")
+  public ResponseEntity<?> getJobApplicationCandidateCvFile(
+      @AuthenticationPrincipal UserPrincipal principal,
+      @PathVariable("job_id") long jobId,
+      @PathVariable("application_id") long applicationId,
+      @RequestParam(name = "download", defaultValue = "false") boolean download) {
+    return companyApplicationsService.getCandidateCvFileForApplication(
+        principal.getUser().getId(), jobId, applicationId, download);
+  }
+
+  @PatchMapping("/applications/{application_id}/viewed")
+  public ResponseEntity<?> markApplicationViewed(
+      @AuthenticationPrincipal UserPrincipal principal,
+      @PathVariable("application_id") long applicationId) {
+    return companyApplicationsService.markApplicationViewed(
+        principal.getUser().getId(), applicationId);
+  }
 }
