@@ -38,14 +38,10 @@ export default function RecruiterReclutamiento() {
             </div>
             <div className="action-card recruiter-reclutamiento-card">
               <p className="recruiter-reclutamiento-card-title">
-                Postulaciones por oferta
+                Matchs
               </p>
-              <button
-                type="button"
-                className="secondary-btn"
-                onClick={() => navigate("/recruiter/ofertas")}
-              >
-                Ir a ofertas
+              <button type="button" className="secondary-btn" disabled>
+                Ir a ver
               </button>
             </div>
           </div>

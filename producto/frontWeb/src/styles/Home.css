@@ -226,6 +226,15 @@
     align-items: stretch;
     }
 
+    .recruiter-job-detail-layout__body--enter {
+    opacity: 0;
+    transition: opacity 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .recruiter-job-detail-layout__body--enter.is-shown {
+    opacity: 1;
+    }
+
     .recruiter-job-detail-top-row {
     display: flex;
     justify-content: space-between;
@@ -860,6 +869,10 @@
     font-weight: 600;
     }
 
+.recruiter-jobs-list-item-title {
+    color: #0f766e;
+}
+
 .recruiter-jobs-list-actions {
     display: flex;
     align-items: center;
@@ -920,7 +933,7 @@
     display: block;
     margin-bottom: 8px;
     font-size: 1rem;
-    color: #0f172a;
+    color: #0f766e;
 }
 
 .recruiter-application-view-top-row,

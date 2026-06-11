@@ -36,6 +36,15 @@ function wait(ms) {
   });
 }
 
+function preloadImage(src) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve();
+    img.onerror = () => resolve();
+    img.src = src;
+  });
+}
+
 function measurePanelSize(panelEl, cardEl) {
   if (!panelEl || !cardEl) return null;
 
@@ -101,6 +110,10 @@ function DeleteIcon() {
   );
 }
 
+function isApplicationsUrl(searchParams) {
+  return searchParams.has("postulaciones");
+}
+
 export default function RecruiterJobDetail() {
   const { jobId } = useParams();
   const navigate = useNavigate();
@@ -108,18 +121,41 @@ export default function RecruiterJobDetail() {
   const [job, setJob] = useState(null);
   const [error, setError] = useState("");
   const [imageSrc, setImageSrc] = useState(null);
-  const [view, setView] = useState("detail");
+  const [mediaReady, setMediaReady] = useState(false);
+  const [view, setView] = useState(() =>
+    isApplicationsUrl(searchParams) ? "applications" : "detail"
+  );
   const [isAnimating, setIsAnimating] = useState(false);
-  const [detailMounted, setDetailMounted] = useState(true);
-  const [appsMounted, setAppsMounted] = useState(false);
-  const [detailShown, setDetailShown] = useState(true);
-  const [appsShown, setAppsShown] = useState(false);
-  const [editVisible, setEditVisible] = useState(true);
-  const [editShown, setEditShown] = useState(true);
-  const [listBackVisible, setListBackVisible] = useState(true);
-  const [listBackShown, setListBackShown] = useState(true);
-  const [detailBackVisible, setDetailBackVisible] = useState(false);
-  const [detailBackShown, setDetailBackShown] = useState(false);
+  const [detailMounted, setDetailMounted] = useState(
+    () => !isApplicationsUrl(searchParams)
+  );
+  const [appsMounted, setAppsMounted] = useState(() =>
+    isApplicationsUrl(searchParams)
+  );
+  const [detailShown, setDetailShown] = useState(
+    () => !isApplicationsUrl(searchParams)
+  );
+  const [appsShown, setAppsShown] = useState(() =>
+    isApplicationsUrl(searchParams)
+  );
+  const [editVisible, setEditVisible] = useState(
+    () => !isApplicationsUrl(searchParams)
+  );
+  const [editShown, setEditShown] = useState(
+    () => !isApplicationsUrl(searchParams)
+  );
+  const [listBackVisible, setListBackVisible] = useState(
+    () => !isApplicationsUrl(searchParams)
+  );
+  const [listBackShown, setListBackShown] = useState(
+    () => !isApplicationsUrl(searchParams)
+  );
+  const [detailBackVisible, setDetailBackVisible] = useState(() =>
+    isApplicationsUrl(searchParams)
+  );
+  const [detailBackShown, setDetailBackShown] = useState(() =>
+    isApplicationsUrl(searchParams)
+  );
   const [detailLeaving, setDetailLeaving] = useState(false);
   const [appsLeaving, setAppsLeaving] = useState(false);
   const [applications, setApplications] = useState([]);
@@ -132,6 +168,19 @@ export default function RecruiterJobDetail() {
   const detailPanelRef = useRef(null);
   const appsPanelRef = useRef(null);
   const initialUrlSyncDone = useRef(false);
+  const [contentShown, setContentShown] = useState(false);
+
+  useEffect(() => {
+    const ready = Boolean(job && mediaReady);
+    if (!ready) {
+      setContentShown(false);
+      return;
+    }
+    const id = window.requestAnimationFrame(() => {
+      setContentShown(true);
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [job, view, mediaReady]);
 
   useEffect(() => {
     if (!jobId) return;
@@ -142,29 +191,38 @@ export default function RecruiterJobDetail() {
         blobUrlRef.current = null;
       }
     };
+    setJob(null);
+    setError("");
     setImageSrc(null);
+    setMediaReady(false);
     revoke();
     getJob(jobId)
       .then(async (j) => {
         if (cancelled) return;
-        setJob(j);
+
+        let src = null;
         if (j.external_image_url) {
-          setImageSrc(j.external_image_url);
-          return;
-        }
-        if (j.has_protected_image) {
+          src = j.external_image_url;
+          await preloadImage(src);
+        } else if (j.has_protected_image) {
           try {
             const blob = await getJobImageBlob(jobId);
             if (cancelled) return;
             if (blob && blob.type && blob.type.startsWith("image/")) {
               const u = URL.createObjectURL(blob);
               blobUrlRef.current = u;
-              setImageSrc(u);
+              src = u;
+              await preloadImage(src);
             }
           } catch {
-            if (!cancelled) setImageSrc(null);
+            src = null;
           }
         }
+
+        if (cancelled) return;
+        setJob(j);
+        setImageSrc(src);
+        setMediaReady(true);
       })
       .catch((err) => {
         if (!cancelled) {
@@ -181,19 +239,8 @@ export default function RecruiterJobDetail() {
 
   useEffect(() => {
     if (!jobId || initialUrlSyncDone.current) return;
-    if (searchParams.has("postulaciones")) {
+    if (isApplicationsUrl(searchParams)) {
       initialUrlSyncDone.current = true;
-      setView("applications");
-      setDetailMounted(false);
-      setDetailShown(false);
-      setAppsMounted(true);
-      setAppsShown(true);
-      setEditVisible(false);
-      setEditShown(false);
-      setListBackVisible(false);
-      setListBackShown(false);
-      setDetailBackVisible(true);
-      setDetailBackShown(true);
       loadApplications();
     }
   }, [jobId, searchParams]);
@@ -372,52 +419,60 @@ export default function RecruiterJobDetail() {
       ? job.skills
       : (job?.skills_ids || []).map((id) => ({ id, name: `Skill #${id}` }));
 
+  const contentReady = job && mediaReady;
+
   return (
     <div>
       <Navbar />
       <div className="home-container home-container--job-detail">
         <div className="home-content recruiter-job-detail-shell">
           <div className="recruiter-job-detail-layout">
-            <div className="recruiter-job-detail-layout__body">
-              <div className="recruiter-job-detail-top-row">
-                <div className="recruiter-job-detail-top-back">
-                  {listBackVisible && (
+            <div
+              className={`recruiter-job-detail-layout__body${
+                contentReady ? " recruiter-job-detail-layout__body--enter" : ""
+              }${contentShown ? " is-shown" : ""}`}
+            >
+              {(contentReady || error) && (
+                <div className="recruiter-job-detail-top-row">
+                  <div className="recruiter-job-detail-top-back">
+                    {listBackVisible && (
+                      <button
+                        type="button"
+                        className="secondary-btn recruiter-job-detail-top-btn recruiter-job-detail-top-btn--fade"
+                        data-shown={listBackShown ? "true" : "false"}
+                        onClick={() => navigate("/recruiter/ofertas")}
+                        disabled={isAnimating}
+                      >
+                        Volver al listado
+                      </button>
+                    )}
+                    {detailBackVisible && (
+                      <button
+                        type="button"
+                        className="secondary-btn recruiter-job-detail-top-btn recruiter-job-detail-top-btn--fade"
+                        data-shown={detailBackShown ? "true" : "false"}
+                        onClick={backFromApplicationsList}
+                        disabled={isAnimating}
+                      >
+                        Volver al detalle
+                      </button>
+                    )}
+                  </div>
+                  {!error && jobId && job && editVisible && (
                     <button
                       type="button"
-                      className="secondary-btn recruiter-job-detail-top-btn recruiter-job-detail-top-btn--fade"
-                      data-shown={listBackShown ? "true" : "false"}
-                      onClick={() => navigate("/recruiter/ofertas")}
+                      className="secondary-btn recruiter-job-detail-top-btn recruiter-job-detail-top-btn--edit"
+                      data-shown={editShown ? "true" : "false"}
+                      onClick={() => navigate(`/recruiter/ofertas/${jobId}/editar`)}
                       disabled={isAnimating}
                     >
-                      Volver al listado
-                    </button>
-                  )}
-                  {detailBackVisible && (
-                    <button
-                      type="button"
-                      className="secondary-btn recruiter-job-detail-top-btn recruiter-job-detail-top-btn--fade"
-                      data-shown={detailBackShown ? "true" : "false"}
-                      onClick={backFromApplicationsList}
-                      disabled={isAnimating}
-                    >
-                      Volver al detalle
+                      Editar oferta
                     </button>
                   )}
                 </div>
-                {!error && jobId && job && editVisible && (
-                  <button
-                    type="button"
-                    className="secondary-btn recruiter-job-detail-top-btn recruiter-job-detail-top-btn--edit"
-                    data-shown={editShown ? "true" : "false"}
-                    onClick={() => navigate(`/recruiter/ofertas/${jobId}/editar`)}
-                    disabled={isAnimating}
-                  >
-                    Editar oferta
-                  </button>
-                )}
-              </div>
+              )}
               {error && <p className="recruiter-job-detail-error">{error}</p>}
-              {job && (
+              {contentReady && (
                 <div
                   ref={sceneRef}
                   className={`job-card-scene ${
@@ -592,7 +647,9 @@ export default function RecruiterJobDetail() {
                         }`}
                         data-shown={appsShown ? "true" : "false"}
                       >
-                        <h2 className="recruiter-job-detail-title">Postulaciones</h2>
+                        <h2 className="recruiter-job-detail-title recruiter-application-view-title">
+                          Postulaciones para {job.title}
+                        </h2>
                         {appsError && (
                           <p className="recruiter-job-detail-error">{appsError}</p>
                         )}

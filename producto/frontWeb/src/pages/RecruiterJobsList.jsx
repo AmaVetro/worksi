@@ -196,7 +196,9 @@ export default function RecruiterJobsList() {
                   }}
                 >
                   <div>
-                    <strong>{job.title}</strong>
+                    <strong className="recruiter-jobs-list-item-title">
+                      {job.title}
+                    </strong>
                     <div style={{ fontSize: 13, color: "#64748b" }}>
                       {job.company_commercial_name} · ${job.salary_offered} ·{" "}
                     {MODALITY_LABELS[job.modality] ?? job.modality} ·{" "}

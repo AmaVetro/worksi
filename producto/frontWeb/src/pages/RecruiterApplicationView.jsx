@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import { listJobApplications } from "../services/companyService";
+import { getJob, listJobApplications } from "../services/companyService";
 import ApplicationMatchRow, {
   candidateFullName,
   matchLevelFromScore,
@@ -41,6 +41,7 @@ export default function RecruiterApplicationView() {
   const location = useLocation();
   const scoreView = isScorePath(location.pathname);
   const [item, setItem] = useState(null);
+  const [jobTitle, setJobTitle] = useState("");
   const [error, setError] = useState("");
   const [view, setView] = useState(scoreView ? "score" : "application");
   const [flipped, setFlipped] = useState(scoreView);
@@ -52,9 +53,10 @@ export default function RecruiterApplicationView() {
   useEffect(() => {
     if (!jobId || !applicationId) return;
     let cancelled = false;
-    listJobApplications(jobId, 1, 100)
-      .then((data) => {
+    Promise.all([listJobApplications(jobId, 1, 100), getJob(jobId)])
+      .then(([data, job]) => {
         if (cancelled) return;
+        setJobTitle(job?.title || "");
         const found = (data.items || []).find(
           (x) => String(x.application_id) === String(applicationId)
         );
@@ -157,20 +159,22 @@ export default function RecruiterApplicationView() {
         <div className="home-content recruiter-job-detail-shell">
           <div className="recruiter-job-detail-layout">
             <div className="recruiter-job-detail-layout__body">
-              <div className="recruiter-job-detail-top-row recruiter-application-view-top-row">
-                <button
-                  type="button"
-                  className="secondary-btn recruiter-job-detail-top-btn"
-                  onClick={() =>
-                    isScorePath(location.pathname)
-                      ? switchToApplication()
-                      : navigate(`/recruiter/ofertas/${jobId}?postulaciones=1`)
-                  }
-                  disabled={isAnimating}
-                >
-                  Volver
-                </button>
-              </div>
+              {(item || error) && (
+                <div className="recruiter-job-detail-top-row recruiter-application-view-top-row">
+                  <button
+                    type="button"
+                    className="secondary-btn recruiter-job-detail-top-btn"
+                    onClick={() =>
+                      isScorePath(location.pathname)
+                        ? switchToApplication()
+                        : navigate(`/recruiter/ofertas/${jobId}?postulaciones=1`)
+                    }
+                    disabled={isAnimating}
+                  >
+                    Volver
+                  </button>
+                </div>
+              )}
               {error && <p className="recruiter-job-detail-error">{error}</p>}
               {item && (
                 <div
@@ -187,7 +191,7 @@ export default function RecruiterApplicationView() {
                           data-shown={appShown ? "true" : "false"}
                         >
                           <h2 className="recruiter-job-detail-title recruiter-application-view-title">
-                            Ver postulación
+                            Postulación para {jobTitle}
                           </h2>
                           <div className="recruiter-application-view-body">
                             <div className="recruiter-application-candidate-header">
