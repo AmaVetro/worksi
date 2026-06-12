@@ -4,9 +4,11 @@ import com.worksi.app.data.model.CandidateApplicationBody
 import com.worksi.app.data.model.CandidateApplicationCreatedJson
 import com.worksi.app.data.model.CandidateFeedPageJson
 import com.worksi.app.data.model.CandidateJobDetailJson
+import com.worksi.app.data.model.CandidateSavedJobBody
 import com.worksi.app.data.model.CandidateSwipeBody
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
@@ -29,4 +31,16 @@ interface CandidateJobsApi {
   suspend fun postApplication(
       @Body body: CandidateApplicationBody
   ): Response<CandidateApplicationCreatedJson>
+
+  @GET("api/v1/candidate/saved-jobs")
+  suspend fun getSavedJobs(
+      @Query("page") page: Int,
+      @Query("size") size: Int
+  ): Response<CandidateFeedPageJson>
+
+  @POST("api/v1/candidate/saved-jobs")
+  suspend fun saveJob(@Body body: CandidateSavedJobBody): Response<Unit>
+
+  @DELETE("api/v1/candidate/saved-jobs/{job_id}")
+  suspend fun unsaveJob(@Path("job_id") jobId: Long): Response<Unit>
 }

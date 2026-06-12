@@ -2,15 +2,12 @@ package cl.duoc.worksi.dto.admin;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class AdminRecruiterListItem {
+public class AdminRecruiterDetailResponse {
   @JsonProperty("user_id")
   private final long userId;
 
   @JsonProperty("email")
   private final String email;
-
-  @JsonProperty("role")
-  private final String role;
 
   @JsonProperty("first_name")
   private final String firstName;
@@ -21,44 +18,42 @@ public class AdminRecruiterListItem {
   @JsonProperty("last_name_maternal")
   private final String lastNameMaternal;
 
-  @JsonProperty("company_id")
-  private final long companyId;
-
-  @JsonProperty("company_commercial_name")
-  private final String companyCommercialName;
+  @JsonProperty("rut")
+  private final String rut;
 
   @JsonProperty("phone")
   private final String phone;
 
-  @JsonProperty("region_name")
-  private final String regionName;
+  @JsonProperty("mobile")
+  private final String mobile;
 
-  @JsonProperty("commune_name")
-  private final String communeName;
+  @JsonProperty("birth_date")
+  private final String birthDate;
 
-  public AdminRecruiterListItem(
+  @JsonProperty("company_id")
+  private final long companyId;
+
+  public AdminRecruiterDetailResponse(
       long userId,
       String email,
-      String role,
       String firstName,
       String lastNamePaternal,
       String lastNameMaternal,
-      long companyId,
-      String companyCommercialName,
+      String rut,
       String phone,
-      String regionName,
-      String communeName) {
+      String mobile,
+      String birthDate,
+      long companyId) {
     this.userId = userId;
     this.email = email;
-    this.role = role;
     this.firstName = firstName;
     this.lastNamePaternal = lastNamePaternal;
     this.lastNameMaternal = lastNameMaternal;
-    this.companyId = companyId;
-    this.companyCommercialName = companyCommercialName;
+    this.rut = rut;
     this.phone = phone;
-    this.regionName = regionName;
-    this.communeName = communeName;
+    this.mobile = mobile;
+    this.birthDate = birthDate;
+    this.companyId = companyId;
   }
 
   public long getUserId() {
@@ -67,10 +62,6 @@ public class AdminRecruiterListItem {
 
   public String getEmail() {
     return email;
-  }
-
-  public String getRole() {
-    return role;
   }
 
   public String getFirstName() {
@@ -85,23 +76,23 @@ public class AdminRecruiterListItem {
     return lastNameMaternal;
   }
 
-  public long getCompanyId() {
-    return companyId;
-  }
-
-  public String getCompanyCommercialName() {
-    return companyCommercialName;
+  public String getRut() {
+    return rut;
   }
 
   public String getPhone() {
     return phone;
   }
 
-  public String getRegionName() {
-    return regionName;
+  public String getMobile() {
+    return mobile;
   }
 
-  public String getCommuneName() {
-    return communeName;
+  public String getBirthDate() {
+    return birthDate;
+  }
+
+  public long getCompanyId() {
+    return companyId;
   }
 }

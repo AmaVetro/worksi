@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import { getJob, updateJob } from "../services/companyService";
+import { getJob as getRecruiterJob, updateJob as updateRecruiterJob } from "../services/companyService";
+import { getJob as getAdminJob, updateJob as updateAdminJob } from "../services/adminService";
 import {
   fetchRegions,
   fetchCommunes,
@@ -44,9 +45,15 @@ async function findSectorForSkillIds(sectors, skillIds) {
   return "";
 }
 
-export default function RecruiterJobEdit() {
+export default function RecruiterJobEdit({ adminMode = false }) {
   const { jobId } = useParams();
   const navigate = useNavigate();
+  const getJob = adminMode ? getAdminJob : getRecruiterJob;
+  const updateJob = adminMode ? updateAdminJob : updateRecruiterJob;
+  const detailPath = adminMode
+    ? `/ofertas/${jobId}`
+    : `/recruiter/ofertas/${jobId}`;
+  const backLabel = adminMode ? "Volver" : "Volver al detalle";
   const [regions, setRegions] = useState([]);
   const [communes, setCommunes] = useState([]);
   const [sectors, setSectors] = useState([]);
@@ -248,7 +255,7 @@ export default function RecruiterJobEdit() {
         skills_ids: Array.from(selectedSkillIds),
       };
       await updateJob(jobId, payload, jobImageFile);
-      navigate(`/recruiter/ofertas/${jobId}`);
+      navigate(detailPath);
     } catch (err) {
       const msg =
         err.response?.data?.error?.message || "Error al guardar cambios";
@@ -281,9 +288,9 @@ export default function RecruiterJobEdit() {
             <button
               type="button"
               className="secondary-btn"
-              onClick={() => navigate(`/recruiter/ofertas/${jobId}`)}
+              onClick={() => navigate(detailPath)}
             >
-              Volver al detalle
+              {backLabel}
             </button>
           </div>
         </div>
@@ -300,9 +307,9 @@ export default function RecruiterJobEdit() {
             type="button"
             className="secondary-btn"
             style={{ marginTop: 0, marginBottom: 12 }}
-            onClick={() => navigate(`/recruiter/ofertas/${jobId}`)}
+            onClick={() => navigate(detailPath)}
           >
-            Volver al detalle
+            {backLabel}
           </button>
           <h2>Editar oferta</h2>
           <form onSubmit={handleSubmit}>
@@ -503,7 +510,7 @@ export default function RecruiterJobEdit() {
               <button
                 type="button"
                 className="secondary-btn"
-                onClick={() => navigate(`/recruiter/ofertas/${jobId}`)}
+                onClick={() => navigate(detailPath)}
               >
                 Cancelar
               </button>

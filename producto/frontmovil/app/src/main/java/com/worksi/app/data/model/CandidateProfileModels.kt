@@ -7,6 +7,24 @@ data class CandidateProfileSkillJson(
     val name: String
 )
 
+data class CandidateProfilePatchJson(
+    @Json(name = "first_name") val firstName: String? = null,
+    @Json(name = "last_name_paternal") val lastNamePaternal: String? = null,
+    @Json(name = "last_name_maternal") val lastNameMaternal: String? = null,
+    val phone: String? = null,
+    val email: String? = null,
+    @Json(name = "profile_summary") val profileSummary: String? = null,
+    @Json(name = "salary_expected_min") val salaryExpectedMin: Int? = null,
+    @Json(name = "salary_expected_max") val salaryExpectedMax: Int? = null,
+    @Json(name = "years_experience") val yearsExperience: Int? = null,
+    @Json(name = "region_id") val regionId: Long? = null,
+    @Json(name = "commune_id") val communeId: Long? = null,
+    @Json(name = "sector_id") val sectorId: Long? = null,
+    @Json(name = "preferred_modalities") val preferredModalities: List<String>? = null,
+    @Json(name = "preferred_workloads") val preferredWorkloads: List<String>? = null,
+    @Json(name = "skills_ids") val skillsIds: List<Long>? = null
+)
+
 data class CandidateProfileJson(
     @Json(name = "first_name") val firstName: String,
     @Json(name = "middle_name") val middleName: String?,

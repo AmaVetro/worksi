@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class CandidateProfileService {
+  private static final Pattern EMAIL_PATTERN =
+      Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+
   private final CandidateProfileRepository candidateProfileRepository;
   private final UserRepository userRepository;
   private final CandidateSkillRepository candidateSkillRepository;
@@ -82,6 +86,53 @@ public class CandidateProfileService {
       return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Perfil no encontrado");
     }
     CandidateProfile profile = opt.get();
+    User user =
+        userRepository.findById(userId).orElseThrow(() -> new IllegalStateException());
+
+    if (req.getEmail() != null) {
+      String email = req.getEmail().trim();
+      if (email.isBlank() || !EMAIL_PATTERN.matcher(email).matches()) {
+        return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "email invalido");
+      }
+      Optional<User> emailOwner = userRepository.findByEmailIgnoreCase(email);
+      if (emailOwner.isPresent() && !emailOwner.get().getId().equals(userId)) {
+        return err(HttpStatus.CONFLICT, "CONFLICT", "Email ya registrado");
+      }
+      user.setEmail(email);
+      userRepository.save(user);
+    }
+
+    if (req.getFirstName() != null) {
+      String firstName = req.getFirstName().trim();
+      if (firstName.isBlank()) {
+        return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "first_name obligatorio");
+      }
+      profile.setFirstName(firstName);
+    }
+
+    if (req.getLastNamePaternal() != null) {
+      String lastNamePaternal = req.getLastNamePaternal().trim();
+      if (lastNamePaternal.isBlank()) {
+        return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "last_name_paternal obligatorio");
+      }
+      profile.setLastNamePaternal(lastNamePaternal);
+    }
+
+    if (req.getLastNameMaternal() != null) {
+      String lastNameMaternal = req.getLastNameMaternal().trim();
+      if (lastNameMaternal.isBlank()) {
+        return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "last_name_maternal obligatorio");
+      }
+      profile.setLastNameMaternal(lastNameMaternal);
+    }
+
+    if (req.getPhone() != null) {
+      String phone = req.getPhone().trim();
+      if (phone.isBlank()) {
+        return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "phone obligatorio");
+      }
+      profile.setPhone(phone);
+    }
 
     if (req.getRegionId() != null && req.getCommuneId() == null) {
       return err(
@@ -219,8 +270,7 @@ public class CandidateProfileService {
   }
 
   private CandidateProfileResponse toResponse(CandidateProfile p) {
-    User u =
-        userRepository.findById(p.getUserId()).orElseThrow(() -> new IllegalStateException());
+    User u = userRepository.findById(p.getUserId()).orElseThrow(() -> new IllegalStateException());
 
     List<String> modalities = new ArrayList<>();
     for (CandidatePreferredModality m : candidatePreferredModalityRepository.findByCandidateUserId(p.getUserId())) {

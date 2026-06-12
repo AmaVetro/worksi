@@ -9,6 +9,7 @@ import cl.duoc.worksi.dto.candidate.CandidateJobSkillPreviewResponse;
 import cl.duoc.worksi.entity.Commune;
 import cl.duoc.worksi.entity.Job;
 import cl.duoc.worksi.entity.JobSkill;
+import cl.duoc.worksi.entity.SavedJob;
 import cl.duoc.worksi.entity.Skill;
 import cl.duoc.worksi.entity.enums.JobStatus;
 import cl.duoc.worksi.repository.ApplicationRepository;
@@ -16,6 +17,7 @@ import cl.duoc.worksi.repository.CandidateJobSwipeRepository;
 import cl.duoc.worksi.repository.CommuneRepository;
 import cl.duoc.worksi.repository.JobRepository;
 import cl.duoc.worksi.repository.JobSkillRepository;
+import cl.duoc.worksi.repository.SavedJobRepository;
 import cl.duoc.worksi.repository.SkillRepository;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -31,6 +33,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class CandidateJobFeedService {
@@ -41,6 +44,7 @@ public class CandidateJobFeedService {
   private final ApplicationRepository applicationRepository;
   private final CommuneRepository communeRepository;
   private final ProductMatchService productMatchService;
+  private final SavedJobRepository savedJobRepository;
 
   public CandidateJobFeedService(
       JobRepository jobRepository,
@@ -49,7 +53,8 @@ public class CandidateJobFeedService {
       CandidateJobSwipeRepository candidateJobSwipeRepository,
       ApplicationRepository applicationRepository,
       CommuneRepository communeRepository,
-      ProductMatchService productMatchService) {
+      ProductMatchService productMatchService,
+      SavedJobRepository savedJobRepository) {
     this.jobRepository = jobRepository;
     this.jobSkillRepository = jobSkillRepository;
     this.skillRepository = skillRepository;
@@ -57,6 +62,7 @@ public class CandidateJobFeedService {
     this.applicationRepository = applicationRepository;
     this.communeRepository = communeRepository;
     this.productMatchService = productMatchService;
+    this.savedJobRepository = savedJobRepository;
   }
 
   public ResponseEntity<PageResponse<CandidateJobFeedItemResponse>> feed(
@@ -78,6 +84,49 @@ public class CandidateJobFeedService {
     PageResponse<CandidateJobFeedItemResponse> body =
         new PageResponse<>(
             items, p, result.getSize(), result.getTotalElements(), result.getTotalPages());
+    return ResponseEntity.ok(body);
+  }
+
+  @Transactional
+  public ResponseEntity<?> saveJob(long candidateUserId, long jobId) {
+    Optional<Job> opt = jobRepository.findById(jobId);
+    if (opt.isEmpty() || opt.get().getStatus() != JobStatus.ACTIVE) {
+      return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
+    }
+    if (savedJobRepository.existsByCandidateUserIdAndJobId(candidateUserId, jobId)) {
+      return ResponseEntity.noContent().build();
+    }
+    savedJobRepository.save(new SavedJob(candidateUserId, jobId));
+    return ResponseEntity.status(HttpStatus.CREATED).build();
+  }
+
+  @Transactional
+  public ResponseEntity<?> unsaveJob(long candidateUserId, long jobId) {
+    if (!savedJobRepository.existsByCandidateUserIdAndJobId(candidateUserId, jobId)) {
+      return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no guardada");
+    }
+    savedJobRepository.deleteByCandidateUserIdAndJobId(candidateUserId, jobId);
+    return ResponseEntity.noContent().build();
+  }
+
+  public ResponseEntity<PageResponse<CandidateJobFeedItemResponse>> listSavedJobs(
+      long candidateUserId, int page, int size) {
+    int p = Math.max(1, page);
+    int sz = Math.min(100, Math.max(1, size));
+    Pageable pageable = PageRequest.of(p - 1, sz, Sort.by(Sort.Direction.DESC, "createdAt"));
+    Page<SavedJob> saved =
+        savedJobRepository.findByCandidateUserIdOrderByCreatedAtDesc(candidateUserId, pageable);
+    List<CandidateJobFeedItemResponse> items = new ArrayList<>();
+    for (SavedJob row : saved.getContent()) {
+      Optional<Job> jobOpt = jobRepository.findById(row.getJobId());
+      if (jobOpt.isEmpty() || jobOpt.get().getStatus() != JobStatus.ACTIVE) {
+        continue;
+      }
+      items.add(toFeedItem(jobOpt.get(), candidateUserId));
+    }
+    PageResponse<CandidateJobFeedItemResponse> body =
+        new PageResponse<>(
+            items, p, saved.getSize(), saved.getTotalElements(), saved.getTotalPages());
     return ResponseEntity.ok(body);
   }
 

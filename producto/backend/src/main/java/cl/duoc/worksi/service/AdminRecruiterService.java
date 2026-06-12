@@ -2,13 +2,21 @@ package cl.duoc.worksi.service;
 
 import cl.duoc.worksi.dto.PageResponse;
 import cl.duoc.worksi.dto.admin.AdminRecruiterCreatedResponse;
+import cl.duoc.worksi.dto.admin.AdminRecruiterDetailResponse;
 import cl.duoc.worksi.dto.admin.AdminRecruiterListItem;
 import cl.duoc.worksi.dto.admin.AdminRecruiterRequest;
+import cl.duoc.worksi.dto.admin.AdminRecruiterUpdateRequest;
+import cl.duoc.worksi.entity.Commune;
 import cl.duoc.worksi.entity.Company;
+import cl.duoc.worksi.entity.Region;
 import cl.duoc.worksi.entity.RecruiterProfile;
 import cl.duoc.worksi.entity.User;
+import cl.duoc.worksi.entity.enums.JobStatus;
 import cl.duoc.worksi.entity.enums.UserRole;
+import cl.duoc.worksi.repository.CommuneRepository;
 import cl.duoc.worksi.repository.CompanyRepository;
+import cl.duoc.worksi.repository.JobRepository;
+import cl.duoc.worksi.repository.RegionRepository;
 import cl.duoc.worksi.repository.RecruiterProfileRepository;
 import cl.duoc.worksi.repository.UserRepository;
 import cl.duoc.worksi.validation.PasswordRules;
@@ -16,6 +24,7 @@ import cl.duoc.worksi.validation.RutRules;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
@@ -35,17 +44,26 @@ public class AdminRecruiterService {
 
   private final UserRepository userRepository;
   private final CompanyRepository companyRepository;
+  private final CommuneRepository communeRepository;
+  private final RegionRepository regionRepository;
   private final RecruiterProfileRepository recruiterProfileRepository;
+  private final JobRepository jobRepository;
   private final PasswordEncoder passwordEncoder;
 
   public AdminRecruiterService(
       UserRepository userRepository,
       CompanyRepository companyRepository,
+      CommuneRepository communeRepository,
+      RegionRepository regionRepository,
       RecruiterProfileRepository recruiterProfileRepository,
+      JobRepository jobRepository,
       PasswordEncoder passwordEncoder) {
     this.userRepository = userRepository;
     this.companyRepository = companyRepository;
+    this.communeRepository = communeRepository;
+    this.regionRepository = regionRepository;
     this.recruiterProfileRepository = recruiterProfileRepository;
+    this.jobRepository = jobRepository;
     this.passwordEncoder = passwordEncoder;
   }
 
@@ -125,6 +143,109 @@ public class AdminRecruiterService {
                 user.getId(), UserRole.RECRUITER.name(), user.getEmail(), req.getCompanyId()));
   }
 
+  public ResponseEntity<?> getRecruiter(long recruiterUserId) {
+    Optional<RecruiterProfile> profileOpt = recruiterProfileRepository.findById(recruiterUserId);
+    if (profileOpt.isEmpty()) {
+      return error(HttpStatus.NOT_FOUND, "NOT_FOUND", "Reclutador no encontrado");
+    }
+    User user = userRepository.findById(recruiterUserId).orElse(null);
+    if (user == null || user.getRole() != UserRole.RECRUITER) {
+      return error(HttpStatus.NOT_FOUND, "NOT_FOUND", "Reclutador no encontrado");
+    }
+    return ResponseEntity.ok(toDetail(user, profileOpt.get()));
+  }
+
+  @Transactional
+  public ResponseEntity<?> updateRecruiter(long recruiterUserId, AdminRecruiterUpdateRequest req) {
+    Optional<RecruiterProfile> profileOpt = recruiterProfileRepository.findById(recruiterUserId);
+    if (profileOpt.isEmpty()) {
+      return error(HttpStatus.NOT_FOUND, "NOT_FOUND", "Reclutador no encontrado");
+    }
+    User user = userRepository.findById(recruiterUserId).orElse(null);
+    if (user == null || user.getRole() != UserRole.RECRUITER) {
+      return error(HttpStatus.NOT_FOUND, "NOT_FOUND", "Reclutador no encontrado");
+    }
+    if (req.getEmail() == null
+        || req.getFirstName() == null
+        || req.getLastNamePaternal() == null
+        || req.getLastNameMaternal() == null
+        || req.getRut() == null
+        || req.getMobile() == null
+        || req.getBirthDate() == null
+        || req.getCompanyId() == null) {
+      return error(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Hay campos invalidos");
+    }
+    String email = req.getEmail().trim();
+    if (!EMAIL_PATTERN.matcher(email).matches()) {
+      return error(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Email invalido");
+    }
+    if (req.getPassword() != null && !req.getPassword().isBlank()) {
+      if (!PasswordRules.matches(req.getPassword())) {
+        return error(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "La contrasena no cumple la politica");
+      }
+    }
+    if (!RutRules.isValidChileRut(req.getRut())) {
+      return error(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "RUT invalido");
+    }
+    String rutNorm = RutRules.normalize(req.getRut());
+    if (recruiterProfileRepository.existsByRutAndUserIdNot(rutNorm, recruiterUserId)) {
+      return error(HttpStatus.CONFLICT, "CONFLICT", "RUT de reclutador ya registrado");
+    }
+    Optional<User> emailOwner = userRepository.findByEmailIgnoreCase(email);
+    if (emailOwner.isPresent() && !emailOwner.get().getId().equals(recruiterUserId)) {
+      return error(HttpStatus.CONFLICT, "CONFLICT", "Email ya registrado");
+    }
+    if (!companyRepository.existsById(req.getCompanyId())) {
+      return error(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "company_id no existe");
+    }
+    LocalDate birth;
+    try {
+      birth = LocalDate.parse(req.getBirthDate().trim());
+    } catch (Exception e) {
+      return error(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "birth_date invalido");
+    }
+    user.setEmail(email);
+    if (req.getPassword() != null && !req.getPassword().isBlank()) {
+      user.setPasswordHash(passwordEncoder.encode(req.getPassword()));
+    }
+    userRepository.save(user);
+    RecruiterProfile profile = profileOpt.get();
+    profile.setCompanyId(req.getCompanyId());
+    profile.setFirstName(req.getFirstName().trim());
+    profile.setLastNamePaternal(req.getLastNamePaternal().trim());
+    profile.setLastNameMaternal(req.getLastNameMaternal().trim());
+    profile.setRut(rutNorm);
+    profile.setMobile(req.getMobile().trim());
+    if (req.getPhone() != null && !req.getPhone().isBlank()) {
+      profile.setPhone(req.getPhone().trim());
+    } else {
+      profile.setPhone(null);
+    }
+    profile.setBirthDate(birth);
+    recruiterProfileRepository.save(profile);
+    return ResponseEntity.ok(toDetail(user, profile));
+  }
+
+  @Transactional
+  public ResponseEntity<?> deleteRecruiter(long recruiterUserId) {
+    Optional<RecruiterProfile> profileOpt = recruiterProfileRepository.findById(recruiterUserId);
+    if (profileOpt.isEmpty()) {
+      return error(HttpStatus.NOT_FOUND, "NOT_FOUND", "Reclutador no encontrado");
+    }
+    User user = userRepository.findById(recruiterUserId).orElse(null);
+    if (user == null || user.getRole() != UserRole.RECRUITER) {
+      return error(HttpStatus.NOT_FOUND, "NOT_FOUND", "Reclutador no encontrado");
+    }
+    if (jobRepository.countByPublishedByUserIdAndStatusNot(recruiterUserId, JobStatus.DELETED) > 0) {
+      return error(
+          HttpStatus.CONFLICT,
+          "CONFLICT",
+          "No se puede eliminar: el reclutador tiene ofertas publicadas");
+    }
+    userRepository.delete(user);
+    return ResponseEntity.noContent().build();
+  }
+
   public ResponseEntity<PageResponse<AdminRecruiterListItem>> listRecruiters(
       int page, int size, String sort) {
     int p = Math.max(1, page);
@@ -149,6 +270,9 @@ public class AdminRecruiterService {
                 rp -> {
                   User u = users.get(rp.getUserId());
                   Company co = companies.get(rp.getCompanyId());
+                  String contactPhone = contactPhone(rp);
+                  String regionName = regionNameForCompany(co);
+                  String communeName = communeNameForCompany(co);
                   return new AdminRecruiterListItem(
                       rp.getUserId(),
                       u != null ? u.getEmail() : "",
@@ -157,12 +281,55 @@ public class AdminRecruiterService {
                       rp.getLastNamePaternal(),
                       rp.getLastNameMaternal(),
                       rp.getCompanyId(),
-                      co != null ? co.getCommercialName() : "");
+                      co != null ? co.getCommercialName() : "",
+                      contactPhone,
+                      regionName,
+                      communeName);
                 })
             .toList();
     return ResponseEntity.ok(
         new PageResponse<>(
             items, p, result.getSize(), result.getTotalElements(), result.getTotalPages()));
+  }
+
+  private AdminRecruiterDetailResponse toDetail(User user, RecruiterProfile profile) {
+    String phone = profile.getPhone() != null ? profile.getPhone() : "";
+    return new AdminRecruiterDetailResponse(
+        user.getId(),
+        user.getEmail(),
+        profile.getFirstName(),
+        profile.getLastNamePaternal(),
+        profile.getLastNameMaternal(),
+        profile.getRut(),
+        phone,
+        profile.getMobile(),
+        profile.getBirthDate().toString(),
+        profile.getCompanyId());
+  }
+
+  private static String contactPhone(RecruiterProfile rp) {
+    if (rp.getPhone() != null && !rp.getPhone().isBlank()) {
+      return rp.getPhone().trim();
+    }
+    return rp.getMobile() != null ? rp.getMobile().trim() : "";
+  }
+
+  private String regionNameForCompany(Company company) {
+    if (company == null) {
+      return "";
+    }
+    return regionRepository.findById(company.getRegionId()).map(Region::getName).orElse("");
+  }
+
+  private String communeNameForCompany(Company company) {
+    if (company == null) {
+      return "";
+    }
+    return communeRepository
+        .findById(company.getCommuneId())
+        .filter(cm -> cm.getRegionId().equals(company.getRegionId()))
+        .map(Commune::getName)
+        .orElse("");
   }
 
   private static Sort parseSort(String raw) {

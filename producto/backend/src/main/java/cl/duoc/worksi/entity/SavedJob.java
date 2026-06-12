@@ -26,6 +26,11 @@ public class SavedJob {
 
   protected SavedJob() {}
 
+  public SavedJob(Long candidateUserId, Long jobId) {
+    this.candidateUserId = candidateUserId;
+    this.jobId = jobId;
+  }
+
   public Long getId() {
     return id;
   }

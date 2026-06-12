@@ -28,6 +28,10 @@ public interface JobRepository extends JpaRepository<Job, Long> {
 
   long countByStatusAndPublishedByUserId(JobStatus status, Long publishedByUserId);
 
+  long countByCompanyIdAndStatusNot(Long companyId, JobStatus status);
+
+  long countByPublishedByUserIdAndStatusNot(Long publishedByUserId, JobStatus status);
+
   long countByStatusAndPublishedByUserIdAndPublishedAtGreaterThanEqualAndPublishedAtLessThan(
       JobStatus status,
       Long publishedByUserId,
@@ -40,4 +44,26 @@ public interface JobRepository extends JpaRepository<Job, Long> {
       "SELECT j FROM Job j WHERE j.status = :st AND j.id NOT IN :excluded ORDER BY j.createdAt DESC")
   Page<Job> findByStatusAndIdNotIn(
       @Param("st") JobStatus status, @Param("excluded") Collection<Long> excluded, Pageable pageable);
+
+  @Query(
+      "SELECT j FROM Job j WHERE j.status = :status"
+          + " AND LOWER(j.companyCommercialName) LIKE LOWER(CONCAT('%', :companyName, '%'))"
+          + " AND LOWER(j.title) LIKE LOWER(CONCAT('%', :title, '%'))")
+  Page<Job> findAdminByStatus(
+      @Param("status") JobStatus status,
+      @Param("companyName") String companyName,
+      @Param("title") String title,
+      Pageable pageable);
+
+  @Query(
+      "SELECT j FROM Job j WHERE j.status IN :statuses"
+          + " AND j.closingDate IS NOT NULL AND j.closingDate <= :closingOnOrBefore"
+          + " AND LOWER(j.companyCommercialName) LIKE LOWER(CONCAT('%', :companyName, '%'))"
+          + " AND LOWER(j.title) LIKE LOWER(CONCAT('%', :title, '%'))")
+  Page<Job> findAdminDueForClosing(
+      @Param("statuses") Collection<JobStatus> statuses,
+      @Param("closingOnOrBefore") LocalDate closingOnOrBefore,
+      @Param("companyName") String companyName,
+      @Param("title") String title,
+      Pageable pageable);
 }

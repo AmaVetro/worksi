@@ -1,5 +1,6 @@
 package cl.duoc.worksi.dto.company;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -63,6 +64,10 @@ public class CompanyJobDetailResponse {
   @JsonProperty("applications_count")
   private final long applicationsCount;
 
+  @JsonProperty("recruiter_name")
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  private final String recruiterName;
+
   public CompanyJobDetailResponse(
       long id,
       String companyCommercialName,
@@ -85,7 +90,8 @@ public class CompanyJobDetailResponse {
       LocalDate closingDate,
       List<Long> skillsIds,
       List<CompanyJobSkillItemResponse> skills,
-      long applicationsCount) {
+      long applicationsCount,
+      String recruiterName) {
     this.id = id;
     this.companyCommercialName = companyCommercialName;
     this.title = title;
@@ -108,6 +114,7 @@ public class CompanyJobDetailResponse {
     this.skillsIds = skillsIds;
     this.skills = skills;
     this.applicationsCount = applicationsCount;
+    this.recruiterName = recruiterName;
   }
 
   public long getId() {
@@ -197,5 +204,9 @@ public class CompanyJobDetailResponse {
 
   public long getApplicationsCount() {
     return applicationsCount;
+  }
+
+  public String getRecruiterName() {
+    return recruiterName;
   }
 }

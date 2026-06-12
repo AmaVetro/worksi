@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.worksi.app.data.api.ApiErrorParser
 import com.worksi.app.data.api.RetrofitClient
 import com.worksi.app.data.model.CandidateProfileJson
+import com.worksi.app.data.model.CandidateProfilePatchJson
 import com.worksi.app.data.model.CandidateProfileSkillJson
 import com.worksi.app.data.model.CatalogItemDto
 import kotlinx.coroutines.Dispatchers
@@ -20,9 +21,27 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
 
+enum class ProfileEditSection {
+    PERSONAL,
+    DESCRIPTION,
+    SALARY,
+    YEARS,
+    MODALITIES,
+    WORKLOADS,
+    SKILLS
+}
+
 data class ProfileUiState(
     val isLoading: Boolean = true,
     val errorMessage: String? = null,
+    val rawProfile: CandidateProfileJson? = null,
+    val activeEditSection: ProfileEditSection? = null,
+    val editSaving: Boolean = false,
+    val editModalError: String? = null,
+    val regions: List<CatalogItemDto> = emptyList(),
+    val communes: List<CatalogItemDto> = emptyList(),
+    val sectors: List<CatalogItemDto> = emptyList(),
+    val skillsCatalog: List<CatalogItemDto> = emptyList(),
     val fullName: String = "",
     val sectorLine: String = "",
     val locationLine: String = "",
@@ -108,9 +127,10 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
             }
         }
         _ui.value =
-            ProfileUiState(
+            _ui.value.copy(
                 isLoading = false,
                 errorMessage = null,
+                rawProfile = p,
                 fullName = fullName.trim(),
                 sectorLine = if (sectorName.isBlank()) "—" else sectorName,
                 locationLine = location,
@@ -121,7 +141,89 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
                 yearsExperienceLine = formatYearsExperience(p.yearsExperience),
                 modalities = p.preferredModalities.map { modalityLabel(it) },
                 workloads = p.preferredWorkloads.map { workloadLabel(it) },
-                skills = p.skills)
+                skills = p.skills,
+                activeEditSection = null,
+                editSaving = false,
+                editModalError = null)
+    }
+
+    fun openEditSection(section: ProfileEditSection) {
+        viewModelScope.launch {
+            _ui.value = _ui.value.copy(activeEditSection = section, editModalError = null)
+            when (section) {
+                ProfileEditSection.PERSONAL -> ensurePersonalCatalogs()
+                ProfileEditSection.SKILLS -> ensureSkillsCatalog()
+                else -> Unit
+            }
+        }
+    }
+
+    fun closeEditSection() {
+        _ui.value = _ui.value.copy(activeEditSection = null, editModalError = null)
+    }
+
+    fun onEditRegionSelected(regionId: Long) {
+        viewModelScope.launch {
+            val communes =
+                withContext(Dispatchers.IO) {
+                    catalogApi.communes(regionId).body()?.items.orEmpty()
+                }
+            _ui.value = _ui.value.copy(communes = communes)
+        }
+    }
+
+    fun saveProfilePatch(patch: CandidateProfilePatchJson) {
+        viewModelScope.launch {
+            _ui.value = _ui.value.copy(editSaving = true, editModalError = null)
+            val err =
+                withContext(Dispatchers.IO) {
+                    try {
+                        val resp = profileApi.patchProfile(patch)
+                        if (!resp.isSuccessful) {
+                            ApiErrorParser.message(resp)
+                        } else {
+                            val body = resp.body()
+                            if (body == null) {
+                                "Respuesta vacía"
+                            } else {
+                                mapProfile(body)
+                                null
+                            }
+                        }
+                    } catch (e: Exception) {
+                        e.message ?: "Error de red"
+                    }
+                }
+            if (err != null) {
+                _ui.value = _ui.value.copy(editSaving = false, editModalError = err)
+            }
+        }
+    }
+
+    private suspend fun ensurePersonalCatalogs() {
+        val regions =
+            withContext(Dispatchers.IO) { catalogApi.regions().body()?.items.orEmpty() }
+        val sectors =
+            withContext(Dispatchers.IO) { catalogApi.sectors().body()?.items.orEmpty() }
+        val regionId = _ui.value.rawProfile?.regionId
+        val communes =
+            if (regionId != null) {
+                withContext(Dispatchers.IO) {
+                    catalogApi.communes(regionId).body()?.items.orEmpty()
+                }
+            } else {
+                emptyList()
+            }
+        _ui.value = _ui.value.copy(regions = regions, sectors = sectors, communes = communes)
+    }
+
+    private suspend fun ensureSkillsCatalog() {
+        val sectorId = _ui.value.rawProfile?.sectorId ?: return
+        val skills =
+            withContext(Dispatchers.IO) {
+                catalogApi.skills(sectorId).body()?.items.orEmpty()
+            }
+        _ui.value = _ui.value.copy(skillsCatalog = skills)
     }
 
     private suspend fun resolveName(

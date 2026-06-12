@@ -62,8 +62,10 @@ fun RegisterConsentScreen(
             Text("Uso de datos", style = MaterialTheme.typography.headlineSmall, color = White)
             Spacer(Modifier.height(16.dp))
             Text(
-                "En esta pantalla hay un escrito acerca de información para el usuario de qué cosas está aceptando, como serán usados sus datos y qué nivel de privacidad tiene.\n\n" +
-                    "Esta es la última pantalla antes de crear la cuenta oficialmente y se accede a ella desde \"Últimas preferencias\".",
+                "Al crear tu cuenta en WorkSí autorizas el tratamiento de tus datos personales para gestionar tu perfil de postulante, almacenar tu CV y mostrarte ofertas laborales compatibles con tus preferencias.\n\n" +
+                    "Los datos que envías (identidad, contacto, ubicación, rubro, skills, modalidades y cargas horarias preferidas, años de experiencia y renta esperada) se usan para operar la plataforma. El contenido de tu CV y tus preferencias de modalidad, jornada y experiencia pueden influir en el porcentaje de compatibilidad con las ofertas. Las skills declaradas en tu perfil y tu presentación personal no alteran ese porcentaje.\n\n" +
+                    "Tus datos se comparten con reclutadores de empresas solo cuando postulas a una oferta o cuando mantienes una conversación iniciada por ellos. Otros candidatos no pueden ver tu información. WorkSí conserva tu consentimiento con fecha y hora en nuestros sistemas.\n\n" +
+                    "Puedes actualizar tu perfil desde la app una vez creada la cuenta. Esta es la última pantalla antes del alta: al pulsar Completar se creará tu cuenta y se guardará tu CV en el servidor.",
                 color = White.copy(alpha = 0.9f),
                 style = MaterialTheme.typography.bodyMedium
             )

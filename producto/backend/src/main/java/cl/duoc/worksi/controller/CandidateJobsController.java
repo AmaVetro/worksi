@@ -2,6 +2,7 @@ package cl.duoc.worksi.controller;
 
 import cl.duoc.worksi.dto.PageResponse;
 import cl.duoc.worksi.dto.candidate.CandidateJobFeedItemResponse;
+import cl.duoc.worksi.dto.candidate.CandidateSavedJobRequest;
 import cl.duoc.worksi.dto.candidate.CandidateSwipeRequest;
 import cl.duoc.worksi.security.UserPrincipal;
 import cl.duoc.worksi.service.CandidateJobFeedService;
@@ -9,6 +10,7 @@ import cl.duoc.worksi.service.CandidateSwipeService;
 import cl.duoc.worksi.service.CompanyJobService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -57,5 +59,28 @@ public class CandidateJobsController {
       @AuthenticationPrincipal UserPrincipal principal, @RequestBody CandidateSwipeRequest body) {
     candidateSwipeService.record(principal.getUser().getId(), body);
     return ResponseEntity.noContent().build();
+  }
+
+  @GetMapping("/saved-jobs")
+  public ResponseEntity<PageResponse<CandidateJobFeedItemResponse>> listSavedJobs(
+      @AuthenticationPrincipal UserPrincipal principal,
+      @RequestParam(name = "page", defaultValue = "1") int page,
+      @RequestParam(name = "size", defaultValue = "20") int size) {
+    return candidateJobFeedService.listSavedJobs(principal.getUser().getId(), page, size);
+  }
+
+  @PostMapping("/saved-jobs")
+  public ResponseEntity<?> saveJob(
+      @AuthenticationPrincipal UserPrincipal principal, @RequestBody CandidateSavedJobRequest body) {
+    if (body == null || body.getJobId() == null) {
+      return ResponseEntity.badRequest().build();
+    }
+    return candidateJobFeedService.saveJob(principal.getUser().getId(), body.getJobId());
+  }
+
+  @DeleteMapping("/saved-jobs/{job_id}")
+  public ResponseEntity<?> unsaveJob(
+      @AuthenticationPrincipal UserPrincipal principal, @PathVariable("job_id") long jobId) {
+    return candidateJobFeedService.unsaveJob(principal.getUser().getId(), jobId);
   }
 }

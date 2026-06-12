@@ -8,6 +8,7 @@ import com.worksi.app.data.model.CandidateApplicationBody
 import com.worksi.app.data.model.CandidateJobFeedItemJson
 import com.worksi.app.data.model.CandidateSwipeBody
 import com.worksi.app.data.model.JobOffer
+import com.worksi.app.data.saved.CandidateSavedJobsStore
 import java.util.ArrayDeque
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -53,8 +54,11 @@ class HomeViewModel : ViewModel() {
   private val _applySuccess = MutableStateFlow<ApplySuccessInfo?>(null)
   val applySuccess: StateFlow<ApplySuccessInfo?> = _applySuccess.asStateFlow()
 
+  val savedJobIds: StateFlow<Set<Long>> = CandidateSavedJobsStore.savedJobIds
+
   init {
     viewModelScope.launch {
+      CandidateSavedJobsStore.ensureLoaded()
       loadInitial()
     }
   }
@@ -171,6 +175,21 @@ class HomeViewModel : ViewModel() {
 
   fun onSwipeToPass() {
     swipePassAndAdvance()
+  }
+
+  fun onToggleSaveCurrentOffer() {
+    val head = queue.firstOrNull() ?: return
+    if (_actionBusy.value || CandidateSavedJobsStore.busyJobId.value != null) return
+    val offerSnapshot = head.toJobOffer()
+    viewModelScope.launch {
+      _actionBusy.value = true
+      _errorMessage.value = null
+      val err = CandidateSavedJobsStore.toggleSave(head.jobId, offerSnapshot)
+      if (err != null) {
+        _errorMessage.value = err
+      }
+      _actionBusy.value = false
+    }
   }
 
   private fun swipePassAndAdvance() {

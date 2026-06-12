@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -90,6 +92,38 @@ fun MatchScoreRow(
                       .clip(RoundedCornerShape(999.dp))
                       .background(matchBarColor(percent)))
         }
+  }
+}
+
+@Composable
+fun MatchProgressBarRow(
+    matchPercentage: Float?,
+    modifier: Modifier = Modifier,
+    barHeight: Dp = 10.dp
+) {
+  val percent = matchPercentage?.toInt()?.coerceIn(0, 100)
+  val fillFraction = (percent ?: 0) / 100f
+
+  Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+    Box(
+        modifier =
+            Modifier.weight(1f)
+                .height(barHeight)
+                .clip(RoundedCornerShape(999.dp))
+                .background(MatchTrack)) {
+          Box(
+              modifier =
+                  Modifier.fillMaxHeight()
+                      .fillMaxWidth(fillFraction.coerceIn(0f, 1f))
+                      .clip(RoundedCornerShape(999.dp))
+                      .background(matchBarColor(percent)))
+        }
+    Spacer(modifier = Modifier.width(8.dp))
+    Text(
+        text = if (percent != null) "$percent%" else "—",
+        fontSize = 14.sp,
+        fontWeight = FontWeight.Bold,
+        color = matchBarColor(percent))
   }
 }
 

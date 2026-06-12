@@ -1,5 +1,6 @@
 package com.worksi.app.ui.home
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
@@ -7,6 +8,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -33,6 +35,7 @@ import com.worksi.app.data.local.SecureTokenStore
 import okhttp3.Headers
 import com.worksi.app.data.model.JobOffer
 import com.worksi.app.ui.components.CandidateMainBottomBar
+import com.worksi.app.ui.components.CandidateSessionSettingsAction
 import com.worksi.app.ui.components.MainTab
 import com.worksi.app.ui.theme.*
 
@@ -41,6 +44,7 @@ import com.worksi.app.ui.theme.*
 fun HomeScreen(
     viewModel: HomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
     onNavigateToProfile: () -> Unit = {},
+    onNavigateToSaved: () -> Unit = {},
     onNavigateToApplications: () -> Unit = {},
     onSettings: () -> Unit = {},
     onLogout: () -> Unit = {},
@@ -54,9 +58,9 @@ fun HomeScreen(
     val actionBusy by viewModel.actionBusy.collectAsState()
     val showApplyConfirm by viewModel.showApplyConfirm.collectAsState()
     val applySuccess by viewModel.applySuccess.collectAsState()
+    val savedJobIds by viewModel.savedJobIds.collectAsState()
     val errText = errorMessage
     val currentOffer = offer
-    var showMenu by remember { mutableStateOf(false) }
     val feedEnabled = !actionBusy && applySuccess == null
 
     if (showApplyConfirm) {
@@ -95,20 +99,7 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text("", color = White) },
                 actions = {
-                    Box {
-                        IconButton(onClick = { showMenu = true }) {
-                            Icon(Icons.Filled.Settings, contentDescription = "Configuración", tint = White)
-                        }
-                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                            DropdownMenuItem(
-                                text = { Text("Cerrar sesión") },
-                                onClick = {
-                                    showMenu = false
-                                    onLogout()
-                                }
-                            )
-                        }
-                    }
+                    CandidateSessionSettingsAction(onLogout = onLogout)
                 },
                 colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = CyanPrimary)
             )
@@ -118,6 +109,7 @@ fun HomeScreen(
                 selected = MainTab.Offers,
                 onProfile = onNavigateToProfile,
                 onOffers = { },
+                onSaved = onNavigateToSaved,
                 onApplications = onNavigateToApplications)
         }
     ) { innerPadding ->
@@ -180,6 +172,8 @@ fun HomeScreen(
                             ActionButtons(
                                 onPostular = viewModel::onSwipeToApply,
                                 onPasar = viewModel::onSwipeToPass,
+                                onToggleSave = viewModel::onToggleSaveCurrentOffer,
+                                isSaved = savedJobIds.contains(currentOffer.id),
                                 enabled = feedEnabled)
                         }
                     }
@@ -458,10 +452,54 @@ fun JobOfferCard(offer: JobOffer, onVerDetalles: () -> Unit, modifier: Modifier 
 }
 
 @Composable
-fun ActionButtons(onPostular: () -> Unit, onPasar: () -> Unit, enabled: Boolean = true) {
+fun SaveOfferButton(
+    isSaved: Boolean,
+    onClick: () -> Unit,
+    enabled: Boolean = true,
+    modifier: Modifier = Modifier
+) {
+    if (isSaved) {
+        Button(
+            onClick = onClick,
+            enabled = enabled,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = CyanPrimary,
+                contentColor = White
+            ),
+            shape = RoundedCornerShape(8.dp),
+            modifier = modifier.height(44.dp)
+        ) {
+            Icon(Icons.Filled.Bookmark, contentDescription = null, tint = White, modifier = Modifier.size(16.dp))
+            Spacer(modifier = Modifier.width(4.dp))
+            Text("Guardada", color = White, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+    } else {
+        OutlinedButton(
+            onClick = onClick,
+            enabled = enabled,
+            border = BorderStroke(1.dp, CyanPrimary),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = CyanPrimary),
+            shape = RoundedCornerShape(8.dp),
+            modifier = modifier.height(44.dp)
+        ) {
+            Icon(Icons.Filled.Bookmark, contentDescription = null, tint = CyanPrimary, modifier = Modifier.size(16.dp))
+            Spacer(modifier = Modifier.width(4.dp))
+            Text("Guardar", color = CyanPrimary, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+    }
+}
+
+@Composable
+fun ActionButtons(
+    onPostular: () -> Unit,
+    onPasar: () -> Unit,
+    onToggleSave: () -> Unit,
+    isSaved: Boolean,
+    enabled: Boolean = true
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
     ) {
         Button(
             onClick = onPostular,
@@ -477,8 +515,15 @@ fun ActionButtons(onPostular: () -> Unit, onPasar: () -> Unit, enabled: Boolean 
         ) {
             Icon(Icons.Filled.Send, contentDescription = null, tint = White, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(4.dp))
-            Text("Postular", color = White, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text("Postular", color = White, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
+
+        SaveOfferButton(
+            isSaved = isSaved,
+            onClick = onToggleSave,
+            enabled = enabled,
+            modifier = Modifier.weight(1f)
+        )
 
         Button(
             onClick = onPasar,
@@ -494,7 +539,7 @@ fun ActionButtons(onPostular: () -> Unit, onPasar: () -> Unit, enabled: Boolean 
         ) {
             Icon(Icons.Filled.Close, contentDescription = null, tint = White, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(4.dp))
-            Text("Pasar", color = White, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text("Pasar", color = White, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }

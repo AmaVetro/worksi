@@ -6,6 +6,7 @@ import cl.duoc.worksi.dto.MatchBreakdownResponse;
 import cl.duoc.worksi.entity.Application;
 import cl.duoc.worksi.entity.CandidateJobSwipe;
 import cl.duoc.worksi.entity.Job;
+import cl.duoc.worksi.entity.enums.ApplicationStatus;
 import cl.duoc.worksi.entity.enums.JobStatus;
 import cl.duoc.worksi.entity.enums.SwipeAction;
 import cl.duoc.worksi.repository.ApplicationRepository;
@@ -97,5 +98,24 @@ public class CandidateApplicationService {
         .body(
             new CandidateApplicationCreatedResponse(
                 saved.getId(), saved.getStatus().name(), appliedAt));
+  }
+
+  @Transactional
+  public ResponseEntity<Void> cancel(long candidateUserId, long applicationId) {
+    Application app =
+        applicationRepository
+            .findByIdAndCandidateUserId(applicationId, candidateUserId)
+            .orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Postulacion no encontrada"));
+    if (app.getStatus() == ApplicationStatus.CANCELLED) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, "Postulacion ya cancelada");
+    }
+    try {
+      app.cancel();
+    } catch (IllegalStateException e) {
+      throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
+    }
+    applicationRepository.save(app);
+    return ResponseEntity.noContent().build();
   }
 }

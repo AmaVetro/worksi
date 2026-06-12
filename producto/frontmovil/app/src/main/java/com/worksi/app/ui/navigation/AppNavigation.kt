@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -17,12 +20,15 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.worksi.app.ui.applications.ApplicationPreviewScreen
 import com.worksi.app.ui.applications.ApplicationsScreen
+import com.worksi.app.ui.applications.ApplicationsViewModel
 import com.worksi.app.ui.jobdetail.JobDetailScreen
 import com.worksi.app.data.local.SecureTokenStore
+import com.worksi.app.data.saved.CandidateSavedJobsStore
 import com.worksi.app.ui.home.HomeScreen
 import com.worksi.app.ui.home.HomeViewModel
 import com.worksi.app.ui.profile.ProfileScreen
 import com.worksi.app.ui.profile.ProfileViewModel
+import com.worksi.app.ui.saved.SavedJobsScreen
 import com.worksi.app.ui.login.LoginScreen
 import com.worksi.app.ui.login.LoginViewModel
 import com.worksi.app.ui.recovery.RecoveryCodeScreen
@@ -46,6 +52,7 @@ sealed class Screen(val route: String) {
     object Login : Screen("login")
     object Session : Screen("session")
     object Profile : Screen("profile")
+    object Saved : Screen("saved")
     object Applications : Screen("applications")
     object RegisterPersonal : Screen("register_personal")
     object RegisterCv : Screen("register_cv")
@@ -112,10 +119,12 @@ fun AppNavigation() {
             HomeScreen(
                 viewModel = homeViewModel,
                 onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
+                onNavigateToSaved = { navController.navigate(Screen.Saved.route) },
                 onNavigateToApplications = { navController.navigate(Screen.Applications.route) },
                 onSettings = { },
                 onLogout = {
                     SecureTokenStore.clear()
+                    CandidateSavedJobsStore.clear()
                     navController.navigate(Screen.Welcome.route) {
                         popUpTo(0) { inclusive = true }
                         launchSingleTop = true
@@ -135,9 +144,11 @@ fun AppNavigation() {
                 onNavigateToHome = {
                     navController.popBackStack(Screen.Session.route, inclusive = false)
                 },
+                onNavigateToSaved = { navController.navigate(Screen.Saved.route) },
                 onNavigateToApplications = { navController.navigate(Screen.Applications.route) },
                 onLogout = {
                     SecureTokenStore.clear()
+                    CandidateSavedJobsStore.clear()
                     navController.navigate(Screen.Welcome.route) {
                         popUpTo(0) { inclusive = true }
                         launchSingleTop = true
@@ -157,14 +168,51 @@ fun AppNavigation() {
               }
             }
 
-        composable(Screen.Applications.route) {
-            ApplicationsScreen(
+        composable(Screen.Saved.route) {
+            SavedJobsScreen(
                 onNavigateToHome = {
                     navController.popBackStack(Screen.Session.route, inclusive = false)
                 },
                 onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
+                onNavigateToApplications = { navController.navigate(Screen.Applications.route) },
+                onOpenJobDetail = { jobId -> navController.navigate("job_detail/$jobId") },
+                onLogout = {
+                    SecureTokenStore.clear()
+                    CandidateSavedJobsStore.clear()
+                    navController.navigate(Screen.Welcome.route) {
+                        popUpTo(0) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                })
+        }
+
+        composable(Screen.Applications.route) { entry ->
+            val applicationsViewModel: ApplicationsViewModel = viewModel(entry)
+            val refresh by entry.savedStateHandle.getStateFlow("refresh_applications", false)
+                .collectAsState()
+            LaunchedEffect(refresh) {
+                if (refresh) {
+                    applicationsViewModel.retry()
+                    entry.savedStateHandle["refresh_applications"] = false
+                }
+            }
+            ApplicationsScreen(
+                viewModel = applicationsViewModel,
+                onNavigateToHome = {
+                    navController.popBackStack(Screen.Session.route, inclusive = false)
+                },
+                onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
+                onNavigateToSaved = { navController.navigate(Screen.Saved.route) },
                 onOpenPreview = { appId ->
                     navController.navigate("application_preview/$appId")
+                },
+                onLogout = {
+                    SecureTokenStore.clear()
+                    CandidateSavedJobsStore.clear()
+                    navController.navigate(Screen.Welcome.route) {
+                        popUpTo(0) { inclusive = true }
+                        launchSingleTop = true
+                    }
                 })
         }
 
@@ -181,6 +229,14 @@ fun AppNavigation() {
                     onBack = { navController.popBackStack() },
                     onGoToJob = { jobId ->
                       navController.navigate("job_detail/$jobId")
+                    },
+                    onCancelled = {
+                      runCatching {
+                        navController
+                            .getBackStackEntry(Screen.Applications.route)
+                            .savedStateHandle["refresh_applications"] = true
+                      }
+                      navController.popBackStack()
                     })
               }
             }

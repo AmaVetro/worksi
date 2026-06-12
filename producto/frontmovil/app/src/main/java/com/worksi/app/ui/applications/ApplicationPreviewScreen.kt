@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -22,18 +23,23 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.worksi.app.ui.components.MatchScoreRow
+import com.worksi.app.ui.components.MatchProgressBarRow
 import com.worksi.app.ui.components.modalityLabel
 import com.worksi.app.ui.theme.CyanPrimary
 import com.worksi.app.ui.theme.White
@@ -48,12 +54,47 @@ fun ApplicationPreviewScreen(
     applicationId: Long,
     onBack: () -> Unit,
     onGoToJob: (Long) -> Unit,
+    onCancelled: () -> Unit,
     viewModel: ApplicationPreviewViewModel =
         viewModel(factory = ApplicationPreviewViewModel.factory(applicationId))
 ) {
   val isLoading by viewModel.isLoading.collectAsState()
   val error by viewModel.errorMessage.collectAsState()
   val detail by viewModel.detail.collectAsState()
+  val cancelBusy by viewModel.cancelBusy.collectAsState()
+  val cancelError by viewModel.cancelError.collectAsState()
+  val cancelled by viewModel.cancelled.collectAsState()
+  var showDeleteConfirm by remember { mutableStateOf(false) }
+
+  LaunchedEffect(cancelled) {
+    if (cancelled) {
+      onCancelled()
+    }
+  }
+
+  if (showDeleteConfirm) {
+    AlertDialog(
+        onDismissRequest = { if (!cancelBusy) showDeleteConfirm = false },
+        title = { Text("Eliminar postulación") },
+        text = { Text("¿Desea eliminar su postulación?") },
+        confirmButton = {
+          TextButton(
+              onClick = {
+                showDeleteConfirm = false
+                viewModel.cancelApplication()
+              },
+              enabled = !cancelBusy) {
+                Text("Confirmar")
+              }
+        },
+        dismissButton = {
+          TextButton(
+              onClick = { showDeleteConfirm = false },
+              enabled = !cancelBusy) {
+                Text("Cancelar")
+              }
+        })
+  }
 
   Scaffold(
       topBar = {
@@ -107,10 +148,8 @@ fun ApplicationPreviewScreen(
                               "Exp. requerida: ${d.yearsExperienceRequired} años",
                               color = MutedText)
                           Spacer(modifier = Modifier.height(DetailSpacing))
-                          MatchScoreRow(
-                              score = d.matchScore,
-                              barWidth = 120.dp,
-                              labelColor = CyanPrimary)
+                          MatchProgressBarRow(
+                              matchPercentage = d.matchScore?.toFloat())
                           if (d.description.isNotBlank()) {
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(d.description, color = MutedText, fontSize = 14.sp)
@@ -123,6 +162,20 @@ fun ApplicationPreviewScreen(
                       modifier = Modifier.fillMaxWidth(),
                       colors = ButtonDefaults.buttonColors(containerColor = CyanPrimary)) {
                         Text("Ir a Oferta")
+                      }
+                  Spacer(modifier = Modifier.height(8.dp))
+                  if (cancelError != null) {
+                    Text(cancelError ?: "", color = Color(0xFFB00020), fontSize = 14.sp)
+                    Spacer(modifier = Modifier.height(8.dp))
+                  }
+                  Button(
+                      onClick = { showDeleteConfirm = true },
+                      enabled = !cancelBusy,
+                      modifier = Modifier.fillMaxWidth(),
+                      colors =
+                          ButtonDefaults.buttonColors(
+                              containerColor = White, contentColor = CyanPrimary)) {
+                        Text(if (cancelBusy) "Eliminando…" else "Eliminar Postulación")
                       }
                 }
               }

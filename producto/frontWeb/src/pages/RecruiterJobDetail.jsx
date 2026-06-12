@@ -650,6 +650,9 @@ export default function RecruiterJobDetail() {
                         <h2 className="recruiter-job-detail-title recruiter-application-view-title">
                           Postulaciones para {job.title}
                         </h2>
+                        <p className="recruiter-applications-sort-hint">
+                          Ordenadas por compatibilidad (mayor a menor)
+                        </p>
                         {appsError && (
                           <p className="recruiter-job-detail-error">{appsError}</p>
                         )}

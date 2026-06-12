@@ -41,7 +41,10 @@ class ApplicationsViewModel : ViewModel() {
       try {
         val r = api.listApplications(page = 1, size = 50)
         if (r.isSuccessful) {
-          _items.value = r.body()?.items.orEmpty()
+          _items.value =
+              r.body()?.items.orEmpty().sortedByDescending {
+                it.matchScore ?: Double.NEGATIVE_INFINITY
+              }
         } else {
           _errorMessage.value = ApiErrorParser.message(r)
           _items.value = emptyList()

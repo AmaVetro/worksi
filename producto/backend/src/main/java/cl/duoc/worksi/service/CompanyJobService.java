@@ -387,6 +387,184 @@ public class CompanyJobService {
     return ResponseEntity.ok(body);
   }
 
+  public ResponseEntity<?> listAllJobs(
+      int page, int size, String sort, String statusFilter, String companyName, String title) {
+    int p = Math.max(1, page);
+    int sz = Math.min(100, Math.max(1, size));
+    Pageable pageable = PageRequest.of(p - 1, sz, parseSort(sort));
+    String companyFilter = trimNull(companyName) != null ? trimNull(companyName) : "";
+    String titleFilter = trimNull(title) != null ? trimNull(title) : "";
+    Page<Job> result;
+    if (isClosingDueListFilter(statusFilter)) {
+      LocalDate today = LocalDate.now(ZoneId.of("America/Santiago"));
+      result =
+          jobRepository.findAdminDueForClosing(
+              List.of(JobStatus.ACTIVE, JobStatus.INACTIVE),
+              today,
+              companyFilter,
+              titleFilter,
+              pageable);
+    } else {
+      JobStatus listStatus = parseListStatusFilter(statusFilter);
+      if (listStatus == null) {
+        return err(
+            HttpStatus.BAD_REQUEST,
+            "VALIDATION_ERROR",
+            "status debe ser ACTIVE, INACTIVE o CLOSING_DUE");
+      }
+      result =
+          jobRepository.findAdminByStatus(listStatus, companyFilter, titleFilter, pageable);
+    }
+    List<CompanyJobListItemResponse> items =
+        result.getContent().stream().map(this::toListItem).toList();
+    PageResponse<CompanyJobListItemResponse> body =
+        new PageResponse<>(
+            items, p, result.getSize(), result.getTotalElements(), result.getTotalPages());
+    return ResponseEntity.ok(body);
+  }
+
+  public ResponseEntity<?> getJobAsAdmin(long jobId) {
+    Optional<Job> job = loadAdminJob(jobId);
+    if (job.isEmpty()) {
+      return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
+    }
+    Job j = job.get();
+    return ResponseEntity.ok(toDetail(j, resolveRecruiterDisplayName(j.getPublishedByUserId())));
+  }
+
+  public ResponseEntity<?> getJobImageAsAdmin(long jobId) {
+    Optional<Job> job = loadAdminJob(jobId);
+    if (job.isEmpty()) {
+      return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
+    }
+    return serveStoredJobImageBytes(job.get());
+  }
+
+  @Transactional
+  public ResponseEntity<?> patchJobStatusAsAdmin(
+      long jobId, CompanyJobStatusPatchRequest body) {
+    if (body == null || body.getStatus() == null || body.getStatus().isBlank()) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "status obligatorio");
+    }
+    Optional<Job> opt = jobRepository.findById(jobId);
+    if (opt.isEmpty()) {
+      return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
+    }
+    Job job = opt.get();
+    if (job.getStatus() == JobStatus.DELETED) {
+      return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
+    }
+    JobStatus newStatus;
+    try {
+      newStatus = JobStatus.valueOf(body.getStatus().trim().toUpperCase(Locale.ROOT));
+    } catch (IllegalArgumentException e) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "status invalido");
+    }
+    if (newStatus != JobStatus.ACTIVE && newStatus != JobStatus.INACTIVE) {
+      return err(
+          HttpStatus.BAD_REQUEST,
+          "VALIDATION_ERROR",
+          "status debe ser ACTIVE o INACTIVE");
+    }
+    job.setStatus(newStatus);
+    jobRepository.save(job);
+    return ResponseEntity.ok(new CompanyJobStatusResponse(job.getId(), job.getStatus().name()));
+  }
+
+  @Transactional
+  public ResponseEntity<?> deleteJobAsAdmin(long jobId) {
+    Optional<Job> opt = jobRepository.findById(jobId);
+    if (opt.isEmpty()) {
+      return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
+    }
+    Job job = opt.get();
+    if (job.getStatus() == JobStatus.DELETED) {
+      return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
+    }
+    job.setStatus(JobStatus.DELETED);
+    jobRepository.save(job);
+    return ResponseEntity.ok(new CompanyJobStatusResponse(job.getId(), job.getStatus().name()));
+  }
+
+  @Transactional
+  public ResponseEntity<?> updateJobAsAdmin(long jobId, String dataJson, MultipartFile image) {
+    if (dataJson == null || dataJson.isBlank()) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Parte data obligatoria");
+    }
+    CompanyJobCreateRequest req;
+    try {
+      req = objectMapper.readValue(dataJson, CompanyJobCreateRequest.class);
+    } catch (IOException e) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "JSON data invalido");
+    }
+    if (image != null && !image.isEmpty()) {
+      String ct = image.getContentType();
+      if (ct == null || !ALLOWED_JOB_IMAGE_TYPES.contains(ct.toLowerCase(Locale.ROOT))) {
+        return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Imagen debe ser PNG o JPEG");
+      }
+    }
+    Optional<Job> opt = jobRepository.findById(jobId);
+    if (opt.isEmpty()) {
+      return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
+    }
+    Job job = opt.get();
+    if (job.getStatus() == JobStatus.DELETED) {
+      return err(HttpStatus.NOT_FOUND, "NOT_FOUND", "Oferta no encontrada");
+    }
+    ResponseEntity<?> v = validateJobPayload(req);
+    if (v != null) {
+      return v;
+    }
+    Modality modality;
+    Workload workload;
+    try {
+      modality = Modality.valueOf(req.getModality().trim());
+      workload = Workload.valueOf(req.getWorkload().trim());
+    } catch (IllegalArgumentException e) {
+      return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "modality o workload invalido");
+    }
+    job.setCompanyCommercialName(req.getCompanyCommercialName().trim());
+    job.setTitle(req.getTitle().trim());
+    job.setDescription(req.getDescription().trim());
+    job.setRegionId(req.getRegionId());
+    job.setCommuneId(req.getCommuneId());
+    job.setSalaryOffered(req.getSalaryOffered());
+    job.setYearsExperienceRequired(req.getYearsExperienceRequired());
+    job.setModality(modality);
+    job.setWorkload(workload);
+    job.setClosingDate(req.getClosingDate());
+    if (image == null || image.isEmpty()) {
+      String urlFromJson = trimNull(req.getImageUrl());
+      if (urlFromJson != null) {
+        job.setImageUrl(urlFromJson);
+      }
+    }
+    jobRepository.saveAndFlush(job);
+    jobSkillRepository.deleteAllByJobId(jobId);
+    for (Long sid : new LinkedHashSet<>(req.getSkillsIds())) {
+      jobSkillRepository.save(new JobSkill(jobId, sid));
+    }
+    if (image != null && !image.isEmpty()) {
+      try {
+        Files.createDirectories(jobImageBaseDir);
+        String ext =
+            image.getContentType().toLowerCase(Locale.ROOT).contains("png") ? ".png" : ".jpg";
+        String filename = jobId + "_" + UUID.randomUUID() + ext;
+        Path target = jobImageBaseDir.resolve(filename);
+        try (InputStream in = image.getInputStream()) {
+          Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
+        }
+        job.setImageUrl(target.toAbsolutePath().normalize().toString());
+        jobRepository.save(job);
+      } catch (IOException e) {
+        return err(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "No se pudo guardar la imagen");
+      }
+    }
+    Job saved = jobRepository.findById(jobId).orElse(job);
+    return ResponseEntity.ok(
+        toDetail(saved, resolveRecruiterDisplayName(saved.getPublishedByUserId())));
+  }
+
   public ResponseEntity<?> getMyJobStats(long recruiterUserId) {
     if (!recruiterProfileRepository.existsById(recruiterUserId)) {
       return err(HttpStatus.FORBIDDEN, "FORBIDDEN", "Sesion no autorizada como reclutador");
@@ -548,6 +726,10 @@ public class CompanyJobService {
   }
 
   private CompanyJobDetailResponse toDetail(Job job) {
+    return toDetail(job, null);
+  }
+
+  private CompanyJobDetailResponse toDetail(Job job, String recruiterName) {
     List<Long> skillIdsOrdered =
         jobSkillRepository.findAllByJobIdOrderBySkillName(job.getId()).stream()
             .map(js -> js.getId().getSkillId())
@@ -610,7 +792,27 @@ public class CompanyJobService {
         job.getClosingDate(),
         skillIdsOrdered,
         skillsOut,
-        companyApplicationsService.countVisibleApplications(job.getId()));
+        companyApplicationsService.countVisibleApplications(job.getId()),
+        recruiterName);
+  }
+
+  private String resolveRecruiterDisplayName(Long publishedByUserId) {
+    if (publishedByUserId == null) {
+      return "—";
+    }
+    return recruiterProfileRepository
+        .findById(publishedByUserId)
+        .map(
+            p -> {
+              String fn = p.getFirstName() != null ? p.getFirstName().trim() : "";
+              String lp =
+                  p.getLastNamePaternal() != null ? p.getLastNamePaternal().trim() : "";
+              String lm =
+                  p.getLastNameMaternal() != null ? p.getLastNameMaternal().trim() : "";
+              String full = (fn + " " + lp + " " + lm).trim().replaceAll("\\s+", " ");
+              return full.isEmpty() ? "—" : full;
+            })
+        .orElse("—");
   }
 
   private ResponseEntity<?> validateJobPayload(CompanyJobCreateRequest req) {
@@ -655,6 +857,18 @@ public class CompanyJobService {
       return err(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "closing_date obligatorio");
     }
     return null;
+  }
+
+  private Optional<Job> loadAdminJob(long jobId) {
+    Optional<Job> opt = jobRepository.findById(jobId);
+    if (opt.isEmpty()) {
+      return Optional.empty();
+    }
+    Job job = opt.get();
+    if (job.getStatus() == JobStatus.DELETED) {
+      return Optional.empty();
+    }
+    return Optional.of(job);
   }
 
   private Optional<Job> loadOwnedJob(long recruiterUserId, long jobId) {

@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import com.worksi.app.ui.components.CandidateMainBottomBar
 import com.worksi.app.ui.components.CvViewerOverlay
+import com.worksi.app.ui.components.CandidateSessionSettingsAction
 import com.worksi.app.ui.components.MainTab
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Settings
@@ -81,11 +82,11 @@ fun ProfileScreen(
     viewModel: ProfileViewModel = viewModel(),
     onBack: () -> Unit,
     onNavigateToHome: () -> Unit,
+    onNavigateToSaved: () -> Unit = {},
     onNavigateToApplications: () -> Unit = {},
     onLogout: () -> Unit
 ) {
     val state by viewModel.ui.collectAsState()
-    var showMenu by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var pickValidating by remember { mutableStateOf(false) }
@@ -152,19 +153,7 @@ fun ProfileScreen(
             TopAppBar(
                 title = { Text("", color = White) },
                 actions = {
-                    Box {
-                        IconButton(onClick = { showMenu = true }) {
-                            Icon(Icons.Filled.Settings, contentDescription = null, tint = White)
-                        }
-                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                            DropdownMenuItem(
-                                text = { Text("Cerrar sesión") },
-                                onClick = {
-                                    showMenu = false
-                                    onLogout()
-                                })
-                        }
-                    }
+                    CandidateSessionSettingsAction(onLogout = onLogout)
                 },
                 colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = CyanPrimary))
         },
@@ -173,6 +162,7 @@ fun ProfileScreen(
                 selected = MainTab.Profile,
                 onProfile = { },
                 onOffers = onNavigateToHome,
+                onSaved = onNavigateToSaved,
                 onApplications = onNavigateToApplications)
         }) { innerPadding ->
         Column(
@@ -221,11 +211,14 @@ fun ProfileScreen(
                         sectorLine = state.sectorLine,
                         locationLine = state.locationLine,
                         email = state.email,
-                        phone = state.phone)
+                        phone = state.phone,
+                        onEdit = { viewModel.openEditSection(ProfileEditSection.PERSONAL) })
 
                     Spacer(Modifier.height(20.dp))
 
-                    SectionWithEditTitle(title = "Descripción", onEdit = {}) {
+                    SectionWithEditTitle(
+                        title = "Descripción",
+                        onEdit = { viewModel.openEditSection(ProfileEditSection.DESCRIPTION) }) {
                         Text(
                             text = state.description,
                             fontSize = 15.sp,
@@ -255,29 +248,48 @@ fun ProfileScreen(
 
                     Spacer(Modifier.height(24.dp))
 
-                    SalaryBlock(salaryLine = state.salaryLine)
+                    SalaryBlock(
+                        salaryLine = state.salaryLine,
+                        onEdit = { viewModel.openEditSection(ProfileEditSection.SALARY) })
 
                     Spacer(Modifier.height(20.dp))
 
-                    YearsExperienceBlock(yearsLine = state.yearsExperienceLine)
+                    YearsExperienceBlock(
+                        yearsLine = state.yearsExperienceLine,
+                        onEdit = { viewModel.openEditSection(ProfileEditSection.YEARS) })
 
                     Spacer(Modifier.height(20.dp))
 
-                    PreferenceBlock(title = "Modalidades preferidas", chips = state.modalities)
+                    PreferenceBlock(
+                        title = "Modalidades preferidas",
+                        chips = state.modalities,
+                        onEdit = { viewModel.openEditSection(ProfileEditSection.MODALITIES) })
 
                     Spacer(Modifier.height(16.dp))
 
-                    PreferenceBlock(title = "Cargas horarias preferidas", chips = state.workloads)
+                    PreferenceBlock(
+                        title = "Cargas horarias preferidas",
+                        chips = state.workloads,
+                        onEdit = { viewModel.openEditSection(ProfileEditSection.WORKLOADS) })
 
                     Spacer(Modifier.height(20.dp))
 
-                    SkillsBlock(skillNames = state.skills.map { it.name })
+                    SkillsBlock(
+                        skillNames = state.skills.map { it.name },
+                        onEdit = { viewModel.openEditSection(ProfileEditSection.SKILLS) })
 
                     Spacer(Modifier.height(24.dp))
                 }
             }
         }
     }
+
+    ProfileEditModalsHost(
+        section = state.activeEditSection,
+        state = state,
+        onRegionChange = viewModel::onEditRegionSelected,
+        onCancel = viewModel::closeEditSection,
+        onSave = viewModel::saveProfilePatch)
 
     CvViewerOverlay(
         visible = state.cvModalVisible,
@@ -296,7 +308,8 @@ private fun PersonalInfoBlock(
     sectorLine: String,
     locationLine: String,
     email: String,
-    phone: String
+    phone: String,
+    onEdit: () -> Unit
 ) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
         Column(modifier = Modifier.weight(1f)) {
@@ -338,7 +351,7 @@ private fun PersonalInfoBlock(
                 }
             }
         }
-        IconButton(onClick = {}, modifier = Modifier.size(40.dp)) {
+        IconButton(onClick = onEdit, modifier = Modifier.size(40.dp)) {
             Icon(Icons.Filled.Edit, contentDescription = null, tint = CyanPrimary, modifier = Modifier.size(22.dp))
         }
     }
@@ -360,7 +373,7 @@ private fun SectionWithEditTitle(title: String, onEdit: () -> Unit, content: @Co
 }
 
 @Composable
-private fun SalaryBlock(salaryLine: String) {
+private fun SalaryBlock(salaryLine: String, onEdit: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -370,14 +383,14 @@ private fun SalaryBlock(salaryLine: String) {
             Spacer(Modifier.height(6.dp))
             Text(salaryLine, fontSize = 15.sp, color = Color.Black, textAlign = TextAlign.Center)
         }
-        IconButton(onClick = {}, modifier = Modifier.size(40.dp)) {
+        IconButton(onClick = onEdit, modifier = Modifier.size(40.dp)) {
             Icon(Icons.Filled.Edit, contentDescription = null, tint = CyanPrimary, modifier = Modifier.size(22.dp))
         }
     }
 }
 
 @Composable
-private fun YearsExperienceBlock(yearsLine: String) {
+private fun YearsExperienceBlock(yearsLine: String, onEdit: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -387,7 +400,7 @@ private fun YearsExperienceBlock(yearsLine: String) {
             Spacer(Modifier.height(6.dp))
             Text(yearsLine, fontSize = 15.sp, color = Color.Black, textAlign = TextAlign.Center)
         }
-        IconButton(onClick = {}, modifier = Modifier.size(40.dp)) {
+        IconButton(onClick = onEdit, modifier = Modifier.size(40.dp)) {
             Icon(Icons.Filled.Edit, contentDescription = null, tint = CyanPrimary, modifier = Modifier.size(22.dp))
         }
     }
@@ -395,14 +408,22 @@ private fun YearsExperienceBlock(yearsLine: String) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun PreferenceBlock(title: String, chips: List<String>) {
-    Text(
-        text = title,
-        fontSize = 16.sp,
-        fontWeight = FontWeight.Bold,
-        color = CyanPrimary,
+private fun PreferenceBlock(title: String, chips: List<String>, onEdit: () -> Unit) {
+    Row(
         modifier = Modifier.fillMaxWidth(),
-        textAlign = TextAlign.Center)
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(
+            text = title,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            color = CyanPrimary,
+            modifier = Modifier.weight(1f),
+            textAlign = TextAlign.Center)
+        IconButton(onClick = onEdit, modifier = Modifier.size(40.dp)) {
+            Icon(Icons.Filled.Edit, contentDescription = null, tint = CyanPrimary, modifier = Modifier.size(22.dp))
+        }
+    }
     Spacer(Modifier.height(10.dp))
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
@@ -418,13 +439,13 @@ private fun PreferenceBlock(title: String, chips: List<String>) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun SkillsBlock(skillNames: List<String>) {
+private fun SkillsBlock(skillNames: List<String>, onEdit: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween) {
         Text("Skills", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-        IconButton(onClick = {}, modifier = Modifier.size(40.dp)) {
+        IconButton(onClick = onEdit, modifier = Modifier.size(40.dp)) {
             Icon(Icons.Filled.Edit, contentDescription = null, tint = CyanPrimary, modifier = Modifier.size(22.dp))
         }
     }
@@ -437,12 +458,6 @@ private fun SkillsBlock(skillNames: List<String>) {
             Text("—", color = MutedText, fontSize = 14.sp)
         } else {
             skillNames.forEach { ProfileChip(it) }
-        }
-    }
-    Spacer(Modifier.height(12.dp))
-    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-        IconButton(onClick = {}, modifier = Modifier.size(48.dp)) {
-            Icon(Icons.Filled.Add, contentDescription = null, tint = ChipText, modifier = Modifier.size(32.dp))
         }
     }
 }

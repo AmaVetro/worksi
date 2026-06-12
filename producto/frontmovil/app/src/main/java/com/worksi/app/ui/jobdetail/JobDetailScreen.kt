@@ -25,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -58,6 +59,7 @@ import com.worksi.app.ui.components.MatchBreakdownContent
 import com.worksi.app.ui.components.modalityLabel
 import com.worksi.app.ui.components.workloadLabel
 import com.worksi.app.ui.home.OfferHeroImage
+import com.worksi.app.ui.home.SaveOfferButton
 import com.worksi.app.ui.theme.CyanPrimary
 import com.worksi.app.ui.theme.White
 
@@ -70,6 +72,9 @@ fun JobDetailScreen(
         viewModel(factory = JobDetailViewModel.factory(jobId), key = "job_detail_$jobId")
 ) {
   val state by viewModel.state.collectAsState()
+  val isSaved by viewModel.isSaved.collectAsState()
+  val saveError by viewModel.saveError.collectAsState()
+  val saveBusy by viewModel.saveBusy.collectAsState()
 
   Scaffold(
       topBar = {
@@ -112,7 +117,13 @@ fun JobDetailScreen(
                       Spacer(modifier = Modifier.height(16.dp))
                       Button(onClick = { viewModel.retry() }) { Text("Reintentar") }
                     }
-                is JobDetailState.Ready -> JobDetailContent(s.detail)
+                is JobDetailState.Ready ->
+                    JobDetailContent(
+                        d = s.detail,
+                        isSaved = isSaved,
+                        saveError = saveError,
+                        saveBusy = saveBusy,
+                        onToggleSave = { viewModel.toggleSaveJob() })
               }
             }
       }
@@ -120,7 +131,13 @@ fun JobDetailScreen(
 
 @Composable
 @OptIn(ExperimentalLayoutApi::class)
-private fun JobDetailContent(d: CandidateJobDetailJson) {
+private fun JobDetailContent(
+    d: CandidateJobDetailJson,
+    isSaved: Boolean,
+    saveError: String?,
+    saveBusy: Boolean,
+    onToggleSave: () -> Unit
+) {
   Column(
       modifier =
           Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
@@ -228,6 +245,24 @@ private fun JobDetailContent(d: CandidateJobDetailJson) {
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
           JobMatchingCard(match = d.match)
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (saveError != null) {
+          Text(
+              text = saveError,
+              color = Color(0xFFB00020),
+              fontSize = 14.sp,
+              fontWeight = FontWeight.Medium,
+              modifier = Modifier.fillMaxWidth())
+          Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        SaveOfferButton(
+            isSaved = isSaved,
+            onClick = onToggleSave,
+            enabled = !saveBusy,
+            modifier = Modifier.fillMaxWidth())
       }
 }
 

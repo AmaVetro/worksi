@@ -4,6 +4,21 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
 public class CandidateProfilePatchRequest {
+  @JsonProperty("first_name")
+  private String firstName;
+
+  @JsonProperty("last_name_paternal")
+  private String lastNamePaternal;
+
+  @JsonProperty("last_name_maternal")
+  private String lastNameMaternal;
+
+  @JsonProperty("phone")
+  private String phone;
+
+  @JsonProperty("email")
+  private String email;
+
   @JsonProperty("profile_summary")
   private String profileSummary;
 
@@ -33,6 +48,46 @@ public class CandidateProfilePatchRequest {
 
   @JsonProperty("skills_ids")
   private List<Long> skillsIds;
+
+  public String getFirstName() {
+    return firstName;
+  }
+
+  public void setFirstName(String firstName) {
+    this.firstName = firstName;
+  }
+
+  public String getLastNamePaternal() {
+    return lastNamePaternal;
+  }
+
+  public void setLastNamePaternal(String lastNamePaternal) {
+    this.lastNamePaternal = lastNamePaternal;
+  }
+
+  public String getLastNameMaternal() {
+    return lastNameMaternal;
+  }
+
+  public void setLastNameMaternal(String lastNameMaternal) {
+    this.lastNameMaternal = lastNameMaternal;
+  }
+
+  public String getPhone() {
+    return phone;
+  }
+
+  public void setPhone(String phone) {
+    this.phone = phone;
+  }
+
+  public String getEmail() {
+    return email;
+  }
+
+  public void setEmail(String email) {
+    this.email = email;
+  }
 
   public String getProfileSummary() {
     return profileSummary;

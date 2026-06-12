@@ -175,4 +175,12 @@ public class Application {
     status = ApplicationStatus.VIEWED;
     viewedAt = LocalDateTime.now(ZoneOffset.UTC);
   }
+
+  public void cancel() {
+    if (status == ApplicationStatus.CANCELLED) {
+      throw new IllegalStateException("Postulacion ya cancelada");
+    }
+    status = ApplicationStatus.CANCELLED;
+    cancelledAt = LocalDateTime.now(ZoneOffset.UTC);
+  }
 }

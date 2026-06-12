@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
-import { listRecruiters } from "../services/adminService";
+import ConfirmModal from "../components/ConfirmModal";
+import AdminListEditButton from "../components/AdminListEditButton";
+import { deleteRecruiter, listRecruiters } from "../services/adminService";
 import "../styles/AdminForms.css";
 
 function recruiterName(row) {
@@ -17,7 +19,10 @@ export default function AdminRecruitersList() {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [busyId, setBusyId] = useState(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -38,6 +43,25 @@ export default function AdminRecruitersList() {
     load();
   }, [load]);
 
+  const confirmDelete = async () => {
+    if (!deleteTarget?.user_id || busyId) return;
+    setBusyId(deleteTarget.user_id);
+    setError("");
+    setSuccess("");
+    try {
+      await deleteRecruiter(deleteTarget.user_id);
+      setDeleteTarget(null);
+      setSuccess("Reclutador eliminado correctamente.");
+      await load();
+    } catch (err) {
+      setError(
+        err.response?.data?.error?.message || "No se pudo eliminar el reclutador"
+      );
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   return (
     <div>
       <Navbar />
@@ -55,6 +79,7 @@ export default function AdminRecruitersList() {
           </div>
           {loading && <p className="admin-list-status">Cargando…</p>}
           {error && <p className="admin-form-error">{error}</p>}
+          {success && <p className="admin-list-success">{success}</p>}
           {!loading && !error && items.length === 0 && (
             <p className="admin-list-empty">
               No hay reclutadores registrados. Use «Registrar reclutador» para
@@ -68,8 +93,12 @@ export default function AdminRecruitersList() {
                   <tr>
                     <th>Nombre</th>
                     <th>Email</th>
+                    <th>Teléfono</th>
+                    <th>Región</th>
+                    <th>Comuna</th>
                     <th>Empresa</th>
                     <th>Rol</th>
+                    <th>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -77,8 +106,28 @@ export default function AdminRecruitersList() {
                     <tr key={row.user_id}>
                       <td>{recruiterName(row)}</td>
                       <td>{row.email}</td>
+                      <td>{row.phone || "—"}</td>
+                      <td>{row.region_name || "—"}</td>
+                      <td>{row.commune_name || "—"}</td>
                       <td>{row.company_commercial_name || "—"}</td>
-                      <td>{row.role}</td>
+                      <td>{row.role || "RECRUITER"}</td>
+                      <td>
+                        <div className="admin-list-actions">
+                          <AdminListEditButton
+                            onClick={() =>
+                              navigate(`/recruiters/${row.user_id}/editar`)
+                            }
+                          />
+                          <button
+                            type="button"
+                            className="admin-list-delete-btn"
+                            disabled={busyId === row.user_id}
+                            onClick={() => setDeleteTarget(row)}
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -87,6 +136,14 @@ export default function AdminRecruitersList() {
           )}
         </div>
       </div>
+      <ConfirmModal
+        open={deleteTarget !== null}
+        message={`¿Desea eliminar al reclutador «${recruiterName(deleteTarget ?? {})}»?`}
+        confirmLabel="Eliminar"
+        confirmDanger
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

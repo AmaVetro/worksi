@@ -366,6 +366,27 @@
     width: 100%;
     }
 
+    .admin-job-detail-card-footer {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: end;
+    gap: 16px;
+    }
+
+    .admin-job-detail-card-footer .recruiter-job-detail-footer-actions {
+    justify-self: start;
+    }
+
+    .admin-job-detail-card-footer .admin-job-recruiter-label {
+    justify-self: center;
+    text-align: center;
+    padding: 0 16px;
+    }
+
+    .admin-job-detail-card-footer .recruiter-job-detail-dates {
+    justify-self: end;
+    }
+
     @media (max-width: 1100px) {
     .home-container--job-detail {
         justify-content: center;
@@ -549,8 +570,96 @@
     .recruitment-card {
     background: white;
     padding: 25px;
-    flex: 2; /* ocupa más espacio */
+    flex: 2;
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .admin-system-status-card {
+    background: white;
+    padding: 25px;
+    flex: 1;
+    min-width: 280px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .admin-system-status-header {
+    align-items: center;
+    gap: 12px;
+    }
+
+    .admin-system-status-header h3 {
+    margin: 0;
+    }
+
+    .admin-system-status-refresh {
+    background: #e2e8f0;
+    color: #334155;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    white-space: nowrap;
+    }
+
+    .admin-system-status-refresh:hover:not(:disabled) {
+    background: #cbd5e1;
+    }
+
+    .admin-system-status-refresh:disabled {
+    opacity: 0.65;
+    cursor: default;
+    }
+
+    .admin-system-status-error {
+    color: #b91c1c;
+    font-size: 14px;
+    margin: 0 0 12px;
+    }
+
+    .admin-system-status-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    }
+
+    .admin-system-status-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    }
+
+    .admin-system-status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    }
+
+    .admin-system-status-dot--up {
+    background: #22c55e;
+    }
+
+    .admin-system-status-dot--down {
+    background: #ef4444;
+    }
+
+    .admin-system-status-dot--pending {
+    background: #94a3b8;
+    }
+
+    .admin-system-status-label {
+    color: #334155;
+    font-size: 14px;
+    }
+
+    .admin-system-status-value {
+    color: #0f766e;
+    font-size: 14px;
     }
 
     .recruitment-card.recruiter-job-detail-card {
@@ -906,6 +1015,45 @@
 
 .recruiter-jobs-list-actions .applications-count-chip__value {
     font-size: 1.22rem;
+}
+
+.admin-jobs-search-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.admin-jobs-search-row label {
+    flex: 1 1 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.admin-jobs-search-row input {
+    padding: 8px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 400;
+}
+
+.admin-job-recruiter-label {
+    font-size: 0.92rem;
+    color: #0f766e;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.recruiter-applications-sort-hint {
+    margin: 0 0 12px;
+    font-size: 0.88rem;
+    color: #64748b;
+    font-weight: 500;
 }
 
 .applications-back-list {

@@ -108,7 +108,7 @@
 }
 
 .admin-list-inner {
-  max-width: 960px;
+  max-width: min(1400px, calc(100vw - 60px));
 }
 
 .admin-list-header {
@@ -145,6 +145,56 @@
   color: #b91c1c;
   font-size: 14px;
   margin: 12px 0;
+}
+
+.admin-list-success {
+  color: #0f766e;
+  font-size: 14px;
+  margin: 12px 0;
+}
+
+.admin-list-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.admin-list-edit-btn {
+  background: #fff;
+  border: 1px solid #0f766e;
+  color: #0f766e;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-list-edit-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.admin-edit-back-btn {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.admin-list-delete-btn {
+  background: #fff;
+  border: 1px solid #b91c1c;
+  color: #b91c1c;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.admin-list-delete-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .admin-table-wrap {

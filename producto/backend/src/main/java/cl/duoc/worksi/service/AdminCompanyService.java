@@ -3,13 +3,17 @@ package cl.duoc.worksi.service;
 import cl.duoc.worksi.dto.PageResponse;
 import cl.duoc.worksi.dto.admin.AdminCompanyCreatedResponse;
 import cl.duoc.worksi.dto.admin.AdminCompanyDataRequest;
+import cl.duoc.worksi.dto.admin.AdminCompanyDetailResponse;
 import cl.duoc.worksi.dto.admin.AdminCompanyListItem;
 import cl.duoc.worksi.entity.Commune;
 import cl.duoc.worksi.entity.Company;
 import cl.duoc.worksi.entity.Region;
 import cl.duoc.worksi.entity.Sector;
+import cl.duoc.worksi.entity.enums.JobStatus;
 import cl.duoc.worksi.repository.CommuneRepository;
 import cl.duoc.worksi.repository.CompanyRepository;
+import cl.duoc.worksi.repository.JobRepository;
+import cl.duoc.worksi.repository.RecruiterProfileRepository;
 import cl.duoc.worksi.repository.RegionRepository;
 import cl.duoc.worksi.repository.SectorRepository;
 import cl.duoc.worksi.validation.RutRules;
@@ -21,6 +25,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -46,6 +51,8 @@ public class AdminCompanyService {
   private final RegionRepository regionRepository;
   private final CommuneRepository communeRepository;
   private final SectorRepository sectorRepository;
+  private final RecruiterProfileRepository recruiterProfileRepository;
+  private final JobRepository jobRepository;
   private final ObjectMapper objectMapper;
   private final Path companyImageBaseDir;
 
@@ -54,12 +61,16 @@ public class AdminCompanyService {
       RegionRepository regionRepository,
       CommuneRepository communeRepository,
       SectorRepository sectorRepository,
+      RecruiterProfileRepository recruiterProfileRepository,
+      JobRepository jobRepository,
       ObjectMapper objectMapper,
       @Value("${worksi.storage.company-images}") String companyImagesDir) {
     this.companyRepository = companyRepository;
     this.regionRepository = regionRepository;
     this.communeRepository = communeRepository;
     this.sectorRepository = sectorRepository;
+    this.recruiterProfileRepository = recruiterProfileRepository;
+    this.jobRepository = jobRepository;
     this.objectMapper = objectMapper;
     this.companyImageBaseDir = Path.of(companyImagesDir);
   }
@@ -127,6 +138,93 @@ public class AdminCompanyService {
         .body(new AdminCompanyCreatedResponse(c.getId()));
   }
 
+  public ResponseEntity<?> getCompany(long companyId) {
+    Optional<Company> opt = companyRepository.findById(companyId);
+    if (opt.isEmpty()) {
+      return error(HttpStatus.NOT_FOUND, "NOT_FOUND", "Empresa no encontrada");
+    }
+    return ResponseEntity.ok(toDetail(opt.get()));
+  }
+
+  @Transactional
+  public ResponseEntity<?> updateCompany(long companyId, String dataJson, MultipartFile image) {
+    Optional<Company> opt = companyRepository.findById(companyId);
+    if (opt.isEmpty()) {
+      return error(HttpStatus.NOT_FOUND, "NOT_FOUND", "Empresa no encontrada");
+    }
+    if (dataJson == null || dataJson.isBlank()) {
+      return error(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Parte data obligatoria");
+    }
+    AdminCompanyDataRequest data;
+    try {
+      data = objectMapper.readValue(dataJson, AdminCompanyDataRequest.class);
+    } catch (IOException e) {
+      return error(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "JSON data invalido");
+    }
+    ResponseEntity<?> validation = validateCompanyPayload(data);
+    if (validation != null) {
+      return validation;
+    }
+    if (image != null && !image.isEmpty()) {
+      String ct = image.getContentType();
+      if (ct == null || !ALLOWED_IMAGE_TYPES.contains(ct.toLowerCase())) {
+        return error(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Imagen debe ser PNG o JPEG");
+      }
+    }
+    String rutNorm = RutRules.normalize(data.getRut());
+    if (companyRepository.existsByRutAndIdNot(rutNorm, companyId)) {
+      return error(HttpStatus.CONFLICT, "CONFLICT", "RUT de empresa ya registrado");
+    }
+    Company c = opt.get();
+    c.setCommercialName(data.getCommercialName().trim());
+    c.setLegalName(data.getLegalName().trim());
+    c.setPhone(data.getPhone().trim());
+    c.setAddress(data.getAddress().trim());
+    c.setCorporateEmail(data.getCorporateEmail().trim());
+    c.setRut(rutNorm);
+    c.setRegionId(data.getRegionId());
+    c.setCommuneId(data.getCommuneId());
+    c.setSectorId(data.getSectorId());
+    c.setWorkerCountApprox(data.getWorkerCountApprox());
+    if (image != null && !image.isEmpty()) {
+      try {
+        Files.createDirectories(companyImageBaseDir);
+        String ext = image.getContentType().toLowerCase().contains("png") ? ".png" : ".jpg";
+        String filename = c.getId() + "_" + UUID.randomUUID() + ext;
+        Path target = companyImageBaseDir.resolve(filename);
+        try (InputStream in = image.getInputStream()) {
+          Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
+        }
+        c.setImageUrl(target.toString());
+      } catch (IOException e) {
+        return error(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "No se pudo guardar la imagen");
+      }
+    }
+    companyRepository.save(c);
+    return ResponseEntity.ok(toDetail(c));
+  }
+
+  @Transactional
+  public ResponseEntity<?> deleteCompany(long companyId) {
+    if (!companyRepository.existsById(companyId)) {
+      return error(HttpStatus.NOT_FOUND, "NOT_FOUND", "Empresa no encontrada");
+    }
+    if (recruiterProfileRepository.countByCompanyId(companyId) > 0) {
+      return error(
+          HttpStatus.CONFLICT,
+          "CONFLICT",
+          "No se puede eliminar: la empresa tiene reclutadores asociados");
+    }
+    if (jobRepository.countByCompanyIdAndStatusNot(companyId, JobStatus.DELETED) > 0) {
+      return error(
+          HttpStatus.CONFLICT,
+          "CONFLICT",
+          "No se puede eliminar: la empresa tiene ofertas asociadas");
+    }
+    companyRepository.deleteById(companyId);
+    return ResponseEntity.noContent().build();
+  }
+
   public ResponseEntity<PageResponse<AdminCompanyListItem>> listCompanies(
       int page, int size, String sort) {
     int p = Math.max(1, page);
@@ -186,6 +284,23 @@ public class AdminCompanyService {
       return error(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "commune_id no coincide con region");
     }
     return null;
+  }
+
+  private AdminCompanyDetailResponse toDetail(Company c) {
+    boolean hasImage = c.getImageUrl() != null && !c.getImageUrl().isBlank();
+    return new AdminCompanyDetailResponse(
+        c.getId(),
+        c.getCommercialName(),
+        c.getLegalName(),
+        c.getRut(),
+        c.getPhone(),
+        c.getCorporateEmail(),
+        c.getAddress(),
+        c.getRegionId(),
+        c.getCommuneId(),
+        c.getSectorId(),
+        c.getWorkerCountApprox(),
+        hasImage);
   }
 
   private AdminCompanyListItem toListItem(Company c) {
