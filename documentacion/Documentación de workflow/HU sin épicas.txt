@@ -2,7 +2,7 @@
 REGLA TRANSVERSAL DE TESTING (ESENCIAL)
 No se implementa testing en frontends: no carpetas ni suites de tests en el proyecto web ni en el móvil.
 Quienes desarrollan frontends verifican que todo funcione de forma visual y manual en pantalla.
-Sprint 12: pruebas automatizadas de backend e IA (solo piezas críticas: pipeline IA, seguridad auth/contraseñas/tokens, postulación, chat mínimo, integración Spring ↔ FastAPI) y pipeline CI/CD con GitHub Actions según Sprint oficiales.txt; no son historias de usuario numeradas en este archivo.
+Sprint 12: pruebas automatizadas de backend e IA (solo piezas críticas: pipeline IA, seguridad auth/contraseñas/tokens, postulación, mensajería mínima, integración Spring ↔ FastAPI) y pipeline CI/CD con GitHub Actions según Sprint oficiales.txt; no son historias de usuario numeradas en este archivo.
 La pasada E2E manual final, corrección de bugs críticos y demo stakeholder se planifican en Sprint 13 según Sprint oficiales.txt.
 Se evita toda batería de testing opcional, de baja prioridad o repartida por sprint en frontends.
 
@@ -165,7 +165,7 @@ Criterios de aceptación:
 * Incluye info básica (título, empresa, ubicación)
 * Carga inicial funciona sin errores
 * Manejo si no hay ofertas
-* En la pantalla Ofertas, ícono de mensajería en la esquina superior derecha que lleva a la vista «Chats» (HU-31; pendiente en frontmovil actual), donde el candidato verá conversaciones activas y matchs pendientes de revisar
+* En la pantalla Ofertas, acceso a la vista «Matchs» (HU-31; pendiente en frontmovil actual), bandeja de entrada de mensajería asincrona con las empresas que establecieron match
 
 
 
@@ -307,10 +307,10 @@ Sprint 8 (mínimo; implementar antes de HU-28 en el mismo sprint):
 * Carga sin errores.
 * No exige en Sprint 8 la pantalla «Perfil postulantes» completa ni el marcado VIEWED automático (HU-23 en Sprint 9).
 * El acceso a conversaciones con candidatos (Matchs) no sustituye este flujo; corresponde a HU-30.
-Sprint 9 (complemento; implementado en producto/frontWeb salvo match/chat):
+Sprint 9 (complemento; implementado en producto/frontWeb salvo match/mensajería):
 * Pantalla «Ver postulación» incluye botones «Detalle de Score» (HU-28) y «Ver perfil de candidato» (navega a /recruiter/ofertas/.../perfil).
 * Pantalla «Perfil postulantes» (vista reclutador): misma información y disposición que el Perfil del candidato en app móvil, en solo lectura; modal «Ver CV» con PDF.
-* Botón «Establecer Match» visible en perfil pero deshabilitado; pendiente de HU-29 y backend chat.
+* Botón «Establecer Match» visible en perfil pero deshabilitado; pendiente de HU-29 y backend de mensajería.
 * Navegación coherente: reverso postulaciones → Ver postulación → Detalle de Score o perfil postulante.
 * Pulimiento del flujo web (vacío, errores, mensajes «Completa este campo» donde aplique) sin reimplementar el GET applications del núcleo Sprint 8.
 
@@ -480,14 +480,14 @@ Criterios de aceptación:
 
 HU-29 — Establecer match con candidato (Sprint 11 — plan obligatorio MVP)
 Como reclutador (RECRUITER)
-* Quiero establecer match con un candidato que postuló a mi oferta
-* Para iniciar una conversación con ese postulante
+* Quiero establecer match con un candidato que postuló a mi oferta enviando un primer mensaje
+* Para abrir la mensajería asincrónica con ese postulante
 Criterios de aceptación (alineados a Flujo Pantallas App Web y Contrato Unificado API sección 28):
-* Solo el reclutador puede iniciar el match; el candidato no crea la conversación.
+* Solo el reclutador puede iniciar el match; el candidato no crea la conversación ni acepta/rechaza el match.
 * Desde la pantalla «Perfil postulantes» (HU-19), botón visible «Establecer Match».
 * Al pulsarlo: modal «¿Desea establecer match con candidato [nombre]?» con botones «Sí» y «Cancelar»; «Cancelar» cierra el modal sin cambios.
-* Si pulsa «Sí»: misma ventana pide «Envíe el primer mensaje para establecer el match» con campo de texto máximo 80 caracteres; botón «Hacer Match» deshabilitado hasta escribir al menos un carácter.
-* Al confirmar «Hacer Match»: POST /api/v1/chat/conversations con application_id de la postulación y first_message; éxito muestra «¡Ha hecho match con candidato [nombre]!» con botón «Ir al chat» (HU-30) y opción volver al perfil del candidato.
+* Si pulsa «Sí»: misma ventana pide «Envíe el primer mensaje para establecer el match» con campo de texto máximo 80 caracteres; botón «Hacer Match» deshabilitado hasta escribir al menos un carácter (sin mensaje no hay match).
+* Al confirmar «Hacer Match»: POST /api/v1/messaging/conversations con application_id de la postulación y first_message; la mensajería queda abierta instantáneamente para reclutador y candidato; éxito muestra «¡Ha hecho match con candidato [nombre]!» con botón «Ir a mensajes» (HU-30) y opción volver al perfil del candidato.
 * No puede ver ni escribir en esa conversación ningún otro reclutador ni candidato ajeno a ese par.
 * Manejo de errores visible si falla validación o servidor.
 
@@ -495,15 +495,15 @@ Criterios de aceptación (alineados a Flujo Pantallas App Web y Contrato Unifica
 
 
 
-HU-30 — Chatear con candidatos (match) (Sprint 11 — plan obligatorio MVP)
+HU-30 — Bandeja Matchs y mensajería con candidatos (Sprint 11 — plan obligatorio MVP)
 Como reclutador (RECRUITER)
-* Quiero ver mis matchs y chatear con los candidatos con los que establecí match
-* Para comunicarme con postulantes de interés
-Criterios de aceptación (alineados a Flujo Pantallas App Web y Contrato Unificado API secciones 29–33):
+* Quiero ver mis matchs y enviar/recibir mensajes con los candidatos con los que establecí match
+* Para comunicarme con postulantes de interés mediante mensajería asincrónica
+Criterios de aceptación (alineados a Flujo Pantallas App Web y Contrato Unificado API secciones 29–32):
 * En Inicio y Reclutamiento del portal reclutador: bloque «Matchs» con botón «Ir a ver» (sustituye el acceso antiguo a postulaciones en esos bloques; las postulaciones se consultan desde la oferta, HU-19).
-* Pantalla «Matchs»: listado de conversaciones del reclutador en sesión vía GET /api/v1/chat/conversations; por fila identificación del candidato y acceso al hilo.
-* Pantalla «Chat con candidato»: historial de mensajes, campo para escribir y enviar; mensajes posteriores al primero respetan límite del contrato (p. ej. 500 caracteres); refresco periódico de nuevos mensajes (MVP sin WebSockets ni notificaciones push).
-* El reclutador ve el nombre del candidato en el chat.
+* Pantalla «Matchs»: bandeja de entrada vía GET /api/v1/messaging/conversations; por fila identificación del candidato y acceso al hilo.
+* Pantalla «Hilo de mensajes con candidato»: historial de mensajes, campo para escribir y enviar; mensajes posteriores al primero respetan límite del contrato (p. ej. 500 caracteres); refresco periódico de nuevos mensajes (MVP sin WebSockets ni notificaciones push).
+* El reclutador ve el nombre del candidato en el hilo.
 * Solo el reclutador que inició el match y ese candidato pueden leer y escribir en esa conversación.
 * Botón «Volver» regresa al listado de Matchs.
 * Manejo de errores visible si falla envío o carga.
@@ -512,19 +512,19 @@ Criterios de aceptación (alineados a Flujo Pantallas App Web y Contrato Unifica
 
 
 
-HU-31 — Responder match y chatear con empresa (Sprint 11 — plan obligatorio MVP)
+HU-31 — Aviso de match y mensajería con empresa (Sprint 11 — plan obligatorio MVP)
 Como candidato
-* Quiero saber cuando una empresa quiere hacer match conmigo y poder chatear con ella
-* Para responder al interés del reclutador y conversar sobre la oportunidad, incluso más tarde si pospuse la decisión
+* Quiero saber cuando una empresa estableció match conmigo y poder leer y enviar mensajes
+* Para revisar el interés del reclutador y responder cuando quiera desde mi bandeja de entrada
 Criterios de aceptación (alineados a Flujo Pantallas App Móvil y Contrato Unificado API secciones 29–32):
-* El acceso a todos los chats y matchs pendientes es mediante la vista «Chats» (ícono de mensajería en pantalla Ofertas, HU-10).
-* Tras login exitoso, si hay match pendiente (reclutador ya envió primer mensaje y el candidato aún no ha respondido): modal a pantalla completa «¡Una empresa quiere hacer match contigo!» con nombre comercial de la empresa (no nombre del reclutador), botón «Responder Chat» y arriba «Ver después».
-* «Responder Chat» abre directamente el chat de esa conversación concreta (pantalla «Chat con empresa»).
-* «Ver después» cierra el modal y continúa el flujo normal de la app; el match sigue pendiente y debe quedar visible en la vista «Chats» para revisarlo más tarde (no se pierde).
-* Vista «Chats» (GET /api/v1/chat/conversations): muestra en un mismo listado las conversaciones activas y los matchs pendientes de revisar (pending_for_candidate true; p. ej. los pospuestos con «Ver después» en el modal o aún sin respuesta del candidato).
-* Los matchs pendientes se distinguen visualmente en el listado (p. ej. indicador de pendiente); al pulsar una fila pendiente o activa → pantalla «Chat con empresa» de esa conversación, donde el candidato puede leer el primer mensaje del reclutador y responder cuando decida.
-* Pantalla «Chat con empresa»: historial, escribir y enviar mensajes; refresco periódico MVP; en cabecera o identificación solo nombre comercial de la empresa, nunca el nombre personal del reclutador.
-* Al enviar el primer mensaje del candidato en un match pendiente, deja de mostrarse como pendiente en «Chats» (pending_for_candidate false según Contrato).
+* El acceso permanente a la mensajería es mediante la vista «Matchs» (bandeja de entrada).
+* Tras login exitoso, si existe conversación con aviso no descartado (GET /api/v1/messaging/conversations/login-notice): modal a pantalla completa «¡Una empresa quiere hacer match contigo!» con nombre comercial de la empresa (no nombre del reclutador), botón «Ver mensajes» y opción cerrar el aviso.
+* «Ver mensajes» abre el hilo de esa conversación y marca el aviso como descartado (PATCH dismiss-login-notice); no vuelve a mostrarse en logins posteriores para esa conversación.
+* Cerrar el aviso sin abrir el hilo también marca descartado (PATCH dismiss-login-notice); no vuelve a mostrarse en logins posteriores para esa conversación.
+* La mensajería ya está abierta desde que el reclutador hizo match con primer mensaje; el candidato no decide si acepta el match.
+* Vista «Matchs» (GET /api/v1/messaging/conversations): bandeja de entrada con todas las conversaciones activas ordenadas por último mensaje.
+* Al pulsar una fila → pantalla «Hilo de mensajes con empresa», donde el candidato lee mensajes del reclutador y puede escribir/enviar respuestas.
+* Pantalla «Hilo de mensajes con empresa»: historial, escribir y enviar mensajes; refresco periódico MVP; en cabecera o identificación solo nombre comercial de la empresa, nunca el nombre personal del reclutador.
 * Solo ese candidato y el reclutador que inició el match pueden ver y escribir en ese hilo.
-* Botón «Volver» en «Chat con empresa» regresa a la vista «Chats».
+* Botón «Volver» en «Hilo de mensajes con empresa» regresa a la vista «Matchs».
 * Manejo de errores visible si falla envío o carga.

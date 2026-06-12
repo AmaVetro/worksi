@@ -131,8 +131,8 @@ Pantalla "Inicio" (sesión de reclutador de empresa):
   - Derecha — cuatro visores:
     1) “Ofertas Totales” (clickeable): “Activas” e “Inactivas”. GET /api/v1/company/jobs/stats (active_count, inactive_count). Al pulsar → /recruiter/ofertas.
     2) “Publicadas Hoy” (solo lectura): GET /api/v1/company/jobs/stats (published_today_count; día America/Santiago).
-    3) “Matchs Totales” (clickeable visualmente; sin navegación): valor fijo 0; pendiente de integración con chat.
-    4) “Matchs Hoy” (solo lectura): valor fijo 0; pendiente de integración con chat.
+    3) "Matchs Totales" (clickeable visualmente; sin navegacion): valor fijo 0; pendiente de integracion con mensajeria.
+    4) "Matchs Hoy" (solo lectura): valor fijo 0; pendiente de integracion con mensajeria.
 - Cambio de imagen de empresa con sesión reclutador: PATCH /api/v1/company/profile/image (implementado en backend; frontWeb aún no consume este endpoint).
 
 
@@ -142,7 +142,7 @@ Pantalla "Reclutamiento":
 - Tres tarjetas:
   - “Ofertas publicadas” → /recruiter/ofertas.
   - “Crear oferta” → /recruiter/ofertas/nueva.
-  - “Matchs” → botón “Ir a ver” deshabilitado; pendiente de pantalla y rutas de chat.
+  - "Matchs" → boton "Ir a ver" deshabilitado; pendiente de pantalla y rutas de mensajeria (bandeja de entrada).
 
 
 
@@ -191,7 +191,7 @@ Pantalla “Ver postulación”:
 - Muestra nombre del postulante, rubro (sector_name en candidate_preview), nivel de match, barra de matching y explicación breve.
 - Botón “Detalle de Score” → /recruiter/ofertas/{job_id}/postulaciones/{application_id}/score (misma vista con card volteada al reverso de score).
 - Botón “Ver perfil” → /recruiter/ofertas/{job_id}/postulaciones/{application_id}/perfil.
-- Botón “Match” visible como UI; sin acción implementada (pendiente de chat).
+- Boton "Establecer Match" visible como UI; sin accion implementada (pendiente de mensajeria).
 - “Volver” → /recruiter/ofertas/{job_id}?postulaciones=1.
 - Datos: GET /api/v1/company/jobs/{job_id}/applications/{application_id} (marca VIEWED automático al abrir).
 
@@ -208,18 +208,17 @@ Pantalla “Detalle de Score”:
 Pantalla “Perfil candidato (vista reclutador)”:
 - Ruta: /recruiter/ofertas/{job_id}/postulaciones/{application_id}/perfil.
 - Implementada en frontWeb. Solo lectura: datos de perfil del postulante, skills, preferencias, modal “Ver CV” con PDF (GET .../cv/file).
-- Botón “Establecer Match” visible pero deshabilitado; pendiente de integración con chat (POST /api/v1/chat/conversations).
+- Botón "Establecer Match" visible pero deshabilitado; pendiente de integración con mensajería (POST /api/v1/messaging/conversations con first_message obligatorio).
 - “Volver” → pantalla “Ver postulación”.
 - Datos: GET /api/v1/company/jobs/{job_id}/applications/{application_id}/candidate-profile (marca VIEWED automático al abrir).
 
 
 
-Pantalla “Matchs” (pendiente):
-- Sin ruta ni pantalla en frontWeb actual. En Inicio, el visor “Matchs Totales” es clickeable pero no navega.
-- Diseño previsto: listado GET /api/v1/chat/conversations; por fila acceso al chat con el candidato.
+Pantalla "Matchs" (bandeja de entrada; pendiente):
+- Sin ruta ni pantalla en frontWeb actual. En Inicio, el visor "Matchs Totales" es clickeable pero no navega.
+- Diseno previsto: listado GET /api/v1/messaging/conversations; por fila acceso al hilo de mensajes con el candidato.
 
 
-
-Pantalla “Chat con candidato” (pendiente):
+Pantalla "Hilo de mensajes con candidato" (pendiente):
 - Sin pantalla en frontWeb actual.
-- Diseño previsto: hilo de mensajes; polling GET /api/v1/chat/conversations/{id}/messages; envío POST /api/v1/chat/conversations/{id}/messages; primer mensaje al establecer match máximo 80 caracteres; mensajes posteriores máximo 500.
+- Diseno previsto: bandeja de mensajes asincrona; polling GET /api/v1/messaging/conversations/{id}/messages; envio POST /api/v1/messaging/conversations/{id}/messages; primer mensaje al establecer match maximo 80 caracteres (obligatorio para abrir match); mensajes posteriores maximo 500.

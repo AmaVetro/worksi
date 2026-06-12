@@ -28,7 +28,7 @@ Pantalla Iniciar Sesión:
 - Validaciones de email y contraseña en UI y backend.
 - Bloqueo tras 4 intentos incorrectos (misma regla que web): respuesta de negocio en login → pantalla recovery_locked.
 - Tras login exitoso → session (pantalla principal de ofertas / HomeScreen).
-- Pendiente: modal post-login de match pendiente (GET /api/v1/chat/conversations/pending) cuando exista chat en backend y móvil.
+- Pendiente: aviso post-login a pantalla completa (GET /api/v1/messaging/conversations/login-notice) cuando exista mensajeria en backend y movil; una sola vez por conversacion (ver o cerrar aviso → PATCH dismiss-login-notice).
 
 
 
@@ -116,7 +116,7 @@ Pantalla "Ofertas" (feed principal):
 - Tras postular puede abrirse application_preview/{application_id}.
 - Barra inferior (CandidateMainBottomBar): Perfil, Ofertas (activo), Guardadas, Postulaciones.
 - Menú de sesión (engranaje): cerrar sesión (limpia token y caché de guardadas).
-- Pendiente: ícono de mensajería en cabecera → vista Chats (GET /api/v1/chat/conversations).
+- Pendiente: acceso a bandeja Matchs desde cabecera o navegacion (GET /api/v1/messaging/conversations).
 
 
 
@@ -160,24 +160,26 @@ Pantalla "Perfil":
 
 
 
-Pantalla "Aviso match pendiente" (pendiente):
-- Modal a pantalla completa tras login cuando un reclutador estableció match y el candidato aún no respondió.
-- Texto: "¡Una empresa quiere hacer match contigo!" con nombre comercial de la empresa.
-- "Responder Chat" → chat de esa conversación; "Ver después" → continúa al flujo normal; el match sigue en Chats.
-- Datos previstos: GET /api/v1/chat/conversations/pending.
+Pantalla "Aviso de match" (pendiente):
+- Modal a pantalla completa tras login exitoso cuando GET /api/v1/messaging/conversations/login-notice devuelve item.
+- Texto: "¡Una empresa quiere hacer match contigo!" con nombre comercial de la empresa (no nombre del reclutador).
+- Boton principal "Ver mensajes" → abre el hilo de esa conversacion y PATCH dismiss-login-notice.
+- Boton cerrar (X) o equivalente → PATCH dismiss-login-notice sin abrir hilo; continua flujo normal (session/Ofertas).
+- Regla: si el candidato ya vio o cerro este aviso una vez para esa conversacion, no vuelve a mostrarse en logins posteriores.
+- La mensajeria ya esta abierta para ambos desde que el reclutador establecio match con primer mensaje; el candidato no acepta ni rechaza el match.
 
 
 
-Pantalla "Chats" (pendiente):
-- Acceso desde ícono de mensajería en Ofertas.
-- GET /api/v1/chat/conversations: conversaciones activas y matchs pendientes (pending_for_candidate true).
-- Nombre comercial de la empresa por fila; indicador visual en pendientes.
-- Al pulsar fila → Chat con empresa.
+Pantalla "Matchs" (bandeja de entrada; pendiente):
+- Acceso desde navegacion principal (p. ej. pestana o entrada en barra inferior; a definir en UI).
+- GET /api/v1/messaging/conversations: listado de conversaciones activas ordenadas por ultimo mensaje.
+- Por fila: nombre comercial empresa, titulo oferta, preview ultimo mensaje.
+- Al pulsar fila → Hilo de mensajes con empresa.
 
 
 
-Pantalla "Chat con empresa" (pendiente):
-- Historial y envío de mensajes; polling GET /api/v1/chat/conversations/{id}/messages; POST mensajes.
+Pantalla "Hilo de mensajes con empresa" (pendiente):
+- Historial y envio de mensajes; polling GET /api/v1/messaging/conversations/{id}/messages; POST mensajes.
 - Cabecera: solo nombre comercial de la empresa.
-- "Volver" → Chats.
-- Al primer mensaje del candidato, pending_for_candidate pasa a false.
+- Mensajeria asincrona clasica: leer mensajes enviados por reclutador desde frontWeb y escribir/enviar respuestas.
+- "Volver" → Matchs.

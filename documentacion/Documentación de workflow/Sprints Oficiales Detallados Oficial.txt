@@ -40,7 +40,7 @@ Regla global de matching (válida en todo el proyecto; no negociar en código):
 
 Regla global de testing (válida en todo el proyecto):
 - No implementar testing en frontends: no carpetas de testing en el proyecto web (React/Vite) ni en el móvil (Android); quienes desarrollan esas capas comprueban que todo funcione visualmente y por uso manual.
-- Tests automatizados backend/IA y CI/CD se concentran en Sprint 12: solo lo crítico (extracción Tika, pipeline fairness + POST /match, score Spring, seguridad auth/contraseñas/tokens, postulación, integración servicios esenciales, chat mínimo si aplica). Omitir tests de funcionalidades no críticas o sencillas.
+- Tests automatizados backend/IA y CI/CD se concentran en Sprint 12: solo lo crítico (extracción Tika, pipeline fairness + POST /match, score Spring, seguridad auth/contraseñas/tokens, postulación, integración servicios esenciales, mensajería mínima si aplica). Omitir tests de funcionalidades no críticas o sencillas.
 - La pasada E2E final, bugs críticos, invariante matching y demo stakeholder se concentran en Sprint 13 (contenido que antes estaba planificado en Sprint 11).
 - Durante sprints 1–11, las menciones a «pruebas» o «Postman» en tareas B4/B5 son comprobaciones mínimas puntuales para desbloquear, no suites completas ni CI.
 
@@ -193,7 +193,7 @@ C) QUÉ NO HACER EN EL SPRINT 1 (para no romper el plan)
 ------------------------------------------------------------
 - No implementar matching ni FastAPI completo aún si “sobra tiempo”: el orden
   oficial exige CV y oferta antes (Sprint oficiales).
-- No agregar chat, notificaciones, dashboards, Kafka, colas, microservicios
+- No agregar mensajería en tiempo real, notificaciones push, dashboards, Kafka, colas, microservicios
   extra.
 - No guardar PDF en MySQL.
 - No implementar HU opcionales.
@@ -906,13 +906,14 @@ B5) HU-27: DELETE admin companies/recruiters + confirmación UI en listados Spri
 SPRINT 11 — SEMANA 15 - 21 Junio DE 2026 (SPRINT PESADO)
 ================================================================================
 Esfuerzo total estimado del equipo: 18 horas.
-Contenido oficial (orden lógico: backend chat → HU-29 → HU-30 → HU-31):
-- Backend chat MVP (Contrato Unificado API secciones 28–33).
-- HU-29 Establecer match con candidato (reclutador).
-- HU-30 Chatear con candidatos (match) (reclutador).
-- HU-31 Responder match y chatear con empresa (candidato).
-- Solo el reclutador inicia match; permiso mínimo: solo los dos participantes ven y escriben en su conversación.
-- MVP sin WebSockets ni push: polling con GET mensajes y after_message_id.
+Contenido oficial (orden lógico: backend mensajería → HU-29 → HU-30 → HU-31):
+- Backend mensajería MVP (Contrato Unificado API secciones 28–33).
+- HU-29 Establecer match con candidato (reclutador; first_message obligatorio).
+- HU-30 Bandeja Matchs y mensajería con candidatos (reclutador).
+- HU-31 Aviso de match y mensajería con empresa (candidato; bandeja Matchs).
+- Solo el reclutador inicia match con primer mensaje; la mensajería queda abierta instantáneamente para ambos; el candidato no acepta ni rechaza el match.
+- Permiso mínimo: solo los dos participantes ven y escriben en su conversación.
+- MVP sin WebSockets ni push: polling con GET mensajes y after_message_id; mensajería asincrónica tipo bandeja de entrada.
 
 Objetivo del sprint en una frase:
 Entregar match y mensajería bidireccional (HU-29, HU-30, HU-31) sobre postulaciones ya evaluables vía HU-19/HU-28 en Sprints 8–9.
@@ -921,41 +922,42 @@ Entregar match y mensajería bidireccional (HU-29, HU-30, HU-31) sobre postulaci
 A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 11
 ------------------------------------------------------------
 1) Backend y BD (soporte HU-29–HU-31)
-- Migraciones Flyway: conversations y messages.
-- POST /api/v1/chat/conversations: RECRUITER, application_id + first_message (1..80 chars).
-- GET /api/v1/chat/conversations: listado RECRUITER (nombre candidato) y CANDIDATE (company_commercial_name; incluye pending_for_candidate).
-- GET /api/v1/chat/conversations/pending: CANDIDATE, modal post-login.
-- GET/POST /api/v1/chat/conversations/{id}/messages: participantes; polling after_message_id; mensajes posteriores 1..500 chars.
-- GET /api/v1/chat/conversations/{id}: cabecera chat (opcional recomendado).
-- 403 si usuario no es participante; pending_for_candidate false tras primer mensaje del candidato.
+- Migraciones Flyway: conversations (incl. login_notice_dismissed) y messages.
+- POST /api/v1/messaging/conversations: RECRUITER, application_id + first_message (1..80 chars; obligatorio).
+- GET /api/v1/messaging/conversations: bandeja Matchs RECRUITER (nombre candidato) y CANDIDATE (company_commercial_name).
+- GET /api/v1/messaging/conversations/login-notice: CANDIDATE, aviso post-login (login_notice_dismissed=false).
+- PATCH /api/v1/messaging/conversations/{id}/dismiss-login-notice: CANDIDATE, al cerrar aviso o entrar al hilo desde aviso.
+- GET/POST /api/v1/messaging/conversations/{id}/messages: participantes; polling after_message_id; mensajes posteriores 1..500 chars.
+- GET /api/v1/messaging/conversations/{id}: cabecera hilo (opcional recomendado).
+- 403 si usuario no es participante.
 
 2) HU-29 Establecer match con candidato (reclutador)
-- Desde botón «Establecer Match» en perfil postulante (HU-19 Sprint 9): modal confirmación, primer mensaje max 80, «Hacer Match», éxito «¡Ha hecho match con candidato [nombre]!», «Ir al chat» (HU-30) o volver al perfil.
-- POST /api/v1/chat/conversations persiste conversación y primer mensaje.
+- Desde botón «Establecer Match» en perfil postulante (HU-19 Sprint 9): modal confirmación, primer mensaje max 80 obligatorio, «Hacer Match», éxito «¡Ha hecho match con candidato [nombre]!», «Ir a mensajes» (HU-30) o volver al perfil.
+- POST /api/v1/messaging/conversations persiste conversación y primer mensaje; mensajería abierta para ambos al instante.
 
-3) HU-30 Chatear con candidatos (match) (reclutador)
+3) HU-30 Bandeja Matchs y mensajería con candidatos (reclutador)
 - Bloques «Matchs» en Inicio y Reclutamiento con «Ir a ver» (sustituye acceso antiguo a postulaciones en esos bloques).
-- Pantalla «Matchs»: GET /api/v1/chat/conversations; filas con candidato; acceso al hilo.
-- Pantalla «Chat con candidato»: enviar/recibir con polling; reclutador ve nombre del candidato.
+- Pantalla «Matchs»: GET /api/v1/messaging/conversations; filas con candidato; acceso al hilo.
+- Pantalla «Hilo de mensajes con candidato»: enviar/recibir con polling; reclutador ve nombre del candidato.
 
-4) HU-31 Responder match y chatear con empresa (candidato)
-- Acceso único vía vista «Chats» (ícono mensajería en Ofertas, HU-10).
-- Modal post-login «¡Una empresa quiere hacer match contigo!»: «Responder Chat» → chat directo; «Ver después» → match pendiente visible en «Chats».
-- Vista «Chats»: listado unificado de conversaciones activas y matchs pendientes de revisar (pending_for_candidate; distinguidos visualmente).
-- Pantalla «Chat con empresa»: polling; cabecera solo company_commercial_name; al primer mensaje del candidato deja de estar pendiente.
+4) HU-31 Aviso de match y mensajería con empresa (candidato)
+- Acceso permanente vía vista «Matchs» (bandeja de entrada).
+- Modal post-login a pantalla completa «¡Una empresa quiere hacer match contigo!»: «Ver mensajes» → hilo y dismiss-login-notice; cerrar aviso → dismiss-login-notice; no se repite en logins posteriores para esa conversación.
+- Vista «Matchs»: listado de conversaciones activas ordenadas por último mensaje.
+- Pantalla «Hilo de mensajes con empresa»: polling; cabecera solo company_commercial_name.
 
 5) Integración mínima verificable
-- Recorrido manual: reclutador perfil → HU-29 → chat; candidato «Ver después» → «Chats» → responde; mensajes visibles en ambos sentidos.
+- Recorrido manual: reclutador perfil → HU-29 → hilo mensajes; candidato cierra aviso post-login → «Matchs» → lee y responde; mensajes visibles en ambos sentidos.
 
 ------------------------------------------------------------
 B) DESGLOSE ULTRA DETALLADO (orden sugerido)
 ------------------------------------------------------------
-B1) Migraciones + entidades + repositorios chat (3 a 4 horas)
-B2) Servicio y controlador chat + reglas participantes (4 a 5 horas)
+B1) Migraciones + entidades + repositorios mensajería (3 a 4 horas)
+B2) Servicio y controlador mensajería + reglas participantes (4 a 5 horas)
 B3) HU-29: modal Establecer Match + integración POST conversación (3 a 4 horas)
-B4) HU-30: Matchs + Chat reclutador web (3 a 4 horas)
-B5) HU-31: modal pending + vista Chats unificada + Chat con empresa móvil (4 a 5 horas)
-B6) Verificación manual bidireccional incl. «Ver después» → Chats (1 a 2 horas)
+B4) HU-30: Matchs + hilo mensajes reclutador web (3 a 4 horas)
+B5) HU-31: aviso post-login + vista Matchs + hilo mensajes móvil (4 a 5 horas)
+B6) Verificación manual bidireccional incl. aviso post-login → Matchs (1 a 2 horas)
 
 ------------------------------------------------------------
 C) QUÉ NO HACER EN EL SPRINT 11
@@ -989,7 +991,7 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 12
 - Pipeline IA: fairness (regex + spaCy) + POST /match devuelve score y explanation en rango esperado.
 - Score producto: Spring calcula cinco dimensiones y final_score coherente con Contrato.
 - Integración Spring ↔ FastAPI: cliente HTTP con timeout; manejo IA_UNAVAILABLE.
-- Integración API esencial (Spring MockMvc o tests de integración acotados): login, registro candidato feliz path, feed, postulación, listado postulaciones empresa, chat mínimo (crear conversación + enviar mensaje).
+- Integración API esencial (Spring MockMvc o tests de integración acotados): login, registro candidato feliz path, feed, postulación, listado postulaciones empresa, mensajería mínima (crear conversación + enviar mensaje).
 - Omitir: tests UI web/móvil, copy, formularios secundarios, HU opcionales, permisos exhaustivos no críticos.
 
 2) Optimización IA
@@ -1031,12 +1033,12 @@ Contenido oficial (cierre MVP; contenido que antes estaba en Sprint 11):
 - Corrección de bugs críticos.
 - Checklist de calidad previo al cierre.
 - Chequeo explícito de regla de matching: mismo CV + misma oferta → mismo resultado aunque solo cambien skills de perfil o job_skills.
-- Pasada integración Spring ↔ FastAPI acotada; Postman rutas prioritarias Spring, IA POST /match y chat según Contrato Unificado API.
-- Demo stakeholder incluyendo match/chat si Sprint 11 cerrado.
+- Pasada integración Spring ↔ FastAPI acotada; Postman rutas prioritarias Spring, IA POST /match y mensajería según Contrato Unificado API.
+- Demo stakeholder incluyendo match/mensajería si Sprint 11 cerrado.
 - HU-22 permanece sólo tiempo extra backlog.
 
 Objetivo del sprint en una frase:
-Demostrable, estable en flujo core completo (incluido match/chat), con evidencia de pruebas manuales E2E y sin deuda bloqueante para entrega.
+Demostrable, estable en flujo core completo (incluido match/mensajería), con evidencia de pruebas manuales E2E y sin deuda bloqueante para entrega.
 
 ------------------------------------------------------------
 A) CHECKLIST OBLIGATORIA DE CIERRE (sin atajos)
@@ -1046,7 +1048,7 @@ A) CHECKLIST OBLIGATORIA DE CIERRE (sin atajos)
 - Candidato: flujo móvil con CV/datos/skills cliente, HU-21 consentimiento, POST /api/v1/auth/register/candidate multipart; cuenta CANDIDATE operativa perfil Bearer.
 - Con CV procesado texto Tika, reclutador publica oferta vía sesión RECRUITER (portal web combinado Contrato demo).
 - Candidato consume feed swipe con score HU-11 y confirma postulación HU-12 (POST /api/v1/candidate/applications).
-- Reclutador ve postulaciones (HU-19), Detalle de Score (HU-28), establece match (HU-29) y chatea (HU-30); candidato pospone con «Ver después» y retoma desde «Chats» (HU-31).
+- Reclutador ve postulaciones (HU-19), Detalle de Score (HU-28), establece match (HU-29) y usa mensajería (HU-30); candidato cierra aviso post-login y retoma desde «Matchs» (HU-31).
 - Mismo reclutador publicador abre detalle de postulación → VIEWED automático HU-23; candidato ve estado HU-13.
 - Lista postulantes orden descendente HU-20 verificación visual.
 
@@ -1057,7 +1059,7 @@ A) CHECKLIST OBLIGATORIA DE CIERRE (sin atajos)
 3) Seguridad mínima
 - Rutas privadas protegidas.
 - JWT operativo.
-- Chat: solo participantes acceden a su conversación.
+- Mensajería: solo participantes acceden a su conversación.
 
 4) Docker Compose
 - Levanta en máquina limpia con README.
@@ -1066,7 +1068,7 @@ A) CHECKLIST OBLIGATORIA DE CIERRE (sin atajos)
 - Crítico: caídas, 500 en flujo core, datos cruzados entre empresas, login roto, postulación duplicada incorrecta, score inconsistente con reglas, mensajes visibles para terceros.
 
 6) Demo alineada a regla global
-- Explicar en demo: score como promedio de cinco dimensiones; skills de perfil y oferta en BD no gobiernan el porcentaje; match/chat como canal reclutador-candidato post-postulación.
+- Explicar en demo: score como promedio de cinco dimensiones; skills de perfil y oferta en BD no gobiernan el porcentaje; match/mensajería como canal reclutador-candidato post-postulación.
 
 7) CI Sprint 12
 - Confirmar pipeline verde en rama de entrega o documentar excepción acordada.
@@ -1077,7 +1079,7 @@ B) ENTREGABLES DE DOCUMENTACIÓN PARA DEFENSA (mínimo)
 - Diagrama simple arquitectura Spring → FastAPI.
 - Defensa fairness: regex + spaCy antes de embeddings.
 - Defensa almacenamiento CV filesystem + referencia BD + Tika.
-- Limitación MVP: sin OCR; chat con polling sin push.
+- Limitación MVP: sin OCR; mensajería con polling sin push.
 
 
 
@@ -1096,8 +1098,8 @@ Sprint 7 — Web MVP React+Vite login ADMIN/RECRUITER, panel empresa/reclutadore
 Sprint 8 — HU-13; portal reclutador HU-15; PATCH imagen si backlog; HU-19 mínimo (card flip, Ver postulación básica); HU-28 «Detalle de Score»; HU-16 editar oferta.
 Sprint 9 — HU-19 complemento (Ver postulación completa, perfil solo lectura, botón Establecer Match); HU-23 VIEWED; pulimiento errores web; HU-17 ciclo de vida oferta; HU-25/HU-26 listados ADMIN.
 Sprint 10 — HU-20 orden descendente HU-05 perfil HU-24 guardar oferta HU-27 eliminar empresas/reclutadores ADMIN + copy seguridad/consentimiento.
-Sprint 11 — HU-29 establecer match; HU-30 chatear reclutador; HU-31 responder match y chatear candidato (vista Chats unificada con pendientes tras «Ver después»).
-Sprint 12 — Tests críticos backend/IA (Tika, fairness, POST /match, score, integración esencial + chat mínimo) + optimización velocidad IA + CI/CD pipeline suite crítica.
+Sprint 11 — HU-29 establecer match; HU-30 bandeja Matchs reclutador; HU-31 aviso post-login y mensajería candidato (vista Matchs).
+Sprint 12 — Tests críticos backend/IA (Tika, fairness, POST /match, score, integración esencial + mensajería mínima) + optimización velocidad IA + CI/CD pipeline suite crítica.
 Sprint 13 — E2E Docker; bugs críticos; invariante matching; Postman + demo stakeholder (HU-29–HU-31); HU-22 backlog tiempo extra.
 
 ================================================================================

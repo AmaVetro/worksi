@@ -9,10 +9,10 @@ OBJETIVO
 
 
 ALCANCE
-- Incluye: endpoints, autenticacion, registro candidato (un solo request de alta con consentimiento), perfiles, catalogos, CV, ofertas, matching, swipe, postulaciones, edicion y ciclo de vida de ofertas, vistas empresa, alta empresa y reclutadores por administrador (web), ofertas guardadas, cancelacion de postulacion, chat y match reclutador-candidato (mensajeria post-match), y servicio IA de matching.
+- Incluye: endpoints, autenticacion, registro candidato (un solo request de alta con consentimiento), perfiles, catalogos, CV, ofertas, matching, swipe, postulaciones, edicion y ciclo de vida de ofertas, vistas empresa, alta empresa y reclutadores por administrador (web), ofertas guardadas, cancelacion de postulacion, match y mensajeria asincrona reclutador-candidato (bandeja de entrada compartida post-match), y servicio IA de matching.
 - Alta de empresa: solo POST /api/v1/admin/companies desde rol ADMIN; no existe rol COMPANY ni login de empresa.
 - closing_date en ofertas es informativa; el listado de ofertas del reclutador admite filtro CLOSING_DUE.
-- Pendiente de implementacion en backend: GET /api/v1/auth/me (seccion 7) y endpoints /api/v1/chat/* (secciones 28-33).
+- Pendiente de implementacion en backend: GET /api/v1/auth/me (seccion 7) y endpoints /api/v1/messaging/* (secciones 28-33).
 
 
 INVENTARIO — ENDPOINTS OPERATIVOS
@@ -97,12 +97,13 @@ Candidato (Bearer CANDIDATE):
 
 PENDIENTE DE IMPLEMENTACION EN BACKEND (definidos en este contrato; ver secciones 7 y 28-33):
 - GET /api/v1/auth/me
-- POST /api/v1/chat/conversations
-- GET /api/v1/chat/conversations
-- GET /api/v1/chat/conversations/pending
-- GET /api/v1/chat/conversations/{conversation_id}
-- GET /api/v1/chat/conversations/{conversation_id}/messages
-- POST /api/v1/chat/conversations/{conversation_id}/messages
+- POST /api/v1/messaging/conversations
+- GET /api/v1/messaging/conversations
+- GET /api/v1/messaging/conversations/login-notice
+- PATCH /api/v1/messaging/conversations/{conversation_id}/dismiss-login-notice
+- GET /api/v1/messaging/conversations/{conversation_id}
+- GET /api/v1/messaging/conversations/{conversation_id}/messages
+- POST /api/v1/messaging/conversations/{conversation_id}/messages
 
 
 ENDPOINTS CONSUMIDOS POR FRONTWEB (producto/frontWeb)
@@ -152,7 +153,7 @@ ENDPOINTS CONSUMIDOS POR FRONTWEB (producto/frontWeb)
   - GET /api/v1/company/jobs/{job_id}/applications/{application_id}/cv (metadatos CV postulante)
   - GET /api/v1/company/jobs/{job_id}/applications/{application_id}/cv/file (binario PDF; query download=true opcional)
 - Implementados en backend pero aun no consumidos por frontWeb: PATCH /api/v1/company/profile/image, PATCH /api/v1/company/applications/{application_id}/viewed (alternativa manual; el flujo web usa VIEWED automatico en GET detalle/perfil).
-- Pendiente de implementacion en backend: GET /api/v1/auth/me, rutas /api/v1/chat/*.
+- Pendiente de implementacion en backend: GET /api/v1/auth/me, rutas /api/v1/messaging/*.
 - Endpoints candidato (/api/v1/candidate/* incl. CV, saved-jobs, cancelar postulacion): consumidos por frontmovil; ver secciones 12–16, 20.1, 21.1 y 25.1 y matriz CANDIDATE.
 - Salud operativa: GET /health (Spring Boot) y GET /api/v1/admin/system/status (panel admin /home).
 
@@ -1287,23 +1288,25 @@ POSTULACIONES EMPRESA
 }
 
 
-CHAT Y MATCH (MENSAJERIA RECLUTADOR <-> CANDIDATO)
+MATCH Y MENSAJERÍA ASÍNCRONA (RECLUTADOR <-> CANDIDATO)
 
-Pendiente de implementacion en backend. Las secciones 28-33 definen el contrato de los endpoints /api/v1/chat/*.
+Pendiente de implementacion en backend. Las secciones 28-33 definen el contrato de los endpoints /api/v1/messaging/*.
 
 Reglas generales:
+- Sistema de mensajería básica asíncrona tipo bandeja de entrada, compartida entre reclutador y candidato de cada match. No es chat en tiempo real.
 - Una conversacion vincula exactamente a un reclutador (quien la inicia) y un candidato.
 - Solo esos dos usuarios pueden listar mensajes y enviar mensajes en esa conversacion; otros reclutadores u otros candidatos reciben 403.
-- El reclutador inicia el match desde flujo web (perfil candidato / postulacion); el candidato no puede crear conversaciones.
+- El reclutador inicia el match desde flujo web (perfil candidato / postulacion) enviando como minimo un mensaje (first_message obligatorio). Al confirmar, la mensajeria queda abierta instantaneamente para ambos; el candidato no acepta ni rechaza el match.
 - En cliente movil el candidato ve company_commercial_name de la empresa del reclutador, no el nombre personal del reclutador.
 - Primer mensaje al establecer match: maximo 80 caracteres (campo first_message en POST conversacion).
 - Mensajes posteriores: maximo 500 caracteres por mensaje (campo body en POST mensaje).
 - Sin WebSockets: clientes refrescan con polling usando GET mensajes y query param after_message_id.
 - No hay adjuntos ni notificaciones push.
+- Aviso post-login candidato (movil): pantalla completa al iniciar sesion si existe al menos una conversacion con login_notice_dismissed=false. Si el candidato pulsa ir a ver o cierra el aviso, se marca login_notice_dismissed=true y ese aviso no vuelve a mostrarse en logins posteriores para esa conversacion. El candidato accede en cualquier momento a la bandeja Matchs (vista de mensajeria).
 
 
-28) Establecer match (crear conversacion + primer mensaje)
-- POST /api/v1/chat/conversations
+28) Establecer match (crear conversacion + primer mensaje obligatorio)
+- POST /api/v1/messaging/conversations
 - Auth: RECRUITER
 - Request:
 {
@@ -1313,11 +1316,12 @@ Reglas generales:
 - Validaciones:
   - application_id debe existir y pertenecer a una oferta publicada por el reclutador en sesion.
   - candidate_user_id se deriva de la postulacion; no se envia en el body.
-  - first_message obligatorio, longitud 1..80 tras trim.
+  - first_message obligatorio, longitud 1..80 tras trim (sin mensaje no hay match ni apertura de mensajeria).
   - no duplicar conversacion activa para el mismo par (recruiter_user_id, candidate_user_id) segun regla de negocio acordada; si ya existe, 409 CONFLICT.
 - Reglas:
-  - persiste conversacion y el primer mensaje en la misma operacion.
+  - persiste conversacion y el primer mensaje en la misma operacion; mensajeria abierta para ambos participantes de inmediato.
   - company_id y company_commercial_name se derivan de la empresa del reclutador para respuestas al candidato.
+  - login_notice_dismissed=false para el candidato (habilita aviso post-login una sola vez).
 - Response 201:
 {
   "conversation_id": 9001,
@@ -1335,12 +1339,13 @@ Reglas generales:
 }
 
 
-29) Listar mis conversaciones (matchs / chats)
-- GET /api/v1/chat/conversations?page=1&size=20&sort=updated_at,desc
+29) Listar mis conversaciones (bandeja Matchs)
+- GET /api/v1/messaging/conversations?page=1&size=20&sort=updated_at,desc
 - Auth: RECRUITER o CANDIDATE
 - Reglas:
   - RECRUITER: solo conversaciones donde recruiter_user_id coincide con el usuario en sesion.
   - CANDIDATE: solo conversaciones donde candidate_user_id coincide con el usuario en sesion.
+  - Bandeja de entrada clasica: filas con preview del ultimo mensaje y fecha; al pulsar fila se abre el hilo.
 - Response 200 item ejemplo RECRUITER:
 {
   "conversation_id": 9001,
@@ -1351,8 +1356,7 @@ Reglas generales:
   "job_title": "Desarrollador Backend Java",
   "last_message_preview": "Hola, nos interesa tu perfil...",
   "last_message_at": "2026-04-25T05:00:00Z",
-  "updated_at": "2026-04-25T05:00:00Z",
-  "pending_for_candidate": true
+  "updated_at": "2026-04-25T05:00:00Z"
 }
 - Response 200 item ejemplo CANDIDATE:
 {
@@ -1364,22 +1368,21 @@ Reglas generales:
   "job_title": "Desarrollador Backend Java",
   "last_message_preview": "Hola, nos interesa tu perfil...",
   "last_message_at": "2026-04-25T05:00:00Z",
-  "updated_at": "2026-04-25T05:00:00Z",
-  "pending_for_candidate": true
+  "updated_at": "2026-04-25T05:00:00Z"
 }
-- pending_for_candidate: true mientras el candidato aun no ha enviado ningun mensaje en esa conversacion (solo existe el primer mensaje del reclutador). Usado para modal «Una empresa quiere hacer match contigo» en login movil.
 
 
-30) Match pendiente para candidato (modal post-login)
-- GET /api/v1/chat/conversations/pending
+30) Aviso post-login (candidato; mensajeria recien abierta)
+- GET /api/v1/messaging/conversations/login-notice
 - Auth: CANDIDATE
 - Reglas:
-  - devuelve como maximo una conversacion pendiente (la mas reciente con pending_for_candidate true), o lista vacia.
-- Response 200 sin pendiente:
+  - devuelve como maximo una conversacion con login_notice_dismissed=false (la mas reciente), o item null.
+  - usado para modal/aviso a pantalla completa tras login en frontmovil; no implica aceptacion del match.
+- Response 200 sin aviso pendiente:
 {
   "item": null
 }
-- Response 200 con pendiente:
+- Response 200 con aviso:
 {
   "item": {
     "conversation_id": 9001,
@@ -1390,9 +1393,22 @@ Reglas generales:
 }
 
 
+30.1) Descartar aviso post-login (candidato)
+- PATCH /api/v1/messaging/conversations/{conversation_id}/dismiss-login-notice
+- Auth: CANDIDATE participante de la conversacion
+- Reglas:
+  - marca login_notice_dismissed=true para esa conversacion.
+  - debe invocarse cuando el candidato cierra el aviso sin ir al hilo, o al entrar al hilo desde el aviso (una sola vez por conversacion).
+- Response 200:
+{
+  "conversation_id": 9001,
+  "login_notice_dismissed": true
+}
+
+
 31) Listar mensajes de una conversacion
-- GET /api/v1/chat/conversations/{conversation_id}/messages?page=1&size=50&sort=sent_at,asc
-- GET /api/v1/chat/conversations/{conversation_id}/messages?after_message_id=9101&size=50
+- GET /api/v1/messaging/conversations/{conversation_id}/messages?page=1&size=50&sort=sent_at,asc
+- GET /api/v1/messaging/conversations/{conversation_id}/messages?after_message_id=9101&size=50
 - Auth: RECRUITER o CANDIDATE participante de la conversacion
 - Query params opcionales:
   - after_message_id: devuelve mensajes con id mayor al indicado (polling).
@@ -1412,7 +1428,7 @@ Reglas generales:
 
 
 32) Enviar mensaje en conversacion existente
-- POST /api/v1/chat/conversations/{conversation_id}/messages
+- POST /api/v1/messaging/conversations/{conversation_id}/messages
 - Auth: RECRUITER o CANDIDATE participante de la conversacion
 - Request:
 {
@@ -1422,7 +1438,6 @@ Reglas generales:
   - body obligatorio, longitud 1..500 tras trim.
 - Reglas:
   - 403 si el usuario no participa en la conversacion.
-  - al primer mensaje enviado por CANDIDATE, pending_for_candidate pasa a false.
 - Response 201:
 {
   "message_id": 9102,
@@ -1434,8 +1449,8 @@ Reglas generales:
 }
 
 
-33) Detalle de conversacion (opcional cabecera chat)
-- GET /api/v1/chat/conversations/{conversation_id}
+33) Detalle de conversacion (opcional cabecera hilo)
+- GET /api/v1/messaging/conversations/{conversation_id}
 - Auth: RECRUITER o CANDIDATE participante
 - Response 200 ejemplo RECRUITER:
 {
@@ -1445,8 +1460,7 @@ Reglas generales:
   "application_id": 8001,
   "job_id": 5001,
   "job_title": "Desarrollador Backend Java",
-  "created_at": "2026-04-25T05:00:00Z",
-  "pending_for_candidate": false
+  "created_at": "2026-04-25T05:00:00Z"
 }
 - Response 200 ejemplo CANDIDATE:
 {
@@ -1456,8 +1470,7 @@ Reglas generales:
   "application_id": 8001,
   "job_id": 5001,
   "job_title": "Desarrollador Backend Java",
-  "created_at": "2026-04-25T05:00:00Z",
-  "pending_for_candidate": false
+  "created_at": "2026-04-25T05:00:00Z"
 }
 
 
@@ -1596,8 +1609,8 @@ MATRIZ DE AUTORIZACION
 
 Pendiente de implementacion en backend:
 - GET /api/v1/auth/me (todos los roles autenticados)
-- CANDIDATE chat: GET /api/v1/chat/conversations, GET /api/v1/chat/conversations/pending, GET /api/v1/chat/conversations/{conversation_id}, GET/POST .../messages
-- RECRUITER chat: POST /api/v1/chat/conversations, GET /api/v1/chat/conversations, GET /api/v1/chat/conversations/{conversation_id}, GET/POST .../messages
+- CANDIDATE mensajeria: GET /api/v1/messaging/conversations, GET /api/v1/messaging/conversations/login-notice, PATCH .../dismiss-login-notice, GET /api/v1/messaging/conversations/{conversation_id}, GET/POST .../messages
+- RECRUITER mensajeria: POST /api/v1/messaging/conversations, GET /api/v1/messaging/conversations, GET /api/v1/messaging/conversations/{conversation_id}, GET/POST .../messages
 
 
 
@@ -1618,7 +1631,7 @@ CHECKLIST DE INTEGRACION FINAL
 - Listado postulaciones empresa GET /api/v1/company/jobs/{job_id}/applications con match_score y match_breakdown por fila (Detalle de Score).
 - Detalle postulacion GET /api/v1/company/jobs/{job_id}/applications/{application_id} y perfil postulante GET .../candidate-profile; VIEWED automatico al abrir.
 - GET /api/v1/auth/me (pendiente backend): hoy los clientes usan el objeto user de POST /api/v1/auth/login.
-- Chat (pendiente backend): POST /api/v1/chat/conversations (match + primer mensaje max 80), listado GET /api/v1/chat/conversations, pendiente candidato GET /api/v1/chat/conversations/pending, mensajes GET/POST /api/v1/chat/conversations/{conversation_id}/messages con polling after_message_id; solo participantes leen/escriben.
+- Mensajeria (pendiente backend): POST /api/v1/messaging/conversations (match + primer mensaje obligatorio max 80), listado GET /api/v1/messaging/conversations (bandeja Matchs), aviso post-login candidato GET /api/v1/messaging/conversations/login-notice y PATCH .../dismiss-login-notice, mensajes GET/POST /api/v1/messaging/conversations/{conversation_id}/messages con polling after_message_id; solo participantes leen/escriben; mensajeria asincrona sin aceptacion del candidato.
 - Feed candidato sin repeticion de ofertas; imagen oferta GET /api/v1/candidate/jobs/{job_id}/image cuando has_protected_image.
 - Swipe PASS funcionando; postulacion via POST /api/v1/candidate/applications al confirmar swipe derecha.
 - Ofertas guardadas GET/POST/DELETE /api/v1/candidate/saved-jobs.

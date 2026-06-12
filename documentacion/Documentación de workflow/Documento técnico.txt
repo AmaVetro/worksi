@@ -35,10 +35,10 @@ Postulación rápida
 Gestión de perfil
 Exploración de ofertas guardadas
 Cancelar postulación
-Match y chat con empresas (vista «Chats»; pendiente de implementación en frontmovil y backend chat)
+Match y mensajería asincrónica con empresas (vista «Matchs»; pendiente de implementación en frontmovil y backend mensajería)
 4.2 Aplicación web (ADMIN y RECRUITER)
 Portal administrador: alta, listado, edición y baja de empresas y reclutadores; gestión global de ofertas (/ofertas); stats GET /api/v1/admin/jobs/stats; estado del sistema GET /api/v1/admin/system/status.
-Portal reclutador: inicio con visores GET /api/v1/company/jobs/stats; creación y gestión de ofertas bajo /api/v1/company/* (closing_date, filtros ACTIVE|INACTIVE|CLOSING_DUE, PATCH status, DELETE soft delete); visualización de postulantes, detalle de score, perfil postulante solo lectura, orden por compatibilidad, marcado automático VIEWED al abrir detalle de postulación; match y chat pendientes de implementación (ver Flujo Pantallas App Web y Contrato Unificado API).
+Portal reclutador: inicio con visores GET /api/v1/company/jobs/stats; creación y gestión de ofertas bajo /api/v1/company/* (closing_date, filtros ACTIVE|INACTIVE|CLOSING_DUE, PATCH status, DELETE soft delete); visualización de postulantes, detalle de score, perfil postulante solo lectura, orden por compatibilidad, marcado automático VIEWED al abrir detalle de postulación; match y mensajería pendientes de implementación (ver Flujo Pantallas App Web y Contrato Unificado API).
 5. USUARIOS OBJETIVO
 Candidatos
 Personas en búsqueda de empleo
@@ -239,7 +239,7 @@ Swipe de ofertas
 Visualización de match
 Postulaciones
 Ofertas guardadas (pestaña Guardadas)
-Vista «Chats» y chat con empresas tras match (pendiente)
+Vista «Matchs» y mensajería con empresas tras match (pendiente)
 Flujo móvil oficial de postulantes incluye además: flujo de pantallas de recuperación de contraseña (regla MVP: solo nueva contraseña real; ver Contrato), formulario de creación de cuenta con validaciones, carga y visualización de CV en el dispositivo (hasta 1 MB, PDF) antes de "Uso de datos", selección de rubro y skills y últimas preferencias en estado local, pantalla de consentimiento de uso de datos (última antes de llamar al backend), y un solo POST /api/v1/auth/register/candidate (multipart) al aceptar que crea la cuenta, persiste CV y perfil, emite JWT y pasa a Perfil; luego desde Perfil se continúa con edición de perfil ya autenticado, consumo de ofertas (incluida vista detalle) y vista previa desde postulaciones
 Recuperación MVP (móvil y web empresa): pasos previos de «código» son maqueta; confirmación por bandeja es ficción; sin despacho de emails
 En pantalla de ofertas: swipe izquierda = pasar, swipe derecha = postular con confirmación
@@ -247,7 +247,7 @@ En postulaciones móviles: estados visibles en listado APPLIED y VIEWED; cancela
 Web (ADMIN + RECRUITER)
 Login único sin registro público en landing; administrador inicial vía datos sembrados (password_hash); reclutadores creados por ADMIN con company_id.
 Panel administrador: CRUD empresas y reclutadores; gestión global de ofertas; stats GET /api/v1/admin/jobs/stats; estado del sistema GET /api/v1/admin/system/status.
-Panel reclutador: inicio con visores GET /api/v1/company/jobs/stats; ofertas (crear, listar con filtros ACTIVE|INACTIVE|CLOSING_DUE, editar, activar/desactivar y eliminar), postulantes, detalle de score, perfil postulante, VIEWED automático, orden por compatibilidad; match/chat pendientes (alinear a Flujo Pantallas App Web y Contrato Unificado API).
+Panel reclutador: inicio con visores GET /api/v1/company/jobs/stats; ofertas (crear, listar con filtros ACTIVE|INACTIVE|CLOSING_DUE, editar, activar/desactivar y eliminar), postulantes, detalle de score, perfil postulante, VIEWED automático, orden por compatibilidad; match/mensajería pendientes (alinear a Flujo Pantallas App Web y Contrato Unificado API).
 14. INFRAESTRUCTURA
 
 Servicios en Docker:
@@ -268,9 +268,9 @@ docker-compose.yml
 
 No se implementa testing en los frontends: no se añaden carpetas de testing ni frameworks de prueba de UI en la web (React) ni en la app móvil. Los integrantes de frontend se limitan a comprobar visualmente y por uso que las pantallas y flujos respondan como se espera.
 
-Sprint 12: tests automatizados de integración solo sobre funcionalidades más críticas — pipeline IA (extracción Tika, fairness, POST /match), seguridad auth (política contraseña, JWT, bloqueo tras 4 intentos), postulación, chat mínimo e integración Spring Boot ↔ FastAPI. Pipeline GitHub Actions ejecuta esa suite y falla el build si regresa Tika, IA o integración esencial.
+Sprint 12: tests automatizados de integración solo sobre funcionalidades más críticas — pipeline IA (extracción Tika, fairness, POST /match), seguridad auth (política contraseña, JWT, bloqueo tras 4 intentos), postulación, mensajería mínima e integración Spring Boot ↔ FastAPI. Pipeline GitHub Actions ejecuta esa suite y falla el build si regresa Tika, IA o integración esencial.
 
-Sprint 13: pasada E2E manual candidato + flujo empresa (reclutador, incl. match/chat), corrección de bugs críticos, demo stakeholder; comprobación puntual con Postman sobre endpoints prioritarios si aplica.
+Sprint 13: pasada E2E manual candidato + flujo empresa (reclutador, incl. match/mensajería), corrección de bugs críticos, demo stakeholder; comprobación puntual con Postman sobre endpoints prioritarios si aplica.
 
 ❌ No se realizan: tests de performance avanzados, suites E2E automatizadas en frontends, ni cobertura de funcionalidades no críticas o sencillas.
 16. REGLAS DE DISEÑO
@@ -289,7 +289,7 @@ Explicación básica
 HU-16: Editar oferta (Sprint 8)
 HU-17: Ciclo de vida oferta — activar/desactivar y eliminar (Sprint 9)
 HU-28: Detalle score matching reclutador (Sprint 8)
-HU-29–HU-31: Match y chat reclutador-candidato (Sprint 11)
+HU-29–HU-31: Match y mensajería asincrónica reclutador-candidato (Sprint 11)
 
 Backlog opcional (no implementado en producto):
 HU-18: Cierre automático de oferta al llegar fecha límite (excluido; closing_date informativa + filtro CLOSING_DUE)
