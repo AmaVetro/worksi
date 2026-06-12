@@ -37,6 +37,7 @@ import com.worksi.app.data.model.JobOffer
 import com.worksi.app.ui.components.CandidateMainBottomBar
 import com.worksi.app.ui.components.CandidateSessionSettingsAction
 import com.worksi.app.ui.components.MainTab
+import com.worksi.app.ui.components.modalityLabel
 import com.worksi.app.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -220,7 +221,7 @@ fun ApplySuccessDialog(
                           Text(info.company, fontSize = 15.sp, color = Color.Gray)
                           Spacer(modifier = Modifier.height(4.dp))
                           Text(
-                              "${info.communeName} · ${info.modality}",
+                              "${info.communeName} · ${modalityLabel(info.modality)}",
                               fontSize = 14.sp,
                               color = Color.Gray)
                           Spacer(modifier = Modifier.height(4.dp))
@@ -341,7 +342,7 @@ fun JobOfferCard(offer: JobOffer, onVerDetalles: () -> Unit, modifier: Modifier 
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "${offer.communeName} · ${offer.modality}",
+                        text = "${offer.communeName} · ${modalityLabel(offer.modality)}",
                         fontSize = 16.sp,
                         color = Color.Gray
                     )

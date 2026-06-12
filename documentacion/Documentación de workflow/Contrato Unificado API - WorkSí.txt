@@ -1,21 +1,111 @@
 CONTRATO UNIFICADO DE INTEGRACION - WORKSI
-Version: 1.16
 Estado: Oficial para desarrollo paralelo (Backend + Web + Android)
 
 
 OBJETIVO
 - Este documento define un contrato unico y obligatorio para que Vicente, Ricardo y Fabián trabajen en paralelo sin romper integracion.
 - Si algun detalle no aparece aqui, se considera no definido y debe acordarse antes de implementar.
-- Si hay conflicto con documentos previos, para API e integracion prevalece este contrato.
+- Si hay conflicto con otros documentos del proyecto, para API e integracion prevalece este contrato.
 
 
 ALCANCE
-- Incluye: endpoints, autenticacion, registro candidato (incluido un solo request de alta con consentimiento), perfiles, catalogos, CV, ofertas, matching, swipe, postulaciones, chat y match reclutador-candidato (MVP mensajeria), vistas empresa, alta empresa y reclutadores por administrador del sistema (web MVP).
-- Incluye en plan obligatorio MVP: HU-16 (editar oferta reclutador, Sprint 8), HU-17 (activar/desactivar y eliminar oferta reclutador — implementado en web actual), HU-28 (detalle score matching reclutador, Sprint 8), HU-29–HU-31 (match/chat, Sprint 11) y mensajeria minima post-match (Flujo Pantallas App Web / Flujo Pantallas App Movil) con endpoints de esta seccion.
-- Excluye del MVP obligatorio: HU-14, HU-18 (cierre automatico de oferta al llegar fecha limite; reemplazado por closing_date informativa + filtro CLOSING_DUE), HU-22, HU-24.
+- Incluye: endpoints, autenticacion, registro candidato (un solo request de alta con consentimiento), perfiles, catalogos, CV, ofertas, matching, swipe, postulaciones, edicion y ciclo de vida de ofertas, vistas empresa, alta empresa y reclutadores por administrador (web), ofertas guardadas, cancelacion de postulacion, chat y match reclutador-candidato (mensajeria post-match), y servicio IA de matching.
+- Alta de empresa: solo POST /api/v1/admin/companies desde rol ADMIN; no existe rol COMPANY ni login de empresa.
+- closing_date en ofertas es informativa; el listado de ofertas del reclutador admite filtro CLOSING_DUE.
+- Pendiente de implementacion en backend: GET /api/v1/auth/me (seccion 7) y endpoints /api/v1/chat/* (secciones 28-33).
 
 
-ENDPOINTS CONSUMIDOS POR FRONTWEB WEB (implementacion actual producto/frontWeb)
+INVENTARIO — ENDPOINTS OPERATIVOS
+Referencia rapida al codigo en producto/. Los detalles de request/response siguen en las secciones numeradas mas abajo.
+
+Operacion / salud (publico; sin prefijo /api/v1):
+- GET /health — Spring Boot
+
+Servicio IA FastAPI (producto/ai-service; sin prefijo /api/v1 del monolito):
+- GET /health
+- POST /match
+
+Autenticacion (publico):
+- POST /api/v1/auth/login
+- POST /api/v1/auth/register/candidate
+- POST /api/v1/auth/password-recovery/request
+- POST /api/v1/auth/password-recovery/verify
+- POST /api/v1/auth/password-recovery/reset
+
+Catalogos (publico):
+- GET /api/v1/catalogs/regions
+- GET /api/v1/catalogs/regions/{region_id}/communes
+- GET /api/v1/catalogs/sectors
+- GET /api/v1/catalogs/sectors/{sector_id}/skills
+
+Administrador (Bearer ADMIN):
+- POST /api/v1/admin/companies
+- GET /api/v1/admin/companies
+- GET /api/v1/admin/companies/{company_id}
+- PATCH /api/v1/admin/companies/{company_id}
+- DELETE /api/v1/admin/companies/{company_id}
+- POST /api/v1/admin/recruiters
+- GET /api/v1/admin/recruiters
+- GET /api/v1/admin/recruiters/{recruiter_user_id}
+- PATCH /api/v1/admin/recruiters/{recruiter_user_id}
+- DELETE /api/v1/admin/recruiters/{recruiter_user_id}
+- GET /api/v1/admin/jobs/stats
+- GET /api/v1/admin/jobs
+- GET /api/v1/admin/jobs/{job_id}
+- GET /api/v1/admin/jobs/{job_id}/image
+- PATCH /api/v1/admin/jobs/{job_id}
+- PATCH /api/v1/admin/jobs/{job_id}/status
+- DELETE /api/v1/admin/jobs/{job_id}
+- GET /api/v1/admin/system/status
+
+Reclutador (Bearer RECRUITER):
+- GET /api/v1/company/profile
+- GET /api/v1/company/profile/image
+- PATCH /api/v1/company/profile/image
+- POST /api/v1/company/jobs
+- GET /api/v1/company/jobs
+- GET /api/v1/company/jobs/stats
+- GET /api/v1/company/jobs/{job_id}
+- GET /api/v1/company/jobs/{job_id}/image
+- PATCH /api/v1/company/jobs/{job_id}
+- PATCH /api/v1/company/jobs/{job_id}/status
+- DELETE /api/v1/company/jobs/{job_id}
+- GET /api/v1/company/jobs/{job_id}/applications
+- GET /api/v1/company/jobs/{job_id}/applications/{application_id}
+- GET /api/v1/company/jobs/{job_id}/applications/{application_id}/candidate-profile
+- GET /api/v1/company/jobs/{job_id}/applications/{application_id}/cv
+- GET /api/v1/company/jobs/{job_id}/applications/{application_id}/cv/file
+- PATCH /api/v1/company/applications/{application_id}/viewed
+
+Candidato (Bearer CANDIDATE):
+- GET /api/v1/candidate/profile
+- PATCH /api/v1/candidate/profile
+- POST /api/v1/candidate/cv
+- GET /api/v1/candidate/cv/current
+- GET /api/v1/candidate/cv/current/file
+- GET /api/v1/candidate/jobs/feed
+- GET /api/v1/candidate/jobs/{job_id}
+- GET /api/v1/candidate/jobs/{job_id}/image
+- POST /api/v1/candidate/swipes
+- GET /api/v1/candidate/saved-jobs
+- POST /api/v1/candidate/saved-jobs
+- DELETE /api/v1/candidate/saved-jobs/{job_id}
+- POST /api/v1/candidate/applications
+- GET /api/v1/candidate/applications
+- GET /api/v1/candidate/applications/{application_id}
+- DELETE /api/v1/candidate/applications/{application_id}
+
+PENDIENTE DE IMPLEMENTACION EN BACKEND (definidos en este contrato; ver secciones 7 y 28-33):
+- GET /api/v1/auth/me
+- POST /api/v1/chat/conversations
+- GET /api/v1/chat/conversations
+- GET /api/v1/chat/conversations/pending
+- GET /api/v1/chat/conversations/{conversation_id}
+- GET /api/v1/chat/conversations/{conversation_id}/messages
+- POST /api/v1/chat/conversations/{conversation_id}/messages
+
+
+ENDPOINTS CONSUMIDOS POR FRONTWEB (producto/frontWeb)
 - Autenticacion y recuperacion (publicos):
   - POST /api/v1/auth/login
   - POST /api/v1/auth/password-recovery/request
@@ -24,9 +114,22 @@ ENDPOINTS CONSUMIDOS POR FRONTWEB WEB (implementacion actual producto/frontWeb)
 - Administrador (Bearer ADMIN):
   - POST /api/v1/admin/companies (multipart: data + image opcional)
   - GET /api/v1/admin/companies?page&size&sort
+  - GET /api/v1/admin/companies/{company_id}
+  - PATCH /api/v1/admin/companies/{company_id} (multipart: data + image opcional)
+  - DELETE /api/v1/admin/companies/{company_id}
   - POST /api/v1/admin/recruiters
   - GET /api/v1/admin/recruiters?page&size&sort
+  - GET /api/v1/admin/recruiters/{recruiter_user_id}
+  - PATCH /api/v1/admin/recruiters/{recruiter_user_id}
+  - DELETE /api/v1/admin/recruiters/{recruiter_user_id}
   - GET /api/v1/admin/jobs/stats
+  - GET /api/v1/admin/jobs?page&size&sort&status&company_name&title
+  - GET /api/v1/admin/jobs/{job_id}
+  - GET /api/v1/admin/jobs/{job_id}/image
+  - PATCH /api/v1/admin/jobs/{job_id} (multipart: data + image opcional)
+  - PATCH /api/v1/admin/jobs/{job_id}/status
+  - DELETE /api/v1/admin/jobs/{job_id}
+  - GET /api/v1/admin/system/status
 - Catalogos (publicos; formularios admin y ofertas):
   - GET /api/v1/catalogs/regions
   - GET /api/v1/catalogs/regions/{region_id}/communes
@@ -40,16 +143,18 @@ ENDPOINTS CONSUMIDOS POR FRONTWEB WEB (implementacion actual producto/frontWeb)
   - POST /api/v1/company/jobs (multipart: data + image opcional)
   - GET /api/v1/company/jobs/{job_id}
   - GET /api/v1/company/jobs/{job_id}/image (binario cuando has_protected_image)
-  - PATCH /api/v1/company/jobs/{job_id} (multipart: data + image opcional; HU-16)
+  - PATCH /api/v1/company/jobs/{job_id} (multipart: data + image opcional)
   - PATCH /api/v1/company/jobs/{job_id}/status (body { "status": "ACTIVE" | "INACTIVE" })
   - DELETE /api/v1/company/jobs/{job_id} (soft delete → DELETED)
   - GET /api/v1/company/jobs/{job_id}/applications?page&size&sort
-  - GET /api/v1/company/jobs/{job_id}/applications/{application_id} (detalle postulacion; dispara VIEWED HU-23)
-  - GET /api/v1/company/jobs/{job_id}/applications/{application_id}/candidate-profile (perfil postulante solo lectura HU-19)
+  - GET /api/v1/company/jobs/{job_id}/applications/{application_id} (detalle postulacion; dispara VIEWED automatico)
+  - GET /api/v1/company/jobs/{job_id}/applications/{application_id}/candidate-profile (perfil postulante solo lectura)
   - GET /api/v1/company/jobs/{job_id}/applications/{application_id}/cv (metadatos CV postulante)
   - GET /api/v1/company/jobs/{job_id}/applications/{application_id}/cv/file (binario PDF; query download=true opcional)
-- Aun no consumidos por frontWeb (definidos en contrato para otras pantallas futuras): GET /api/v1/auth/me, PATCH /api/v1/company/profile/image, PATCH /api/v1/company/applications/{application_id}/viewed (alternativa manual; MVP usa VIEWED automatico en GET detalle/perfil), rutas /api/v1/chat/*.
-- Endpoints candidato (/api/v1/candidate/* incl. CV): consumidos por frontmovil; ver secciones 12–16 y matriz CANDIDATE.
+- Implementados en backend pero aun no consumidos por frontWeb: PATCH /api/v1/company/profile/image, PATCH /api/v1/company/applications/{application_id}/viewed (alternativa manual; el flujo web usa VIEWED automatico en GET detalle/perfil).
+- Pendiente de implementacion en backend: GET /api/v1/auth/me, rutas /api/v1/chat/*.
+- Endpoints candidato (/api/v1/candidate/* incl. CV, saved-jobs, cancelar postulacion): consumidos por frontmovil; ver secciones 12–16, 20.1, 21.1 y 25.1 y matriz CANDIDATE.
+- Salud operativa: GET /health (Spring Boot) y GET /api/v1/admin/system/status (panel admin /home).
 
 
 ARQUITECTURA OBLIGATORIA
@@ -89,8 +194,8 @@ AUTENTICACION Y SESION
   - RECRUITER (vinculado a companies.id; todas las rutas /api/v1/company/*)
 - Contrasenas en persistencia solo en users.password_hash (bcrypt u algoritmo acordado) para usuarios que inician sesion CANDIDATE, ADMIN y RECRUITER. La empresa en companies no tiene credencial ni campo de contraseña en datos.
 - Cuenta ADMIN inicial en entorno de desarrollo o prueba puede sembrarse en migracion Flyway con INSERT en users que solo establece password_hash (por ejemplo bcrypt), sin publicar texto plano en el repositorio. Este contrato no incluye ninguna contrasena literal para ADMIN; la cadena que valida ese hash debe acordarse fuera de este archivo u operativa del equipo.
-- Politica de contraseña (registro candidato, alta reclutador por ADMIN, y paso definitivo de recuperacion donde se envia nueva contraseña — ver «Recuperacion de contraseña — regla de producto MVP»): el texto claro debe cumplir como minimo: longitud minima 10 caracteres; al menos una letra mayuscula; al menos una letra minuscula; al menos un simbolo; al menos un digito numerico. El backend rechaza con error de validacion si no se cumple; en persistencia solo password_hash.
-- Logout: elimina sesion en cliente (backend no mantiene blacklist para MVP).
+- Politica de contraseña (registro candidato, alta reclutador por ADMIN, y paso definitivo de recuperacion donde se envia nueva contraseña — ver «Recuperacion de contraseña — regla de producto»): el texto claro debe cumplir como minimo: longitud minima 10 caracteres; al menos una letra mayuscula; al menos una letra minuscula; al menos un simbolo; al menos un digito numerico. El backend rechaza con error de validacion si no se cumple; en persistencia solo password_hash.
+- Logout: elimina sesion en cliente (backend no mantiene blacklist de tokens).
 
 
 
@@ -157,6 +262,28 @@ FAIRNESS OBLIGATORIO (ANTES DE EMBEDDINGS)
 
 
 
+SALUD Y OPERACION
+
+0) Health check Spring Boot
+- GET /health
+- Auth: publica (sin Authorization)
+- Response 200:
+{
+  "status": "UP"
+}
+- Uso: docker compose, README producto, comprobacion de arranque del backend.
+
+
+0.1) Health check servicio IA (FastAPI)
+- GET /health
+- Host: servicio ai-service (puerto 8000 en compose local)
+- Auth: publica
+- Response 200:
+{
+  "status": "UP"
+}
+
+
 ENDPOINTS DE AUTENTICACION
 
 1) Registro candidato
@@ -211,13 +338,7 @@ ENDPOINTS DE AUTENTICACION
 
 
 
-2) Registro empresa (no MVP)
-- POST /api/v1/auth/register/company
-- Auth: publica
-- Estado respecto del modelo actual (Cambio 1.4): no hay usuario con rol empresa; alta de empresa es solo POST /api/v1/admin/companies desde ADMIN con datos negocio (sin crear credencial de login para la empresa). El endpoint historico puede no estar implementado, devolver 404/410 o estar desactivado; no forma parte del contrato operativo paralelo hasta acordarlo explícitamente si se rehabilita.
-
-
-2.1) Alta empresa (administrador del sistema) — Flujo web MVP
+2.1) Alta empresa (administrador del sistema)
 - POST /api/v1/admin/companies
 - Auth: Bearer ADMIN
 - Content-Type: multipart/form-data; charset=UTF-8
@@ -262,11 +383,11 @@ ENDPOINTS DE AUTENTICACION
 - Response 200 (formato paginado estandar):
 - items minimos por fila:
   - Desplegable «Registrar reclutadores»: company_id, commercial_name, corporate_email (y opcionalmente legal_name, rut).
-  - Listado HU-25 (/companies): commercial_name, corporate_email, phone, region_name, commune_name, sector_name.
+  - Listado /companies: commercial_name, corporate_email, phone, region_name, commune_name, sector_name.
 - Uso en frontWeb: /companies (listado) y /recruiters/nueva (desplegable empresa).
 
 
-2.4) Alta reclutador (administrador del sistema) — Flujo web MVP
+2.4) Alta reclutador (administrador del sistema)
 - POST /api/v1/admin/recruiters
 - Auth: Bearer ADMIN
 - Content-Type: application/json
@@ -312,8 +433,106 @@ ENDPOINTS DE AUTENTICACION
   "company_id": 201,
   "company_commercial_name": "Empresa X"
 }
-- Uso en frontWeb: /recruiters (listado HU-26).
+- Uso en frontWeb: /recruiters (listado).
 
+
+2.6) Detalle empresa (administrador del sistema)
+- GET /api/v1/admin/companies/{company_id}
+- Auth: Bearer ADMIN
+- Response 200: detalle completo de la empresa (mismos campos que alta mas company_id, region_name, commune_name, sector_name, image_url si aplica).
+- Response 404 si no existe.
+- Uso en frontWeb: /companies/{companyId}/editar.
+
+
+2.7) Editar empresa (administrador del sistema)
+- PATCH /api/v1/admin/companies/{company_id}
+- Auth: Bearer ADMIN
+- Content-Type: multipart/form-data (misma estructura que POST seccion 2.1: parte data JSON obligatoria + parte image opcional PNG/JPEG).
+- Validaciones: mismas que alta; RUT unico salvo la propia empresa.
+- Response 200: detalle actualizado.
+- Uso en frontWeb: formulario editar empresa.
+
+
+2.8) Eliminar empresa (administrador del sistema)
+- DELETE /api/v1/admin/companies/{company_id}
+- Auth: Bearer ADMIN
+- Reglas:
+  - 409 CONFLICT si la empresa tiene reclutadores asociados u ofertas no DELETED.
+  - 404 si no existe.
+- Response 204 sin cuerpo si exito.
+- Uso en frontWeb: accion eliminar en listado /companies.
+
+
+2.9) Detalle reclutador (administrador del sistema)
+- GET /api/v1/admin/recruiters/{recruiter_user_id}
+- Auth: Bearer ADMIN
+- Response 200: datos del usuario RECRUITER y recruiter_profile (email, nombres, rut, telefonos, birth_date, company_id, company_commercial_name).
+- Uso en frontWeb: /recruiters/{userId}/editar.
+
+
+2.10) Editar reclutador (administrador del sistema)
+- PATCH /api/v1/admin/recruiters/{recruiter_user_id}
+- Auth: Bearer ADMIN
+- Content-Type: application/json
+- Request: mismos campos editables que alta (email, password opcional si se cambia, nombres, rut, phone, mobile, birth_date, company_id).
+- Response 200: detalle actualizado.
+- Uso en frontWeb: formulario editar reclutador.
+
+
+2.11) Eliminar reclutador (administrador del sistema)
+- DELETE /api/v1/admin/recruiters/{recruiter_user_id}
+- Auth: Bearer ADMIN
+- Reglas: 404 si no existe; no afecta otros reclutadores ni empresas.
+- Response 204 sin cuerpo si exito.
+- Uso en frontWeb: accion eliminar en listado /recruiters.
+
+
+2.12) Gestion global de ofertas (administrador del sistema)
+- GET /api/v1/admin/jobs?page=1&size=20&sort=created_at,desc&status=ACTIVE&company_name=&title=
+- Auth: Bearer ADMIN
+- Query status: ACTIVE | INACTIVE | CLOSING_DUE (misma semantica CLOSING_DUE que reclutador; todas las empresas).
+- Query company_name y title: filtros opcionales de busqueda (substring).
+- Response 200: paginacion estandar con items tipo listado oferta (id, title, company_commercial_name, status, salary_offered, modality, workload, created_at, closing_date, applications_count, etc.).
+- Uso en frontWeb: /ofertas (vista admin global).
+
+- GET /api/v1/admin/jobs/{job_id}
+- Auth: Bearer ADMIN
+- Response 200: mismo cuerpo detallado que GET /api/v1/company/jobs/{job_id} (seccion 19) sin restriccion de reclutador publicador.
+- Uso en frontWeb: /ofertas/{jobId}.
+
+- GET /api/v1/admin/jobs/{job_id}/image
+- Auth: Bearer ADMIN
+- Response 200: binario PNG/JPEG cuando la oferta tiene imagen en disco bajo worksi.storage.job-images.
+- Uso en frontWeb: detalle oferta admin.
+
+- PATCH /api/v1/admin/jobs/{job_id}
+- Auth: Bearer ADMIN
+- Content-Type: multipart/form-data (misma estructura que PATCH reclutador seccion 19.2).
+- Response 200: detalle actualizado.
+- Uso en frontWeb: /ofertas/{jobId}/editar.
+
+- PATCH /api/v1/admin/jobs/{job_id}/status
+- Auth: Bearer ADMIN
+- Request: { "status": "ACTIVE" | "INACTIVE" }
+- Response 200: { "id", "status" }.
+
+- DELETE /api/v1/admin/jobs/{job_id}
+- Auth: Bearer ADMIN
+- Reglas: soft delete → status DELETED (misma semantica que seccion 19.4).
+- Response 200: { "id", "status": "DELETED" }.
+
+
+2.13) Estado del sistema (administrador del sistema)
+- GET /api/v1/admin/system/status
+- Auth: Bearer ADMIN
+- Response 200:
+{
+  "backend": "UP",
+  "database": "UP",
+  "ai": "UP"
+}
+- Valores posibles por componente: UP | DOWN (ai puede ser DOWN si el servicio FastAPI no responde).
+- Uso en frontWeb: panel /home (salud del entorno junto a active_jobs_total).
 
 
 3) Login
@@ -356,23 +575,23 @@ ENDPOINTS DE AUTENTICACION
   - retornar BUSINESS_RULE_VIOLATION con code de bloqueo.
 
 
-Recuperacion de contraseña — regla de producto MVP (móvil CANDIDATE y web ADMIN/RECRUITER)
-- El bloqueo tras 4 intentos fallidos consecutivos de login es real (misma regla Contrato para login) y debe mostrar las pantallas de recuperación como derivación UX.
-- En el MVP por tiempo de equipo **no existe** recuperación efectiva basada en **código** enviado o generado para el usuario: **nunca se entrega ni se exige validar contra backend un OTP/código real** como condición para cambiar contraseña.
-- Las pantallas y botones de «solicitar código», «ingresar código» y «reenviar código» son **solo maqueta**: en la práctica **no cumplen función de recuperación real** ni obligan en UX MVP al usuario a un código válido; el cliente **debe permitir continuar** con **cualquier texto** escrito en el campo de código.
-- La **única parte obligatoria y real** del flujo es la pantalla de **nueva contraseña**: al confirmar ahí con política válida, el cambio debe **persistir de inmediato** en backend (`users.password_hash`) y el usuario debe poder iniciar sesión con la nueva clave sin depender del «código falso» anterior.
-- La pantalla de «confirmación en bandeja» (o mensaje equivalente) sigue siendo **ficción**: no hay envío de correo ni enlace real en MVP.
-- Los endpoints siguientes son referencia técnica; el **compromiso MVP** definido en estos documentos de workflow es el **cierre con persistencia** en el paso de nueva contraseña. Como el cliente no depende de un código real, la implementación (backend/cliente) debe alinearse para que ese cierre sea posible sin flujo OTP (p. ej. mecanismo interno/`recovery_token` u ajuste de contrato operativo decidido por el equipo sin contradecir la regla de producto anterior).
+Recuperacion de contraseña — regla de producto (movil CANDIDATE y web ADMIN/RECRUITER)
+- El bloqueo tras 4 intentos fallidos consecutivos de login es real (misma regla Contrato para login) y debe mostrar las pantallas de recuperacion como derivacion UX.
+- No existe recuperacion efectiva basada en codigo enviado o generado para el usuario: nunca se entrega ni se exige validar contra backend un OTP/codigo real como condicion para cambiar contraseña.
+- Las pantallas y botones de «solicitar codigo», «ingresar codigo» y «reenviar codigo» son solo maqueta: no cumplen funcion de recuperacion real ni obligan al usuario a un codigo valido; el cliente debe permitir continuar con cualquier texto escrito en el campo de codigo.
+- La unica parte obligatoria y real del flujo es la pantalla de nueva contraseña: al confirmar ahi con politica valida, el cambio debe persistir de inmediato en backend (`users.password_hash`) y el usuario debe poder iniciar sesion con la nueva clave.
+- La pantalla de «confirmacion en bandeja» (o mensaje equivalente) no implica envio de correo ni enlace real.
+- Los endpoints siguientes son referencia tecnica; el cierre con persistencia ocurre en el paso de nueva contraseña. Como el cliente no depende de un codigo real, backend y clientes deben alinearse para que ese cierre sea posible sin flujo OTP (p. ej. mecanismo interno con `recovery_token`).
 
 
-4) Recuperacion — solicitar codigo (referencia API; sin OTP real para usuario en MVP UI)
+4) Recuperacion — solicitar codigo (referencia API; sin OTP real para usuario en UI)
 - POST /api/v1/auth/password-recovery/request
 - Auth: publica
 - Request:
 {
   "email": "correo@dominio.cl"
 }
-- Response 200 (ejemplo; el MVP no usa esto como paso efectivo obligatorio ni entrega código al usuario por este medio):
+- Response 200 (ejemplo; la UI no usa esto como paso efectivo obligatorio ni entrega codigo al usuario por este medio):
 {
   "message": "Codigo generado en modo mock",
   "mock_flow": true
@@ -380,10 +599,10 @@ Recuperacion de contraseña — regla de producto MVP (móvil CANDIDATE y web AD
 
 
 
-5) Recuperacion — validar codigo (referencia API; sin validacion de OTP real contra UX MVP)
+5) Recuperacion — validar codigo (referencia API; sin validacion de OTP real en UI)
 - POST /api/v1/auth/password-recovery/verify
 - Auth: publica
-- Request (en MVP UI el contenido del campo código es irrelevante para poder avanzar a nueva contraseña):
+- Request (en UI el contenido del campo codigo es irrelevante para poder avanzar a nueva contraseña):
 {
   "email": "correo@dominio.cl",
   "code": "cualquier-texto-placeholder-ui"
@@ -396,13 +615,13 @@ Recuperacion de contraseña — regla de producto MVP (móvil CANDIDATE y web AD
 
 
 
-6) Recuperacion — nueva contrasena (paso MVP con efecto real obligatorio)
+6) Recuperacion — nueva contrasena (paso con efecto real obligatorio)
 - POST /api/v1/auth/password-recovery/reset
 - Auth: publica
 - Request:
 {
   "email": "correo@dominio.cl",
-  "recovery_token": "jwt-recuperacion-u-emitido-compat-mvp",
+  "recovery_token": "jwt-recuperacion",
   "new_password": "Aa!1234567890"
 }
 - Response 200:
@@ -415,13 +634,14 @@ Recuperacion de contraseña — regla de producto MVP (móvil CANDIDATE y web AD
 7) Perfil autenticado basico
 - GET /api/v1/auth/me
 - Auth: Bearer access_token con role CANDIDATE, ADMIN o RECRUITER
+- Pendiente de implementacion en backend. Hoy los clientes usan los datos de user devueltos por POST /api/v1/auth/login persistidos en localStorage (web) o SecureTokenStore (movil).
 - Response 200 (minimo):
 {
   "id": 101,
   "role": "CANDIDATE",
   "email": "correo@dominio.cl"
 }
-- Implementacion puede ampliar payload para RECRUITER (ej. company_id, nombre comercial empresa) si el frontend lo requiere; no romper campos minimos anteriores.
+- El payload puede ampliarse para RECRUITER (ej. company_id, nombre comercial empresa) sin romper los campos minimos definidos arriba.
 
 7.1) Imagen de empresa (edicion con sesion reclutador)
 - PATCH /api/v1/company/profile/image
@@ -739,7 +959,7 @@ OFERTAS (EMPRESA)
 - Si no hay archivo valido o no aplica: 404 (o error de negocio acorde a implementacion).
 
 
-19.2) Editar oferta propia (HU-16)
+19.2) Editar oferta propia
 - PATCH /api/v1/company/jobs/{job_id}
 - Auth: RECRUITER
 - Content-Type: multipart/form-data (misma estructura que POST seccion 17)
@@ -757,7 +977,7 @@ OFERTAS (EMPRESA)
 - Response 200: mismo cuerpo que GET /api/v1/company/jobs/{job_id} (seccion 19) tras persistir cambios.
 
 
-19.3) Activar o desactivar oferta propia (HU-17 — ciclo de vida)
+19.3) Activar o desactivar oferta propia (ciclo de vida)
 - PATCH /api/v1/company/jobs/{job_id}/status
 - Auth: RECRUITER
 - Content-Type: application/json
@@ -780,7 +1000,7 @@ OFERTAS (EMPRESA)
 - Uso en frontWeb: boton encendido/apagado en listado /recruiter/ofertas y detalle /recruiter/ofertas/{job_id}.
 
 
-19.4) Eliminar oferta propia (HU-17 — soft delete)
+19.4) Eliminar oferta propia (soft delete)
 - DELETE /api/v1/company/jobs/{job_id}
 - Auth: RECRUITER
 - Reglas autorizacion:
@@ -834,6 +1054,16 @@ OFERTAS (CANDIDATO)
 }
 
 
+20.1) Imagen de oferta para candidato (lectura binaria)
+- GET /api/v1/candidate/jobs/{job_id}/image
+- Auth: CANDIDATE
+- Reglas:
+  - Solo ofertas ACTIVE.
+  - Solo cuando jobs.image_url apunta a archivo local bajo worksi.storage.job-images; si la oferta usa URL externa, el cliente usa el campo de imagen del feed/detalle.
+- Response 200: cuerpo binario; Content-Type image/png o image/jpeg.
+- Response 404 si oferta inexistente, no ACTIVE o sin archivo local.
+- Uso en frontmovil: Coil en HomeScreen con header Authorization Bearer para imagenes protegidas.
+
 
 21) Detalle de oferta para candidato
 - GET /api/v1/candidate/jobs/{job_id}
@@ -845,6 +1075,34 @@ OFERTAS (CANDIDATO)
   - match.score
   - match.explanation
   - match.match_breakdown (misma estructura que CONTRATO DE SCORE FINAL)
+
+
+21.1) Ofertas guardadas
+- GET /api/v1/candidate/saved-jobs?page=1&size=20
+- Auth: CANDIDATE
+- Reglas:
+  - Lista ofertas ACTIVE guardadas por el candidato, orden created_at desc.
+  - Cada item usa la misma estructura que feed (CandidateJobFeedItemResponse / seccion 20) incluyendo match.
+- Response 200: paginacion estandar.
+- Uso en frontmovil: pantalla Guardadas.
+
+- POST /api/v1/candidate/saved-jobs
+- Auth: CANDIDATE
+- Request:
+{
+  "job_id": 5001
+}
+- Reglas:
+  - job_id debe existir y estar ACTIVE.
+  - Idempotente: si ya estaba guardada, Response 204 sin cuerpo.
+  - Primera vez: Response 201 sin cuerpo.
+- Uso en frontmovil: boton guardar en feed o detalle de oferta.
+
+- DELETE /api/v1/candidate/saved-jobs/{job_id}
+- Auth: CANDIDATE
+- Reglas: 404 si no estaba guardada; 204 sin cuerpo si exito.
+- Uso en frontmovil: quitar de guardadas.
+
 
 SWIPE Y POSTULACIONES CANDIDATO
 
@@ -859,13 +1117,9 @@ SWIPE Y POSTULACIONES CANDIDATO
   "job_id": 5001,
   "action": "PASS"
 }
-- Response 201:
-{
-  "swipe_id": 7001,
-  "job_id": 5001,
-  "action": "PASS",
-  "created_at": "2026-04-25T03:45:00Z"
-}
+- action: PASS | APPLY (enum swipe_action).
+- Response 204 sin cuerpo si exito (implementacion actual producto/backend).
+- Reglas: persiste el swipe; no duplica par candidato-job si ya existia.
 
 
 
@@ -893,8 +1147,7 @@ SWIPE Y POSTULACIONES CANDIDATO
 24) Listar mis postulaciones
 - GET /api/v1/candidate/applications?page=1&size=20&sort=applied_at,desc
 - Auth: CANDIDATE
-- Estados visibles MVP: APPLIED, VIEWED.
-- CANCELLED reservado para opcional.
+- Estados visibles: APPLIED, VIEWED, CANCELLED (tras cancelar postulacion, seccion 25.1).
 
 
 
@@ -903,6 +1156,16 @@ SWIPE Y POSTULACIONES CANDIDATO
 - Auth: CANDIDATE
 
 
+25.1) Cancelar postulacion
+- DELETE /api/v1/candidate/applications/{application_id}
+- Auth: CANDIDATE
+- Reglas:
+  - Solo postulaciones propias del candidato autenticado.
+  - Cambia status a CANCELLED si estaba APPLIED o VIEWED.
+  - 409 CONFLICT si ya estaba CANCELLED.
+  - 404 si application_id no existe o no pertenece al candidato.
+- Response 204 sin cuerpo si exito.
+- Uso en frontmovil: pantalla vista previa de postulacion (ApplicationPreviewScreen).
 
 
 POSTULACIONES EMPRESA
@@ -913,9 +1176,9 @@ POSTULACIONES EMPRESA
 - Auth: RECRUITER
 - Reglas:
   - solo oferta propia (reclutador publicador); oferta DELETED responde 404.
-  - orden por score descendente para HU-20.
-  - cada item incluye match_score y match_breakdown para HU-28 (pantalla «Detalle de Score» / «Ver postulacion»).
-  - no dispara VIEWED (HU-23); solo lectura de listado.
+  - orden por score descendente.
+  - cada item incluye match_score y match_breakdown (pantalla «Detalle de Score» / «Ver postulacion»).
+  - no dispara VIEWED; solo lectura de listado.
 - Response 200 item ejemplo:
 {
   "application_id": 8001,
@@ -940,7 +1203,7 @@ POSTULACIONES EMPRESA
   }
 }
 - Notas:
-  - match_breakdown obligatorio cuando exista match_score calculado; si no hay score, match_breakdown puede ser null y la UI HU-28 muestra estado vacio/error visible.
+  - match_breakdown obligatorio cuando exista match_score calculado; si no hay score, match_breakdown puede ser null y la UI muestra estado vacio/error visible.
   - candidate_preview: campos minimos para listado; detalle ampliado en seccion 26.2.
 
 
@@ -949,7 +1212,7 @@ POSTULACIONES EMPRESA
 - Auth: RECRUITER
 - Reglas:
   - solo oferta propia (reclutador publicador); application_id debe pertenecer al job_id; estados visibles APPLIED o VIEWED; oferta DELETED responde 404.
-  - al abrir este detalle el backend marca APPLIED → VIEWED si corresponde (HU-23); idempotente.
+  - al abrir este detalle el backend marca APPLIED → VIEWED si corresponde; idempotente.
   - no sustituye al listado seccion 26; frontWeb lo usa en /recruiter/ofertas/{job_id}/postulaciones/{application_id} («Ver postulacion» y «Detalle de Score»).
 - Response 200: mismo cuerpo que un item del listado seccion 26 (application_id, candidate_user_id, status, applied_at, viewed_at, match_score, match_explanation, match_breakdown, candidate_preview).
 
@@ -959,7 +1222,7 @@ POSTULACIONES EMPRESA
 - Auth: RECRUITER
 - Reglas:
   - mismas reglas de titularidad y visibilidad que 26.1.
-  - al abrir este perfil el backend marca APPLIED → VIEWED si corresponde (HU-23); idempotente.
+  - al abrir este perfil el backend marca APPLIED → VIEWED si corresponde; idempotente.
   - solo lectura: misma informacion de perfil candidato que GET /api/v1/candidate/profile, mas nombres de catalogo resueltos (region_name, commune_name, sector_name); sin datos de edicion ni consentimiento.
 - Response 200 ejemplo:
 {
@@ -983,7 +1246,7 @@ POSTULACIONES EMPRESA
     { "id": 10, "name": "Integracion de APIs REST" }
   ]
 }
-- Uso en frontWeb: /recruiter/ofertas/{job_id}/postulaciones/{application_id}/perfil (HU-19 complemento Sprint 9).
+- Uso en frontWeb: /recruiter/ofertas/{job_id}/postulaciones/{application_id}/perfil.
 
 
 26.3) Metadatos CV del postulante (reclutador)
@@ -1014,8 +1277,8 @@ POSTULACIONES EMPRESA
 - Reglas:
   - solo el reclutador publicador de la oferta asociada.
   - idempotente: si ya VIEWED, mantener VIEWED.
-  - en producto MVP el backend dispara esta transicion automaticamente al abrir el detalle de la postulacion (HU-23; GET seccion 26.1 o GET seccion 26.2 al entrar a «Ver postulacion» / «Perfil postulantes»); no al listar postulantes de la oferta (seccion 26) ni al postular el candidato; no requiere boton manual en UI.
-  - PATCH manual (este endpoint) queda como alternativa idempotente; frontWeb MVP no lo consume directamente.
+  - el backend dispara esta transicion automaticamente al abrir el detalle de la postulacion (GET seccion 26.1 o GET seccion 26.2 al entrar a «Ver postulacion» / «Perfil postulantes»); no al listar postulantes de la oferta (seccion 26) ni al postular el candidato; no requiere boton manual en UI.
+  - PATCH manual (este endpoint) queda como alternativa idempotente; frontWeb no lo consume directamente.
 - Response 200:
 {
   "application_id": 8001,
@@ -1024,17 +1287,19 @@ POSTULACIONES EMPRESA
 }
 
 
-CHAT Y MATCH (MVP MENSAJERIA RECLUTADOR <-> CANDIDATO)
+CHAT Y MATCH (MENSAJERIA RECLUTADOR <-> CANDIDATO)
 
-Reglas generales MVP:
+Pendiente de implementacion en backend. Las secciones 28-33 definen el contrato de los endpoints /api/v1/chat/*.
+
+Reglas generales:
 - Una conversacion vincula exactamente a un reclutador (quien la inicia) y un candidato.
 - Solo esos dos usuarios pueden listar mensajes y enviar mensajes en esa conversacion; otros reclutadores u otros candidatos reciben 403.
 - El reclutador inicia el match desde flujo web (perfil candidato / postulacion); el candidato no puede crear conversaciones.
 - En cliente movil el candidato ve company_commercial_name de la empresa del reclutador, no el nombre personal del reclutador.
 - Primer mensaje al establecer match: maximo 80 caracteres (campo first_message en POST conversacion).
 - Mensajes posteriores: maximo 500 caracteres por mensaje (campo body en POST mensaje).
-- MVP sin WebSockets: clientes refrescan con polling usando GET mensajes y query param after_message_id.
-- No hay adjuntos ni notificaciones push en este MVP.
+- Sin WebSockets: clientes refrescan con polling usando GET mensajes y query param after_message_id.
+- No hay adjuntos ni notificaciones push.
 
 
 28) Establecer match (crear conversacion + primer mensaje)
@@ -1130,7 +1395,7 @@ Reglas generales MVP:
 - GET /api/v1/chat/conversations/{conversation_id}/messages?after_message_id=9101&size=50
 - Auth: RECRUITER o CANDIDATE participante de la conversacion
 - Query params opcionales:
-  - after_message_id: devuelve mensajes con id mayor al indicado (polling MVP).
+  - after_message_id: devuelve mensajes con id mayor al indicado (polling).
   - page, size, sort: paginacion estandar cuando no se usa after_message_id.
 - Reglas:
   - 403 si el usuario no es recruiter_user_id ni candidate_user_id de la conversacion.
@@ -1200,8 +1465,10 @@ Reglas generales MVP:
 
 MATCHING API EXTERNA (CONSUMIDA SOLO POR SPRING)
 
-34) Match interno IA
-- URL interna sugerida: /match (FastAPI)
+34) Match interno IA (ai-service)
+- GET /health — ver seccion 0.1
+- POST /match (FastAPI)
+- URL interna: http://ai:8000/match en Docker Compose; Spring Boot usa WORKSI_AI_BASE_URL
 - Request:
 {
   "cv_text": "texto cv limpio",
@@ -1228,7 +1495,7 @@ CONTRATO DE SCORE FINAL (BACKEND -> FRONT)
   - workload_score: 100 si workload de la oferta está en preferred_workloads del candidato; 0 si no coincide.
   - experience_score: comparación years_experience_required de la oferta vs years_experience del perfil del candidato (declarado en registro/edición de perfil); si no hubiera valor, 0.
 - POST /match (FastAPI) puede aportar similitud semántica base; Spring calcula dimensiones y final_score.
-- Objeto match_breakdown (obligatorio cuando la respuesta incluya match para candidato o listado/detalle postulaciones empresa HU-28):
+- Objeto match_breakdown (obligatorio cuando la respuesta incluya match para candidato o listado/detalle postulaciones empresa):
 {
   "final_score": 82.15,
   "description_score": 78.50,
@@ -1238,7 +1505,7 @@ CONTRATO DE SCORE FINAL (BACKEND -> FRONT)
   "experience_score": 75.00
 }
 - En respuestas con match al candidato: incluir match.score (= final_score), match.explanation_short o match.explanation, y match.match_breakdown.
-- En GET /api/v1/company/jobs/{job_id}/applications (HU-28): incluir match_score y match_breakdown por fila segun ejemplo seccion 26.
+- En GET /api/v1/company/jobs/{job_id}/applications: incluir match_score y match_breakdown por fila segun ejemplo seccion 26.
 - Redondeo de respuesta: dos decimales (DECIMAL 5,2).
 
 
@@ -1262,6 +1529,7 @@ CODIGOS HTTP POR TIPO DE RESULTADO
 
 MATRIZ DE AUTORIZACION
 - Publico:
+  - GET /health
   - POST /api/v1/auth/login
   - POST /api/v1/auth/register/candidate
   - POST /api/v1/auth/password-recovery/request
@@ -1272,14 +1540,25 @@ MATRIZ DE AUTORIZACION
   - GET /api/v1/catalogs/sectors
   - GET /api/v1/catalogs/sectors/{sector_id}/skills
 - ADMIN (Bearer access_token rol ADMIN):
-  - GET /api/v1/auth/me
   - POST /api/v1/admin/companies
   - GET /api/v1/admin/companies
+  - GET /api/v1/admin/companies/{company_id}
+  - PATCH /api/v1/admin/companies/{company_id}
+  - DELETE /api/v1/admin/companies/{company_id}
   - POST /api/v1/admin/recruiters
   - GET /api/v1/admin/recruiters
+  - GET /api/v1/admin/recruiters/{recruiter_user_id}
+  - PATCH /api/v1/admin/recruiters/{recruiter_user_id}
+  - DELETE /api/v1/admin/recruiters/{recruiter_user_id}
   - GET /api/v1/admin/jobs/stats
+  - GET /api/v1/admin/jobs
+  - GET /api/v1/admin/jobs/{job_id}
+  - GET /api/v1/admin/jobs/{job_id}/image
+  - PATCH /api/v1/admin/jobs/{job_id}
+  - PATCH /api/v1/admin/jobs/{job_id}/status
+  - DELETE /api/v1/admin/jobs/{job_id}
+  - GET /api/v1/admin/system/status
 - CANDIDATE (Bearer access_token rol CANDIDATE):
-  - GET /api/v1/auth/me
   - GET /api/v1/candidate/profile
   - PATCH /api/v1/candidate/profile
   - POST /api/v1/candidate/cv
@@ -1287,17 +1566,16 @@ MATRIZ DE AUTORIZACION
   - GET /api/v1/candidate/cv/current/file
   - GET /api/v1/candidate/jobs/feed
   - GET /api/v1/candidate/jobs/{job_id}
+  - GET /api/v1/candidate/jobs/{job_id}/image
   - POST /api/v1/candidate/swipes
+  - GET /api/v1/candidate/saved-jobs
+  - POST /api/v1/candidate/saved-jobs
+  - DELETE /api/v1/candidate/saved-jobs/{job_id}
   - POST /api/v1/candidate/applications
   - GET /api/v1/candidate/applications
   - GET /api/v1/candidate/applications/{application_id}
-  - GET /api/v1/chat/conversations
-  - GET /api/v1/chat/conversations/pending
-  - GET /api/v1/chat/conversations/{conversation_id}
-  - GET /api/v1/chat/conversations/{conversation_id}/messages
-  - POST /api/v1/chat/conversations/{conversation_id}/messages
+  - DELETE /api/v1/candidate/applications/{application_id}
 - RECRUITER (Bearer access_token rol RECRUITER):
-  - GET /api/v1/auth/me
   - GET /api/v1/company/profile
   - GET /api/v1/company/profile/image
   - PATCH /api/v1/company/profile/image
@@ -1315,43 +1593,49 @@ MATRIZ DE AUTORIZACION
   - GET /api/v1/company/jobs/{job_id}/applications/{application_id}/cv
   - GET /api/v1/company/jobs/{job_id}/applications/{application_id}/cv/file
   - PATCH /api/v1/company/applications/{application_id}/viewed
-  - POST /api/v1/chat/conversations
-  - GET /api/v1/chat/conversations
-  - GET /api/v1/chat/conversations/{conversation_id}
-  - GET /api/v1/chat/conversations/{conversation_id}/messages
-  - POST /api/v1/chat/conversations/{conversation_id}/messages
+
+Pendiente de implementacion en backend:
+- GET /api/v1/auth/me (todos los roles autenticados)
+- CANDIDATE chat: GET /api/v1/chat/conversations, GET /api/v1/chat/conversations/pending, GET /api/v1/chat/conversations/{conversation_id}, GET/POST .../messages
+- RECRUITER chat: POST /api/v1/chat/conversations, GET /api/v1/chat/conversations, GET /api/v1/chat/conversations/{conversation_id}, GET/POST .../messages
 
 
 
 
 CHECKLIST DE INTEGRACION FINAL
+- Health operativo: GET /health (Spring Boot) y GET /api/v1/admin/system/status (backend, database, ai).
 - Login candidato, reclutador y administrador operativos con JWT y POST /api/v1/auth/login (roles CANDIDATE, RECRUITER, ADMIN; sin usuario empresa ni rol COMPANY).
 - Registro candidato: un solo POST /api/v1/auth/register/candidate (multipart: data JSON + file PDF) con consent_given=true y todos los datos de identidad, perfil, skills y preferencias; consentimiento en "Uso de datos"; JWT CANDIDATE en la respuesta.
-- Web MVP empresa: alta empresa (datos negocio company_id, corporate_email obligatorio en ficha; sin login empresa) POST /api/v1/admin/companies (multipart) con ADMIN; listado GET /api/v1/admin/companies (HU-25); alta reclutador POST /api/v1/admin/recruiters con company_id; listado GET /api/v1/admin/recruiters (HU-26); stats admin GET /api/v1/admin/jobs/stats (active_jobs_total); login reclutador con mismo POST /api/v1/auth/login que admin (respuesta user con nombres para RECRUITER segun contrato).
+- Web empresa: alta empresa POST /api/v1/admin/companies (multipart) con ADMIN; listado GET /api/v1/admin/companies; detalle/edicion/baja GET PATCH DELETE /api/v1/admin/companies/{company_id}; alta reclutador POST /api/v1/admin/recruiters; listado GET /api/v1/admin/recruiters; detalle/edicion/baja GET PATCH DELETE /api/v1/admin/recruiters/{recruiter_user_id}; stats admin GET /api/v1/admin/jobs/stats; gestion global ofertas GET/PATCH/DELETE /api/v1/admin/jobs/*; login reclutador con mismo POST /api/v1/auth/login que admin.
 - Lectura ficha empresa en sesion reclutador: GET /api/v1/company/profile (incluye commercial_name y corporate_email); imagen en disco: GET /api/v1/company/profile/image cuando has_protected_image.
-- Endpoint historico POST /api/v1/auth/register/company fuera del contrato MVP (ver seccion registro empresa no MVP).
 - CV PDF <= 1MB validado y almacenado; candidato: POST/GET /api/v1/candidate/cv/* (frontmovil Perfil); reclutador: GET .../applications/{application_id}/cv y .../cv/file (frontWeb «Ver CV»).
 - Oferta creada con POST /api/v1/company/jobs multipart (data JSON + image opcional PNG/JPEG), company_commercial_name, closing_date obligatorio (YYYY-MM-DD), sin requirements, salary_offered y years_experience_required obligatorios, skills 3..8; status inicial ACTIVE.
 - Listado ofertas reclutador GET /api/v1/company/jobs con filtro status ACTIVE | INACTIVE | CLOSING_DUE; items con company_commercial_name, salary_offered, modality, workload, created_at, closing_date, applications_count.
 - Estadisticas dashboard reclutador GET /api/v1/company/jobs/stats (active_count, inactive_count, published_today_count; dia America/Santiago).
 - Detalle oferta reclutador GET /api/v1/company/jobs/{job_id} con region_name, commune_name, created_at, closing_date, skills (id y name) y campos de imagen external_image_url / has_protected_image; imagen en disco con GET /api/v1/company/jobs/{job_id}/image cuando has_protected_image.
-- Edicion oferta HU-16: PATCH /api/v1/company/jobs/{job_id} multipart (mismas reglas que POST, incluido closing_date).
-- Ciclo de vida oferta HU-17: PATCH /api/v1/company/jobs/{job_id}/status (ACTIVE|INACTIVE); DELETE /api/v1/company/jobs/{job_id} (soft delete DELETED).
-- Listado postulaciones empresa GET /api/v1/company/jobs/{job_id}/applications con match_score y match_breakdown por fila (HU-28 / Detalle de Score).
-- Detalle postulacion GET /api/v1/company/jobs/{job_id}/applications/{application_id} y perfil postulante GET .../candidate-profile (HU-19 Sprint 9); VIEWED automatico al abrir (HU-23).
-- Chat MVP: POST /api/v1/chat/conversations (match + primer mensaje max 80), listado GET /api/v1/chat/conversations, pendiente candidato GET /api/v1/chat/conversations/pending, mensajes GET/POST /api/v1/chat/conversations/{conversation_id}/messages con polling after_message_id; solo participantes leen/escriben.
-- Feed candidato sin repeticion de ofertas.
-- Swipe PASS/APPLY funcionando.
+- Edicion oferta: PATCH /api/v1/company/jobs/{job_id} multipart (mismas reglas que POST, incluido closing_date).
+- Ciclo de vida oferta: PATCH /api/v1/company/jobs/{job_id}/status (ACTIVE|INACTIVE); DELETE /api/v1/company/jobs/{job_id} (soft delete DELETED).
+- Listado postulaciones empresa GET /api/v1/company/jobs/{job_id}/applications con match_score y match_breakdown por fila (Detalle de Score).
+- Detalle postulacion GET /api/v1/company/jobs/{job_id}/applications/{application_id} y perfil postulante GET .../candidate-profile; VIEWED automatico al abrir.
+- GET /api/v1/auth/me (pendiente backend): hoy los clientes usan el objeto user de POST /api/v1/auth/login.
+- Chat (pendiente backend): POST /api/v1/chat/conversations (match + primer mensaje max 80), listado GET /api/v1/chat/conversations, pendiente candidato GET /api/v1/chat/conversations/pending, mensajes GET/POST /api/v1/chat/conversations/{conversation_id}/messages con polling after_message_id; solo participantes leen/escriben.
+- Feed candidato sin repeticion de ofertas; imagen oferta GET /api/v1/candidate/jobs/{job_id}/image cuando has_protected_image.
+- Swipe PASS funcionando; postulacion via POST /api/v1/candidate/applications al confirmar swipe derecha.
+- Ofertas guardadas GET/POST/DELETE /api/v1/candidate/saved-jobs.
+- Cancelar postulacion DELETE /api/v1/candidate/applications/{application_id}.
 - Postulacion APPLIED creada solo al confirmar.
-- VIEWED automatico en servidor al abrir detalle de postulacion GET 26.1 o perfil GET 26.2 (HU-23); no al listar (seccion 26) ni al postular.
+- VIEWED automatico en servidor al abrir detalle de postulacion GET 26.1 o perfil GET 26.2; no al listar (seccion 26) ni al postular.
 - Orden por score descendente en vistas empresa.
 - Invariante de score verificada (skills no alteran score).
-- Recuperacion MVP: bloqueo a 4 intentos real con derivacion a pantallas; sin codigo OTP real para usuario; maqueta en solicitud/ingreso de codigo; solo persistencia real al confirmar nueva contraseña (`password_hash`).
+- Recuperacion de contraseña: bloqueo a 4 intentos con derivacion a pantallas; sin codigo OTP real para usuario; maqueta en solicitud/ingreso de codigo; persistencia al confirmar nueva contraseña (`password_hash`).
 
 
 
-PUERTOS (FRONTEND/BACKEND/BD, ETC):
-- Pendiente luego de preparar bien el setup de docker, etc.
+PUERTOS (DOCKER COMPOSE LOCAL — producto/docker-compose.yml):
+- MySQL: 3306
+- Spring Boot (backend): 8080
+- FastAPI (ai-service): 8000
+- Frontends web y movil: puertos de desarrollo segun Vite/Android Studio; no expuestos en compose del backend.
 
 
 FIN DEL CONTRATO
