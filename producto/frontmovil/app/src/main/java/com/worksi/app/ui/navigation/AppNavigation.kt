@@ -16,6 +16,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.worksi.app.ui.applications.ApplicationPreviewScreen
@@ -24,8 +25,11 @@ import com.worksi.app.ui.applications.ApplicationsViewModel
 import com.worksi.app.ui.jobdetail.JobDetailScreen
 import com.worksi.app.data.local.SecureTokenStore
 import com.worksi.app.data.saved.CandidateSavedJobsStore
-import com.worksi.app.ui.home.HomeScreen
 import com.worksi.app.ui.home.HomeViewModel
+import com.worksi.app.ui.matches.CandidateLoginNoticeOverlay
+import com.worksi.app.ui.matches.MatchThreadScreen
+import com.worksi.app.ui.matches.MatchsScreen
+import com.worksi.app.ui.session.CandidateSessionScreen
 import com.worksi.app.ui.profile.ProfileScreen
 import com.worksi.app.ui.profile.ProfileViewModel
 import com.worksi.app.ui.saved.SavedJobsScreen
@@ -64,14 +68,31 @@ sealed class Screen(val route: String) {
     object RecoveryCode : Screen("recovery_code")
     object RecoveryNewPassword : Screen("recovery_new_password")
     object RecoverySuccess : Screen("recovery_success")
+    object Matches : Screen("matches")
 }
+
+private const val MatchThreadRoute = "match_thread/{conversationId}"
 
 private const val JobDetailRoute = "job_detail/{jobId}"
 private const val ApplicationPreviewRoute = "application_preview/{applicationId}"
 
+private fun isCandidateSessionRoute(route: String?): Boolean {
+    if (route == null) return false
+    return route == Screen.Session.route ||
+        route == Screen.Profile.route ||
+        route == Screen.Saved.route ||
+        route == Screen.Applications.route ||
+        route == Screen.Matches.route ||
+        route.startsWith("match_thread/") ||
+        route.startsWith("job_detail/") ||
+        route.startsWith("application_preview/")
+}
+
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
     val activity = LocalContext.current as ComponentActivity
     val app = LocalContext.current.applicationContext as Application
     val recoveryVm: RecoveryViewModel = viewModel(viewModelStoreOwner = activity)
@@ -79,6 +100,7 @@ fun AppNavigation() {
         factory = ViewModelProvider.AndroidViewModelFactory.getInstance(app)
     )
 
+    Box(modifier = Modifier.fillMaxSize()) {
     NavHost(navController = navController, startDestination = Screen.Splash.route) {
         composable(Screen.Splash.route) {
             SplashScreen(onFinished = {
@@ -116,25 +138,62 @@ fun AppNavigation() {
 
         composable(Screen.Session.route) {
             val homeViewModel: HomeViewModel = viewModel()
-            HomeScreen(
-                viewModel = homeViewModel,
+            val logout: () -> Unit = {
+                SecureTokenStore.clear()
+                CandidateSavedJobsStore.clear()
+                navController.navigate(Screen.Welcome.route) {
+                    popUpTo(0) { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
+            CandidateSessionScreen(
+                homeViewModel = homeViewModel,
                 onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
                 onNavigateToSaved = { navController.navigate(Screen.Saved.route) },
                 onNavigateToApplications = { navController.navigate(Screen.Applications.route) },
-                onSettings = { },
-                onLogout = {
-                    SecureTokenStore.clear()
-                    CandidateSavedJobsStore.clear()
-                    navController.navigate(Screen.Welcome.route) {
-                        popUpTo(0) { inclusive = true }
-                        launchSingleTop = true
-                    }
-                },
+                onNavigateToMatches = { navController.navigate(Screen.Matches.route) },
+                onLogout = logout,
                 onOpenJobDetail = { jobId -> navController.navigate("job_detail/$jobId") },
                 onOpenApplicationPreview = { appId ->
                     navController.navigate("application_preview/$appId")
                 })
         }
+
+        composable(Screen.Matches.route) {
+            val logout: () -> Unit = {
+                SecureTokenStore.clear()
+                CandidateSavedJobsStore.clear()
+                navController.navigate(Screen.Welcome.route) {
+                    popUpTo(0) { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
+            MatchsScreen(
+                onNavigateToHome = {
+                    navController.popBackStack(Screen.Session.route, inclusive = false)
+                },
+                onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
+                onNavigateToSaved = { navController.navigate(Screen.Saved.route) },
+                onNavigateToApplications = { navController.navigate(Screen.Applications.route) },
+                onOpenThread = { conversationId ->
+                    navController.navigate("match_thread/$conversationId")
+                },
+                onLogout = logout)
+        }
+
+        composable(
+            route = MatchThreadRoute,
+            arguments = listOf(navArgument("conversationId") { type = NavType.LongType })) { entry ->
+              val conversationId = entry.arguments?.getLong("conversationId") ?: 0L
+              if (conversationId <= 0L) {
+                LaunchedEffect(Unit) { navController.popBackStack() }
+                Box(modifier = Modifier.fillMaxSize())
+              } else {
+                MatchThreadScreen(
+                    conversationId = conversationId,
+                    onBack = { navController.popBackStack() })
+              }
+            }
 
         composable(Screen.Profile.route) {
             val profileViewModel: ProfileViewModel = viewModel()
@@ -146,6 +205,7 @@ fun AppNavigation() {
                 },
                 onNavigateToSaved = { navController.navigate(Screen.Saved.route) },
                 onNavigateToApplications = { navController.navigate(Screen.Applications.route) },
+                onNavigateToMatches = { navController.navigate(Screen.Matches.route) },
                 onLogout = {
                     SecureTokenStore.clear()
                     CandidateSavedJobsStore.clear()
@@ -175,6 +235,7 @@ fun AppNavigation() {
                 },
                 onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
                 onNavigateToApplications = { navController.navigate(Screen.Applications.route) },
+                onNavigateToMatches = { navController.navigate(Screen.Matches.route) },
                 onOpenJobDetail = { jobId -> navController.navigate("job_detail/$jobId") },
                 onLogout = {
                     SecureTokenStore.clear()
@@ -203,6 +264,7 @@ fun AppNavigation() {
                 },
                 onNavigateToProfile = { navController.navigate(Screen.Profile.route) },
                 onNavigateToSaved = { navController.navigate(Screen.Saved.route) },
+                onNavigateToMatches = { navController.navigate(Screen.Matches.route) },
                 onOpenPreview = { appId ->
                     navController.navigate("application_preview/$appId")
                 },
@@ -331,5 +393,11 @@ fun AppNavigation() {
                 }
             )
         }
+    }
+    CandidateLoginNoticeOverlay(
+        enabled = isCandidateSessionRoute(currentRoute),
+        onViewMessages = { conversationId ->
+            navController.navigate("match_thread/$conversationId")
+        })
     }
 }

@@ -52,6 +52,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers("/api/v1/auth/password-recovery/**")
                     .permitAll()
+                    .requestMatchers("/api/v1/messaging/**")
+                    .hasAnyRole("RECRUITER", "CANDIDATE")
                     .requestMatchers("/api/v1/admin/**")
                     .hasRole("ADMIN")
                     .requestMatchers("/api/v1/company/**")

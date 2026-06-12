@@ -35,7 +35,7 @@ import com.worksi.app.data.local.SecureTokenStore
 import okhttp3.Headers
 import com.worksi.app.data.model.JobOffer
 import com.worksi.app.ui.components.CandidateMainBottomBar
-import com.worksi.app.ui.components.CandidateSessionSettingsAction
+import com.worksi.app.ui.components.CandidateTopSessionActions
 import com.worksi.app.ui.components.MainTab
 import com.worksi.app.ui.components.modalityLabel
 import com.worksi.app.ui.theme.*
@@ -47,6 +47,7 @@ fun HomeScreen(
     onNavigateToProfile: () -> Unit = {},
     onNavigateToSaved: () -> Unit = {},
     onNavigateToApplications: () -> Unit = {},
+    onNavigateToMatches: () -> Unit = {},
     onSettings: () -> Unit = {},
     onLogout: () -> Unit = {},
     onOpenJobDetail: (Long) -> Unit = {},
@@ -100,7 +101,9 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text("", color = White) },
                 actions = {
-                    CandidateSessionSettingsAction(onLogout = onLogout)
+                    CandidateTopSessionActions(
+                        onNavigateToMatches = onNavigateToMatches,
+                        onLogout = onLogout)
                 },
                 colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = CyanPrimary)
             )

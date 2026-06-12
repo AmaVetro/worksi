@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import CvViewerModal, { parseFilename } from "../components/CvViewerModal";
+import EstablishMatchModal from "../components/EstablishMatchModal";
 import {
   getApplicationCvFile,
   getCandidateProfileForApplication,
@@ -54,6 +55,7 @@ export default function RecruiterCandidateProfile() {
   const [cvError, setCvError] = useState("");
   const [cvUrl, setCvUrl] = useState("");
   const [cvFilename, setCvFilename] = useState("cv.pdf");
+  const [matchModalOpen, setMatchModalOpen] = useState(false);
   const cvBlobRef = useRef(null);
 
   useEffect(() => {
@@ -209,8 +211,7 @@ export default function RecruiterCandidateProfile() {
                     <button
                       type="button"
                       className="recruiter-match-btn recruiter-establecer-match-btn"
-                      disabled
-                      title="Disponible en Sprint 11"
+                      onClick={() => setMatchModalOpen(true)}
                     >
                       <span>Establecer Match</span>
                       <svg
@@ -318,6 +319,15 @@ export default function RecruiterCandidateProfile() {
         filename={cvFilename}
         onClose={closeCvModal}
         onDownload={downloadCv}
+      />
+      <EstablishMatchModal
+        open={matchModalOpen}
+        candidateName={name}
+        applicationId={applicationId}
+        onClose={() => setMatchModalOpen(false)}
+        onGoToMessages={(conversationId) =>
+          navigate(`/recruiter/matchs/${conversationId}`)
+        }
       />
     </div>
   );

@@ -28,7 +28,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import com.worksi.app.ui.components.CandidateMainBottomBar
 import com.worksi.app.ui.components.CvViewerOverlay
-import com.worksi.app.ui.components.CandidateSessionSettingsAction
+import com.worksi.app.ui.components.CandidateTopSessionActions
 import com.worksi.app.ui.components.MainTab
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Settings
@@ -84,6 +84,7 @@ fun ProfileScreen(
     onNavigateToHome: () -> Unit,
     onNavigateToSaved: () -> Unit = {},
     onNavigateToApplications: () -> Unit = {},
+    onNavigateToMatches: () -> Unit = {},
     onLogout: () -> Unit
 ) {
     val state by viewModel.ui.collectAsState()
@@ -153,7 +154,9 @@ fun ProfileScreen(
             TopAppBar(
                 title = { Text("", color = White) },
                 actions = {
-                    CandidateSessionSettingsAction(onLogout = onLogout)
+                    CandidateTopSessionActions(
+                        onNavigateToMatches = onNavigateToMatches,
+                        onLogout = onLogout)
                 },
                 colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = CyanPrimary))
         },

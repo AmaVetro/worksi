@@ -97,7 +97,6 @@ export default function AdminRecruitersList() {
                     <th>Región</th>
                     <th>Comuna</th>
                     <th>Empresa</th>
-                    <th>Rol</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
@@ -110,7 +109,6 @@ export default function AdminRecruitersList() {
                       <td>{row.region_name || "—"}</td>
                       <td>{row.commune_name || "—"}</td>
                       <td>{row.company_commercial_name || "—"}</td>
-                      <td>{row.role || "RECRUITER"}</td>
                       <td>
                         <div className="admin-list-actions">
                           <AdminListEditButton

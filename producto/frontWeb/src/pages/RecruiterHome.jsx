@@ -6,6 +6,7 @@ import {
   getRecruiterCompanyProfileImageBlob,
   getMyJobStats,
 } from "../services/companyService";
+import { listConversations } from "../services/messagingService";
 import loginImage from "../assets/images/login-bg.jpg";
 import "../styles/Home.css";
 
@@ -15,6 +16,14 @@ function readUser() {
   } catch {
     return {};
   }
+}
+
+function isTodayChile(iso) {
+  if (!iso) return false;
+  const opts = { timeZone: "America/Santiago" };
+  const day = (d) =>
+    d.toLocaleDateString("en-CA", { ...opts, year: "numeric", month: "2-digit", day: "2-digit" });
+  return day(new Date(iso)) === day(new Date());
 }
 
 function recruiterFullName(user) {
@@ -58,7 +67,12 @@ export default function RecruiterHome() {
 
       const jobsPromise = getMyJobStats().catch(() => null);
       const profilePromise = getRecruiterCompanyProfile().catch(() => null);
-      const [jobStats, profile] = await Promise.all([jobsPromise, profilePromise]);
+      const matchsPromise = listConversations(1, 100).catch(() => null);
+      const [jobStats, profile, matchsPage] = await Promise.all([
+        jobsPromise,
+        profilePromise,
+        matchsPromise,
+      ]);
       if (cancelled) return;
 
       if (jobStats) {
@@ -70,8 +84,16 @@ export default function RecruiterHome() {
         setJobsInactive(0);
         setJobsPublishedToday(0);
       }
-      setMatchsTotal(0);
-      setMatchsToday(0);
+      if (matchsPage) {
+        const rows = matchsPage.items || [];
+        setMatchsTotal(matchsPage.total_items ?? rows.length);
+        setMatchsToday(
+          rows.filter((row) => isTodayChile(row.last_message_at)).length
+        );
+      } else {
+        setMatchsTotal(0);
+        setMatchsToday(0);
+      }
 
       if (profile) {
         setCommercialName(
@@ -182,6 +204,7 @@ export default function RecruiterHome() {
               <button
                 type="button"
                 className="recruiter-home-visor recruiter-home-visor--clickable"
+                onClick={() => navigate("/recruiter/matchs")}
               >
                 <span className="recruiter-home-visor__label">Matchs Totales</span>
                 <span className="recruiter-home-visor__value">{matchsTotal}</span>

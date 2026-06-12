@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.worksi.app.ui.components.CandidateMainBottomBar
 import com.worksi.app.ui.components.CandidateOfferListCard
-import com.worksi.app.ui.components.CandidateSessionSettingsAction
+import com.worksi.app.ui.components.CandidateTopSessionActions
 import com.worksi.app.ui.components.MainTab
 import com.worksi.app.ui.theme.CyanPrimary
 import com.worksi.app.ui.theme.White
@@ -42,6 +42,7 @@ fun ApplicationsScreen(
     onNavigateToHome: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToSaved: () -> Unit = {},
+    onNavigateToMatches: () -> Unit = {},
     onOpenPreview: (Long) -> Unit,
     onLogout: () -> Unit
 ) {
@@ -53,7 +54,10 @@ fun ApplicationsScreen(
       topBar = {
         TopAppBar(
             title = { Text("Mis Postulaciones", color = White) },
-            actions = { CandidateSessionSettingsAction(onLogout = onLogout) },
+            actions = {
+              CandidateTopSessionActions(
+                  onNavigateToMatches = onNavigateToMatches, onLogout = onLogout)
+            },
             colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = CyanPrimary))
       },
       bottomBar = {

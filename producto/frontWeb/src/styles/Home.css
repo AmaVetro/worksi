@@ -762,10 +762,32 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 8px;
     margin: 0;
     padding: 0 8px 12px;
     line-height: 1.35;
     text-align: center;
+    }
+
+    .recruiter-reclutamiento-card-title-text {
+    display: inline-block;
+    }
+
+    .recruiter-matchs-chats-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: 6px;
+    border: 2px solid #f97316;
+    background: #fff;
+    color: #f97316;
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1;
+    box-sizing: border-box;
     }
 
     .action-card.recruiter-reclutamiento-card .secondary-btn {
@@ -1524,4 +1546,301 @@
 
 .recruiter-candidate-profile-cv-btn {
     margin-top: 14px;
+}
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.55);
+    padding: 16px;
+}
+
+.modal-card,
+.establish-match-modal {
+    width: 100%;
+    max-width: 440px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+}
+
+.establish-match-modal__title {
+    margin: 0 0 16px;
+    font-size: 1.1rem;
+    color: #0f766e;
+    line-height: 1.4;
+}
+
+.establish-match-modal__textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font: inherit;
+    resize: vertical;
+}
+
+.establish-match-modal__hint {
+    margin: 6px 0 0;
+    font-size: 0.85rem;
+    color: #64748b;
+}
+
+.establish-match-modal__actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.establish-match-modal__actions .secondary-btn,
+.establish-match-modal__actions .primary-btn {
+    margin-top: 0;
+}
+
+.establish-match-modal__actions--stack {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.recruiter-matchs-card {
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+.recruiter-matchs-subtitle {
+    margin: 10px 0 0;
+    color: #64748b;
+    font-size: 0.95rem;
+}
+
+.recruiter-matchs-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: clamp(180px, 32vh, 300px);
+    margin-top: 40px;
+    padding: 24px 16px;
+    text-align: center;
+}
+
+.recruiter-matchs-empty__text {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.recruiter-matchs-list {
+    list-style: none;
+    margin: 16px 0 0;
+    padding: 0;
+}
+
+.recruiter-matchs-list__row {
+    width: 100%;
+    text-align: left;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    background: #f8fafc;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-sizing: border-box;
+}
+
+.recruiter-matchs-list__row--unread {
+    border: 2px solid #f97316;
+}
+
+.recruiter-matchs-list__row:hover {
+    background: #f0fdfa;
+    border-color: #99f6e4;
+}
+
+.recruiter-matchs-list__row--unread:hover {
+    border-color: #f97316;
+}
+
+.recruiter-matchs-list__row-main {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    gap: 4px;
+}
+
+.recruiter-matchs-list__unread-badge {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 7px;
+    border-radius: 6px;
+    background: #f97316;
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.recruiter-matchs-list__name-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    min-height: 16px;
+}
+
+.recruiter-matchs-list__name {
+    font-weight: 700;
+    color: #0f766e;
+    flex-shrink: 0;
+    font-size: 1rem;
+    line-height: 16px;
+    min-height: 16px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.recruiter-matchs-list__match-wrap {
+    flex: 1;
+    min-width: 0;
+    max-width: 220px;
+    display: flex;
+    align-items: center;
+    min-height: 16px;
+}
+
+.recruiter-matchs-list__match-wrap .applications-back-match-row {
+    margin: 0;
+    gap: 8px;
+    align-items: center;
+    min-height: 16px;
+    width: 100%;
+}
+
+.recruiter-matchs-list__match-wrap .applications-back-match-label {
+    font-size: 13px;
+    line-height: 16px;
+    min-height: 16px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.recruiter-matchs-list__match-wrap .applications-back-score-bar.score-bar-track {
+    width: 100%;
+    max-width: 120px;
+    height: 16px;
+    flex: 1;
+    margin: 0;
+    align-self: center;
+}
+
+.recruiter-matchs-list__job {
+    color: #334155;
+    font-size: 0.95rem;
+}
+
+.recruiter-matchs-list__preview {
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.recruiter-matchs-list__date {
+    color: #94a3b8;
+    font-size: 0.8rem;
+}
+
+.recruiter-thread-card {
+    max-width: 720px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 420px;
+}
+
+.recruiter-thread-top-row {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.recruiter-thread-top-row .secondary-btn {
+    width: auto;
+    align-self: flex-start;
+}
+
+.recruiter-thread-messages {
+    flex: 1;
+    max-height: 420px;
+    overflow-y: auto;
+    margin: 16px 0;
+    padding: 8px 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.recruiter-thread-bubble {
+    max-width: 85%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    display: flex;
+    flex-direction: column;
+}
+
+.recruiter-thread-bubble p {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.recruiter-thread-bubble__time {
+    display: block;
+    width: 100%;
+    margin-top: 6px;
+    font-size: 0.7rem;
+    line-height: 1.2;
+    text-align: right;
+    opacity: 0.8;
+}
+
+.recruiter-thread-bubble--mine {
+    align-self: flex-end;
+    background: #0d9488;
+    color: #fff;
+}
+
+.recruiter-thread-bubble--theirs {
+    align-self: flex-start;
+    background: #fff;
+    color: #0d9488;
+    border: 1px solid #99f6e4;
+}
+
+.recruiter-thread-bubble--theirs .recruiter-thread-bubble__time {
+    color: #64748b;
+}
+
+.recruiter-thread-compose {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }

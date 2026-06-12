@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Navbar from "../components/Navbar";
+import EstablishMatchModal from "../components/EstablishMatchModal";
 import { getJob, getJobApplication } from "../services/companyService";
 import ApplicationMatchRow, {
   candidateFullName,
@@ -48,6 +49,7 @@ export default function RecruiterApplicationView() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [appShown, setAppShown] = useState(!scoreView);
   const [scoreShown, setScoreShown] = useState(scoreView);
+  const [matchModalOpen, setMatchModalOpen] = useState(false);
   const sceneRef = useRef(null);
 
   useEffect(() => {
@@ -198,7 +200,8 @@ export default function RecruiterApplicationView() {
                               <div className="recruiter-application-header-actions">
                                 <button
                                   type="button"
-                                  className="recruiter-match-btn"
+                                  className="recruiter-match-btn recruiter-establecer-match-btn"
+                                  onClick={() => setMatchModalOpen(true)}
                                 >
                                   <span>Match</span>
                                   <svg
@@ -328,6 +331,15 @@ export default function RecruiterApplicationView() {
           </div>
         </div>
       </div>
+      <EstablishMatchModal
+        open={matchModalOpen}
+        candidateName={name}
+        applicationId={applicationId}
+        onClose={() => setMatchModalOpen(false)}
+        onGoToMessages={(conversationId) =>
+          navigate(`/recruiter/matchs/${conversationId}`)
+        }
+      />
     </div>
   );
 }

@@ -24,6 +24,8 @@ import RecruiterJobDetail from "../pages/RecruiterJobDetail";
 import RecruiterJobEdit from "../pages/RecruiterJobEdit";
 import RecruiterApplicationView from "../pages/RecruiterApplicationView";
 import RecruiterCandidateProfile from "../pages/RecruiterCandidateProfile";
+import RecruiterMatchsList from "../pages/RecruiterMatchsList";
+import RecruiterMessageThread from "../pages/RecruiterMessageThread";
 
 function AppRoutes() {
   return (
@@ -184,6 +186,22 @@ function AppRoutes() {
           element={
             <PrivateRoute roles={["RECRUITER"]}>
               <RecruiterJobDetail />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/recruiter/matchs"
+          element={
+            <PrivateRoute roles={["RECRUITER"]}>
+              <RecruiterMatchsList />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/recruiter/matchs/:conversationId"
+          element={
+            <PrivateRoute roles={["RECRUITER"]}>
+              <RecruiterMessageThread />
             </PrivateRoute>
           }
         />

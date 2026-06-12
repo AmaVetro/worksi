@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.worksi.app.ui.components.CandidateMainBottomBar
 import com.worksi.app.ui.components.CandidateOfferListCard
-import com.worksi.app.ui.components.CandidateSessionSettingsAction
+import com.worksi.app.ui.components.CandidateTopSessionActions
 import com.worksi.app.ui.components.MainTab
 import com.worksi.app.ui.theme.CyanPrimary
 import com.worksi.app.ui.theme.White
@@ -44,6 +44,7 @@ fun SavedJobsScreen(
     onNavigateToHome: () -> Unit,
     onNavigateToProfile: () -> Unit,
     onNavigateToApplications: () -> Unit,
+    onNavigateToMatches: () -> Unit = {},
     onOpenJobDetail: (Long) -> Unit,
     onLogout: () -> Unit,
     viewModel: SavedJobsViewModel = viewModel()
@@ -54,7 +55,10 @@ fun SavedJobsScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Guardadas", color = White) },
-                actions = { CandidateSessionSettingsAction(onLogout = onLogout) },
+                actions = {
+                  CandidateTopSessionActions(
+                      onNavigateToMatches = onNavigateToMatches, onLogout = onLogout)
+                },
                 colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = CyanPrimary))
         },
         bottomBar = {
