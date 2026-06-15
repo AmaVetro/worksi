@@ -80,10 +80,17 @@ fun MatchsScreen(
                   TextButton(onClick = { viewModel.reload() }) { Text("Reintentar") }
                 }
                 items.isEmpty() -> {
-                  Text(
-                      "Aún no tienes conversaciones con empresas.",
-                      color = Color(0xFF64748B),
-                      fontSize = 15.sp)
+                  Card(
+                      modifier = Modifier.fillMaxWidth(),
+                      shape = RoundedCornerShape(12.dp),
+                      colors = CardDefaults.cardColors(containerColor = White),
+                      elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)) {
+                        Text(
+                            "Aún no tienes conversaciones con empresas.",
+                            color = CyanPrimary,
+                            fontSize = 15.sp,
+                            modifier = Modifier.padding(14.dp))
+                      }
                 }
                 else -> {
                   LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
