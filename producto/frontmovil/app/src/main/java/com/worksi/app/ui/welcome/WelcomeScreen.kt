@@ -45,16 +45,18 @@ fun WelcomeScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = buildAnnotatedString {
-                    withStyle(style = SpanStyle(color = White, fontWeight = FontWeight.Bold, fontSize = 42.sp)) {
-                        append("Work")
-                    }
-                    withStyle(style = SpanStyle(color = OrangeAccent, fontWeight = FontWeight.Bold, fontSize = 42.sp)) {
-                        append("SÍ")
-                    }
-                }
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "Work",
+                    color = White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 42.sp)
+                Text(
+                    text = "S\u00ed",
+                    color = OrangeAccent,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 42.sp)
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
