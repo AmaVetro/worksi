@@ -1,1 +1,1 @@
-En esta carpeta se dejará el Documento de registro de definición e identificación del proyecto.
+Documento de registro de definición e identificación del proyecto: [`DOCUMENTO-DEFINICION-IDENTIFICACION.md`](DOCUMENTO-DEFINICION-IDENTIFICACION.md)
