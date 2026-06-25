@@ -52,7 +52,8 @@ worksi/
 
 - [Estructura y arquitectura del proyecto](documentacion/ESTRUCTURA-Y-ARQUITECTURA.md)
 - [Documento de definición e identificación](gestion/DOCUMENTO-DEFINICION-IDENTIFICACION.md)
-- [Arranque local del entorno](producto/README.md)
+- [Arranque local del entorno](producto/README.md) (sección 3 en adelante)
+- [Ejecución de pruebas](producto/README.md) (sección 13)
 
 ## Arranque rápido
 

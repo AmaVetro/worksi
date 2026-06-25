@@ -192,3 +192,96 @@ curl -s -X POST "$BASE/api/v1/auth/register/candidate" `
 ```
 
 La respuesta esperada **201** incluye `access_token` con rol **CANDIDATE** según Contrato (cuando la implementación esté disponible).
+
+## 13) Ejecución de pruebas
+
+Suite automatizada de backend (unitarios e integración) y servicio IA. Los frontends web y móvil no incluyen pruebas automatizadas en el alcance del proyecto.
+
+### 13.1 Requisitos adicionales
+
+| Suite | Requisitos |
+|-------|------------|
+| Unitarios backend | Java 21, Maven |
+| Integración backend | Java 21, Maven, Docker Desktop en ejecución |
+| IA (pytest) | Python 3.11, `pip` |
+
+### 13.2 Unitarios del backend
+
+Ubicación: `producto/backend/src/test/java/.../service/` (`ProductMatchServiceTest`, `ExperienceScoreUtilTest`).
+
+No requieren Docker ni servicios levantados. Maven excluye automáticamente el grupo `integration`.
+
+```powershell
+cd "C:\RUTA\A\worksi\producto\backend"
+mvn test
+```
+
+### 13.3 Pruebas de integración (backend + IA)
+
+Ubicación: `producto/backend/src/test/java/.../integration/MatchScoreIntegrationTest.java`.
+
+Levantan MySQL y el servicio IA con Testcontainers (construye la imagen desde `producto/ai-service`). La primera ejecución puede tardar varios minutos.
+
+Requisitos: Docker Desktop en ejecución y carpeta `producto/ai-service` presente junto a `backend`.
+
+```powershell
+cd "C:\RUTA\A\worksi\producto\backend"
+mvn test -Pintegration
+```
+
+**IA ya en ejecución (opcional):** si `docker compose` ya tiene el servicio IA en `localhost:8000`, se puede apuntar sin reconstruir el contenedor de test:
+
+```powershell
+$env:WORKSI_IT_AI_URL = "http://localhost:8000"
+mvn test -Pintegration
+```
+
+Si Docker no está disponible y no hay `WORKSI_IT_AI_URL`, el test de integración se omite (`@EnabledIf`).
+
+### 13.4 Pruebas del servicio IA (aisladas)
+
+Ubicación: `producto/ai-service/tests/`.
+
+| Archivo | Contenido |
+|---------|-----------|
+| `test_fairness.py` | Fairness ligero sobre ofertas |
+| `test_main_fast.py` | Endpoint `/health` y `/match` con mocks |
+| `test_semantic_match.py` | Fairness, embeddings y score real (marcados `slow`) |
+
+**Instalación (una vez por entorno):**
+
+```powershell
+cd "C:\RUTA\A\worksi\producto\ai-service"
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install -r requirements.txt -r requirements-dev.txt
+python -m spacy download es_core_news_sm
+python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
+```
+
+**Ejecutar:**
+
+```powershell
+cd "C:\RUTA\A\worksi\producto\ai-service"
+pytest
+```
+
+Solo pruebas rápidas (sin cargar spaCy ni sentence-transformers):
+
+```powershell
+pytest -m "not slow"
+```
+
+Solo pruebas lentas (modelos reales):
+
+```powershell
+pytest -m slow
+```
+
+### 13.5 Resumen de comandos
+
+| Qué | Dónde | Comando |
+|-----|-------|---------|
+| Unitarios backend | `producto/backend` | `mvn test` |
+| Integración backend ↔ IA | `producto/backend` | `mvn test -Pintegration` |
+| IA rápidas | `producto/ai-service` | `pytest -m "not slow"` |
+| IA completas | `producto/ai-service` | `pytest` |
