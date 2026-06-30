@@ -146,8 +146,8 @@ class MatchScoreIntegrationTest {
     profile.setLastNamePaternal("Rojas");
     profile.setLastNameMaternal("Perez");
     profile.setPhone("+56912345678");
-    profile.setRut("1234567" + unique.charAt(0) + "-5");
-    profile.setDocumentNumber("1234567" + unique.charAt(0));
+    profile.setRut(IntegrationFixtures.uniqueRut());
+    profile.setDocumentNumber(Long.toString(Math.abs(UUID.randomUUID().getMostSignificantBits() % 99_999_999L)));
     profile.setRegionId(region.getId());
     profile.setCommuneId(commune.getId());
     profile.setSectorId(1L);
@@ -176,7 +176,7 @@ class MatchScoreIntegrationTest {
     company.setPhone("+56987654321");
     company.setCommercialName("Empresa IT Test");
     company.setLegalName("Empresa IT Test SpA");
-    company.setRut("7612345" + unique.charAt(1) + "-7");
+    company.setRut(IntegrationFixtures.uniqueCompanyRut());
     company.setRegionId(region.getId());
     company.setCommuneId(commune.getId());
     company.setAddress("Av. Providencia 123");

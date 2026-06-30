@@ -40,9 +40,9 @@ Regla global de matching (válida en todo el proyecto; no negociar en código):
 
 Regla global de testing (válida en todo el proyecto):
 - No implementar testing en frontends: no carpetas de testing en el proyecto web (React/Vite) ni en el móvil (Android); quienes desarrollan esas capas comprueban que todo funcione visualmente y por uso manual.
-- Tests automatizados backend/IA y CI/CD se concentran en Sprint 12: solo lo crítico (extracción Tika, pipeline fairness + POST /match, score Spring, seguridad auth/contraseñas/tokens, postulación, integración servicios esenciales, mensajería mínima si aplica). Omitir tests de funcionalidades no críticas o sencillas.
-- La pasada E2E final, bugs críticos, invariante matching y demo stakeholder se concentran en Sprint 13 (contenido que antes estaba planificado en Sprint 11).
-- Durante sprints 1–11, las menciones a «pruebas» o «Postman» en tareas B4/B5 son comprobaciones mínimas puntuales para desbloquear, no suites completas ni CI.
+- Tests automatizados backend/IA se concentran en Sprint 12 (alcance cerrado en producto; ver definición de terminado Sprint 12). Omitir tests de funcionalidades no críticas o sencillas.
+- La pasada E2E final, bugs críticos y demo stakeholder se concentran en Sprint 13.
+- Durante sprints 1–11, las menciones a «pruebas» o «Postman» en tareas B4/B5 son comprobaciones mínimas puntuales para desbloquear, no suites completas.
 
 
 
@@ -974,51 +974,58 @@ C) QUÉ NO HACER EN EL SPRINT 11
 ================================================================================
 SPRINT 12 — SEMANA 22 - 28 Junio DE 2026
 ================================================================================
-Esfuerzo total estimado del equipo: 14 horas.
-Contenido oficial (orden lógico de desarrollo):
-1) Tests automatizados críticos (solo backend/servicios; sin tests en frontends).
-2) Optimización velocidad cálculo IA.
-3) CI/CD ejecutando la suite crítica.
+Esfuerzo total estimado del equipo: 10 horas.
+Estado: cerrado (suite implementada en producto).
+Contenido oficial (único alcance obligatorio):
+Tests automatizados críticos backend e IA (sin tests en frontends), limitados a lo ya implementado en producto.
 
 Objetivo del sprint en una frase:
-Asegurar con pruebas automatizadas el núcleo técnico (Tika, IA, match, integración esencial), reducir latencia de POST /match y dejar pipeline CI que las ejecute en cada push.
+Asegurar con pruebas automatizadas el núcleo técnico ya desarrollado (Tika, IA, match, auth esencial, postulación, mensajería mínima e invariante de skills).
 
 ------------------------------------------------------------
-A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 12
+A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 12 (CERRADO EN PRODUCTO)
 ------------------------------------------------------------
-1) Tests críticos implementados y pasando localmente
-- Extracción texto: Apache Tika sobre PDF de prueba; rechazo PDF sin texto útil.
-- Pipeline IA: fairness (regex + spaCy) + POST /match devuelve score y explanation en rango esperado.
-- Score producto: Spring calcula cinco dimensiones y final_score coherente con Contrato.
-- Integración Spring ↔ FastAPI: cliente HTTP con timeout; manejo IA_UNAVAILABLE.
-- Integración API esencial (Spring MockMvc o tests de integración acotados): login, registro candidato feliz path, feed, postulación, listado postulaciones empresa, mensajería mínima (crear conversación + enviar mensaje).
-- Omitir: tests UI web/móvil, copy, formularios secundarios, HU opcionales, permisos exhaustivos no críticos.
+1) Suite crítica implementada y pasando localmente (producto/README.md §13)
 
-2) Optimización IA
-- Modelos spaCy y Sentence Transformers cargados una vez (warm-up en arranque contenedor FastAPI).
-- Medición antes/después de latencia típica POST /match documentada en README o nota interna.
-- Tests críticos de match siguen pasando tras cambios.
+Backend — unitarios (mvn test):
+- Tika: PDF con texto útil y rechazo sin texto útil (CvTextExtractionServiceTest).
+- Score: cinco dimensiones, promedio, modality/workload/experience, sin CV, sin texto, IA no disponible (ProductMatchServiceTest, ExperienceScoreUtilTest).
+- Auth: política contraseña, claims JWT, login y bloqueo (PasswordRulesTest, JwtServiceTest, AuthServiceTest).
 
-3) CI/CD
-- Pipeline (GitHub Actions u otro acordado) que ejecute tests backend/IA críticos.
-- Falla el job si regresa Tika, match o integración esencial.
-- No incluir build Android ni lint frontend en pipeline MVP salvo acuerdo explícito.
+Backend — integración (mvn test -Pintegration; Docker + IA):
+- Login HTTP con rol esperado; RECRUITER sin acceso a /api/v1/admin/**; bloqueo tras 4 intentos (AuthIntegrationTest).
+- Detalle de oferta con score y cinco dimensiones; oferta alineada > no alineada (MatchScoreIntegrationTest).
+- Postulación, listado postulaciones empresa con score, mensajería crear conversación y enviar mensaje (CoreApiIntegrationTest).
+- Invariante: skills de perfil y job_skills no alteran score (MatchInvariantIntegrationTest).
+
+IA — pytest (producto/ai-service/tests):
+- /health; contrato POST /match; rechazo payload corto y CV sin texto útil tras fairness (test_main_fast.py).
+- fairness_job_light (test_fairness.py).
+- fairness CV, score semántico y explicación con modelos reales (test_semantic_match.py; marker slow).
+
+2) Fuera del alcance cerrado del Sprint 12 (no exigido para darlo por terminado):
+- Tests UI web/móvil, registro candidato multipart, feed, permisos exhaustivos admin, copy o formularios secundarios.
 
 ------------------------------------------------------------
-B) DESGLOSE ULTRA DETALLADO (orden lógico)
+B) DESGLOSE EJECUTADO (referencia equipo)
 ------------------------------------------------------------
-B1) Baseline: ejecutar y documentar tiempos actuales POST /match y extracción Tika (1 hora)
-B2) Suite tests críticos backend + FastAPI (5 a 6 horas)
-B3) Optimización carga modelos y latencia FastAPI (3 a 4 horas)
-B4) Re-ejecutar suite; ajustar si optimización rompe contrato score (1 hora)
-B5) Pipeline CI/CD con jobs acordados (3 a 4 horas)
+B1) Suite unitaria backend + pytest IA rápidos
+B2) Suite integración backend + MySQL + FastAPI (Testcontainers)
+B3) Documentación de comandos en producto/README.md §13
 
 ------------------------------------------------------------
 C) QUÉ NO HACER EN EL SPRINT 12
 ------------------------------------------------------------
 - No montar suites E2E completas con frontends (eso es Sprint 13 manual).
-- No testear cada endpoint admin secundario ni cada validación de formulario.
+- No ampliar el alcance de tests más allá de la suite cerrada salvo trabajo opcional.
 - No desplegar a producción cloud salvo acuerdo aparte.
+
+------------------------------------------------------------
+D) OPCIONAL — SOLO SI SOBRA TIEMPO (NO BLOQUEA CIERRE SPRINT 12)
+------------------------------------------------------------
+- Pipeline CI/CD (p. ej. GitHub Actions) ejecutando mvn test, pytest -m "not slow" y opcionalmente mvn test -Pintegration.
+- Optimización/refinación IA: warm-up explícito en arranque FastAPI, medición de latencia POST /match, baseline documentado.
+- Tests adicionales no incluidos en la suite cerrada (p. ej. registro candidato, feed).
 
 
 
@@ -1032,7 +1039,7 @@ Contenido oficial (cierre MVP; contenido que antes estaba en Sprint 11):
 - Integración end-to-end candidato-empresa en entorno común.
 - Corrección de bugs críticos.
 - Checklist de calidad previo al cierre.
-- Chequeo explícito de regla de matching: mismo CV + misma oferta → mismo resultado aunque solo cambien skills de perfil o job_skills.
+- Chequeo explícito regla de matching: evidencia E2E o documental complementaria a MatchInvariantIntegrationTest (Sprint 12); mismo CV + misma oferta → mismo resultado aunque solo cambien skills de perfil o job_skills.
 - Pasada integración Spring ↔ FastAPI acotada; Postman rutas prioritarias Spring, IA POST /match y mensajería según Contrato Unificado API.
 - Demo stakeholder incluyendo match/mensajería si Sprint 11 cerrado.
 - HU-22 permanece sólo tiempo extra backlog.
@@ -1052,8 +1059,8 @@ A) CHECKLIST OBLIGATORIA DE CIERRE (sin atajos)
 - Mismo reclutador publicador abre detalle de postulación → VIEWED automático HU-23; candidato ve estado HU-13.
 - Lista postulantes orden descendente HU-20 verificación visual.
 
-2) Chequeo explícito regla matching (obligatorio documentado)
-- Capturas o logs: dos consultas con misma oferta y mismo CV; en el medio se cambian skills de perfil; el porcentaje final no debe cambiar.
+2) Chequeo explícito regla matching (evidencia complementaria a tests Sprint 12)
+- Capturas o logs E2E: dos consultas con misma oferta y mismo CV; en el medio se cambian skills de perfil; el porcentaje final no debe cambiar.
 - Caso análogo: mismo CV mismos textos IA; sólo mutan filas job_skills sin cambiar campos que componen las dimensiones de score Contrato.
 
 3) Seguridad mínima
@@ -1070,8 +1077,8 @@ A) CHECKLIST OBLIGATORIA DE CIERRE (sin atajos)
 6) Demo alineada a regla global
 - Explicar en demo: score como promedio de cinco dimensiones; skills de perfil y oferta en BD no gobiernan el porcentaje; match/mensajería como canal reclutador-candidato post-postulación.
 
-7) CI Sprint 12
-- Confirmar pipeline verde en rama de entrega o documentar excepción acordada.
+7) Tests Sprint 12
+- Confirmar suite local documentada en producto/README.md §13 (mvn test, mvn test -Pintegration, pytest). CI/CD en pipeline es opcional (ver Sprint 12 sección D).
 
 ------------------------------------------------------------
 B) ENTREGABLES DE DOCUMENTACIÓN PARA DEFENSA (mínimo)
@@ -1099,13 +1106,15 @@ Sprint 8 — HU-13; portal reclutador HU-15; PATCH imagen si backlog; HU-19 mín
 Sprint 9 — HU-19 complemento (Ver postulación completa, perfil solo lectura, botón Establecer Match); HU-23 VIEWED; pulimiento errores web; HU-17 ciclo de vida oferta; HU-25/HU-26 listados ADMIN.
 Sprint 10 — HU-20 orden descendente HU-05 perfil HU-24 guardar oferta HU-27 eliminar empresas/reclutadores ADMIN + copy seguridad/consentimiento.
 Sprint 11 — HU-29 establecer match; HU-30 bandeja Matchs reclutador; HU-31 aviso post-login y mensajería candidato (vista Matchs).
-Sprint 12 — Tests críticos backend/IA (Tika, fairness, POST /match, score, integración esencial + mensajería mínima) + optimización velocidad IA + CI/CD pipeline suite crítica.
+Sprint 12 — Tests críticos backend/IA cerrados en producto (Tika, score, auth, integración match, postulación, mensajería mínima, invariante skills). Ver definición de terminado Sprint 12.
 Sprint 13 — E2E Docker; bugs críticos; invariante matching; Postman + demo stakeholder (HU-29–HU-31); HU-22 backlog tiempo extra.
 
 ================================================================================
 APÉNDICE B — BACKLOG “SOLO SI SOBRA TIEMPO” (NO BLOQUEA MVP)
 ================================================================================
 HU-18 (cierre automático por fecha; excluido; closing_date + CLOSING_DUE), HU-22
+
+Sprint 12 opcional (no bloquea MVP): pipeline CI/CD GitHub Actions; optimización/refinación velocidad IA (warm-up, latencia POST /match); tests adicionales (registro candidato, feed u otros endpoints no cubiertos por la suite cerrada).
 
 Nota producto: HU-14 y HU-24 ya implementadas en producto.
 
