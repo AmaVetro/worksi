@@ -2,6 +2,19 @@
 
 Este documento define el arranque mínimo para que cualquier integrante clone el repo y levante el entorno base del proyecto usando Docker Compose.
 
+## 0) Entorno de producción (demo cloud)
+
+Despliegue en Railway (proyecto `prolific-joy`) + Vercel.
+
+| Uso | URL |
+|-----|-----|
+| Web ADMIN / RECRUITER | https://worksi.vercel.app |
+| API (Postman, health) | https://backend-production-f9dc.up.railway.app |
+| Health | `GET /health` → `{"status":"UP"}` |
+
+- **Web:** `producto/frontWeb/vercel.json` reenvía `/api/*` al backend Railway.
+- **Móvil:** `producto/frontmovil/.../RetrofitClient.kt` → `BASE_URL` HTTPS del backend Railway para APK de demo; para emulador + Docker local usar `http://10.0.2.2:8080/`.
+
 ## 1) Requisitos previos
 
 - Docker Desktop instalado y en ejecución.
