@@ -1,5 +1,6 @@
 .cursorignore
 .env
+Guía despliegue
 **/.env
 !.env.example
 **/target/
