@@ -97,7 +97,7 @@ fun WelcomeScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "o si aún no eres parte del equipo",
+                text = "O si aún no eres parte del equipo",
                 color = White.copy(alpha = 0.9f),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Normal
