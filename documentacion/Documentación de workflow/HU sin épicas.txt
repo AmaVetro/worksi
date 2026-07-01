@@ -3,7 +3,7 @@ REGLA TRANSVERSAL DE TESTING (ESENCIAL)
 No se implementa testing en frontends: no carpetas ni suites de tests en el proyecto web ni en el móvil.
 Quienes desarrollan frontends verifican que todo funcione de forma visual y manual en pantalla.
 Sprint 12: pruebas automatizadas de backend e IA (solo piezas críticas: pipeline IA, seguridad auth/contraseñas/tokens, postulación, mensajería mínima, integración Spring ↔ FastAPI) y pipeline CI/CD con GitHub Actions según Sprint oficiales.txt; no son historias de usuario numeradas en este archivo.
-La pasada E2E manual final, corrección de bugs críticos y demo stakeholder se planifican en Sprint 13 según Sprint oficiales.txt.
+El despliegue cloud (Vercel + Railway), la validación manual del producto en ese entorno y la demo stakeholder se planifican en Sprint 13 según Sprint oficiales.txt.
 Se evita toda batería de testing opcional, de baja prioridad o repartida por sprint en frontends.
 
 

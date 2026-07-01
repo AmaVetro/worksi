@@ -181,10 +181,10 @@ ROWS = [
     ],
     [
         "TP-14",
-        "E2E — Admin",
+        "Cloud — Admin",
         "Alta empresa y reclutadores (Sprint 2)",
-        "Manual funcional (E2E)",
-        "Con Docker Compose: login ADMIN; crear empresa multipart; crear reclutador asociado.",
+        "Manual funcional (cloud)",
+        "En portal web Vercel: login ADMIN; crear empresa multipart; crear reclutador asociado (API vía proxy /api).",
         "Credenciales ADMIN semilla; datos empresa y reclutador de demo",
         "Empresa y reclutador visibles; reclutador puede iniciar sesión.",
         "Login ADMIN, alta empresa y reclutador exitosos; login reclutador verificado. Ver §6.2 (EV-14).",
@@ -193,10 +193,10 @@ ROWS = [
     ],
     [
         "TP-15",
-        "E2E — Candidato móvil",
+        "Cloud — Candidato móvil",
         "Registro candidato multipart (HU-01 / HU-21)",
-        "Manual funcional (E2E)",
-        "App Android: consentimiento HU-21; registro con CV PDF y datos perfil.",
+        "Manual funcional (cloud)",
+        "App Android con BASE_URL backend Railway: consentimiento HU-21; registro con CV PDF y datos perfil.",
         "CV PDF con texto; email único; skills perfil",
         "Cuenta CANDIDATE operativa; CV procesado; puede autenticarse.",
         "Consentimiento HU-21, registro multipart con CV y perfil completados; candidato operativo. Ver §6.2 (EV-15).",
@@ -205,10 +205,10 @@ ROWS = [
     ],
     [
         "TP-16",
-        "E2E — Reclutador web",
+        "Cloud — Reclutador web",
         "Publicación oferta (HU-15)",
-        "Manual funcional (E2E)",
-        "Portal RECRUITER: crear oferta con campos obligatorios y skills.",
+        "Manual funcional (cloud)",
+        "Portal RECRUITER en Vercel: crear oferta con campos obligatorios y skills.",
         "Sesión reclutador de TP-14",
         "Oferta publicada y visible en listados empresa.",
         "Oferta creada y visible en listado empresa del reclutador. Ver §6.2 (EV-16).",
@@ -217,10 +217,10 @@ ROWS = [
     ],
     [
         "TP-17",
-        "E2E — Candidato móvil",
+        "Cloud — Candidato móvil",
         "Feed swipe y postulación (HU-11 / HU-12)",
-        "Manual funcional (E2E)",
-        "Candidato autenticado: feed con score; swipe APPLY; confirmar postulación.",
+        "Manual funcional (cloud)",
+        "Candidato autenticado contra API Railway: feed con score; swipe APPLY; confirmar postulación.",
         "Candidato TP-15; oferta TP-16",
         "Postulación registrada; estado coherente en app.",
         "Feed con score, swipe APPLY y postulación confirmada. Ver §6.2 (EV-17).",
@@ -229,10 +229,10 @@ ROWS = [
     ],
     [
         "TP-18",
-        "E2E — Reclutador web",
+        "Cloud — Reclutador web",
         "Postulaciones y Detalle de Score (HU-19 / HU-28)",
-        "Manual funcional (E2E)",
-        "Reclutador: listado postulantes; abrir detalle; ver cinco dimensiones y score.",
+        "Manual funcional (cloud)",
+        "Reclutador en Vercel: listado postulantes; abrir detalle; ver cinco dimensiones y score.",
         "Postulación de TP-17",
         "Postulante visible con score; detalle muestra dimensiones del contrato.",
         "Listado postulantes y Detalle de Score con cinco dimensiones y porcentaje final. Ver §6.2 (EV-18).",
@@ -241,10 +241,10 @@ ROWS = [
     ],
     [
         "TP-19",
-        "E2E — Match y mensajería",
+        "Cloud — Match y mensajería",
         "Establecer match y mensajes (HU-29–HU-31)",
-        "Manual funcional (E2E)",
-        "Reclutador: Establecer Match con primer mensaje; bandeja Matchs; hilo mensajes. Candidato: aviso post-login; Matchs; responder.",
+        "Manual funcional (cloud)",
+        "Reclutador web: Establecer Match con primer mensaje; bandeja Matchs; hilo mensajes. Candidato móvil: aviso post-login; Matchs; responder.",
         "Postulación de TP-17; primer mensaje max 80 caracteres",
         "Conversación creada; mensajes bidireccionales visibles solo para participantes.",
         "Match establecido, mensajería bidireccional web reclutador y móvil candidato verificada. Ver §6.2 (EV-19).",
@@ -253,10 +253,10 @@ ROWS = [
     ],
     [
         "TP-20",
-        "E2E — Matching",
+        "Cloud — Matching",
         "Invariante scoring (evidencia documental)",
         "Manual / documental",
-        "Misma oferta y mismo CV: cambiar solo skills perfil u oferta; comparar score antes/después (complementa TP-10).",
+        "En entorno cloud: misma oferta y mismo CV; cambiar solo skills perfil u oferta; comparar score antes/después (complementa TP-10 / Sprint 12).",
         "Dos capturas o logs de consultas con mismos textos IA",
         "Porcentaje final no cambia al mutar solo skills en BD.",
         "Score final idéntico antes y después de cambiar solo skills de perfil u oferta (mismo CV). Ver §6.2 (EV-20).",
@@ -265,22 +265,22 @@ ROWS = [
     ],
     [
         "TP-21",
-        "Infraestructura",
-        "Ambiente reproducible Docker",
+        "Cloud — Infraestructura",
+        "Despliegue Vercel + Railway (Sprint 13)",
         "Manual operativa",
-        "En máquina limpia: docker compose up según producto/README.md; verificar mysql, backend, ai-service.",
-        "docker-compose.yml del repositorio",
-        "Servicios levantan; /health IA responde; backend accesible.",
-        "docker compose up con contenedores activos; GET /health IA responde OK. Ver §6.2 (EV-21).",
+        "Tras deploy: GET /health backend e IA en Railway; portal web Vercel accesible; rewrite /api hacia backend; volumen CV montado en backend.",
+        "Servicios Railway (MySQL, backend, ai-service) y proyecto Vercel frontWeb",
+        "Health UP; web carga; API responde vía proxy; backend persiste CV.",
+        "Health backend e IA OK; web Vercel operativa; proxy /api funcional. Ver §6.2 (EV-21).",
         "OK",
-        "§6.2 — EV-21: capturas Docker y /health",
+        "§6.2 — EV-21: capturas health y portal web",
     ],
     [
         "TP-22",
-        "Seguridad",
+        "Cloud — Seguridad",
         "Rutas privadas y JWT",
         "Manual / exploratoria",
-        "Sin token: GET rutas protegidas → 401. Con JWT incorrecto rol → 403 donde aplique.",
+        "Contra URL pública del backend Railway: sin token GET rutas protegidas → 401; con JWT rol incorrecto → 403 donde aplique.",
         "Postman o cliente HTTP; tokens ADMIN, RECRUITER, CANDIDATE",
         "Rutas privadas rechazan acceso no autorizado.",
         "GET /api/v1/admin/companies sin token: acceso denegado. Con JWT RECRUITER: 403 Forbidden. Ver §6.2 (EV-22).",
@@ -317,25 +317,25 @@ E2E_EVIDENCE_ANNEX = [
     ("TP-18 / EV-18", "Reclutador: listado postulantes y Detalle de Score."),
     ("TP-19 / EV-19", "Match y mensajería bidireccional (web reclutador y móvil candidato)."),
     ("TP-20 / EV-20", "Invariante scoring: mismo porcentaje tras cambiar solo skills."),
-    ("TP-21 / EV-21", "Docker compose activo y respuesta /health del servicio IA."),
+    ("TP-21 / EV-21", "Railway + Vercel: health backend e IA, portal web y proxy /api operativos."),
     ("TP-22 / EV-22", "Postman: acceso denegado sin token y 403 con JWT RECRUITER en /admin."),
 ]
 
 INTRO_PARAGRAPHS = [
     "Proyecto: WorkSí — plataforma de reclutamiento (Spring Boot, FastAPI, MySQL, React, Android).",
     "Este documento constituye el plan de pruebas de software alineado a la Evaluación Final Transversal TPY1101 y al cierre Sprint 12–13 del proyecto.",
-    "Alcance: pruebas automatizadas de backend e IA (Sprint 12) y pruebas manuales E2E del flujo core (Sprint 13). Estado del plan: 22/22 casos ejecutados.",
-    "Entorno de pruebas: local con Java 21, Maven, Python 3.11, Docker Desktop. Integración backend usa Testcontainers (MySQL + imagen ai-service) o WORKSI_IT_AI_URL apuntando a IA en localhost:8000.",
+    "Alcance: pruebas automatizadas de backend e IA (Sprint 12) y validación manual del despliegue cloud y demo del flujo core (Sprint 13). Estado del plan: 22/22 casos ejecutados.",
+    "Entorno de pruebas: local con Java 21, Maven, Python 3.11, Docker Desktop (Sprint 12). Integración backend usa Testcontainers (MySQL + imagen ai-service) o WORKSI_IT_AI_URL apuntando a IA en localhost:8000. Sprint 13: entorno cloud Vercel (web) + Railway (MySQL, backend, IA); app móvil con BASE_URL HTTPS del backend.",
     "Comandos de referencia (producto/README.md §13): mvn test (unitarios backend); mvn test -Pintegration (integración); pytest o pytest -m \"not slow\" (IA).",
-    "Criterio de éxito general: cada caso de la tabla cumple su resultado esperado; bugs críticos (caídas, 500 en flujo core, datos cruzados, score inconsistente, mensajes a terceros) deben quedar en cero antes de la demo stakeholder.",
-    "Evidencias (TP-01 a TP-22): capturas en la sección 6 de este documento. TP-01 a TP-13: tres capturas de terminal (EV-UNIT, EV-INT, EV-IA). TP-14 a TP-22: capturas E2E del producto.",
+    "Criterio de éxito general: cada caso de la tabla cumple su resultado esperado; bugs críticos (caídas, 500 en flujo core en cloud, proxy /api roto, BD no migrada, score inconsistente, mensajes a terceros) deben quedar en cero antes de la demo stakeholder.",
+    "Evidencias (TP-01 a TP-22): capturas en la sección 6 de este documento. TP-01 a TP-13: tres capturas de terminal (EV-UNIT, EV-INT, EV-IA). TP-14 a TP-22: capturas de validación cloud y demo del producto.",
 ]
 
 SUMMARY_STATS = [
     ("Pruebas automatizadas backend (unitarias)", "6 filas (TP-01 a TP-06) — 1 captura EV-UNIT en §6.1"),
     ("Pruebas automatizadas backend (integración)", "4 filas (TP-07 a TP-10) — 1 captura EV-INT en §6.1"),
     ("Pruebas automatizadas IA (pytest)", "3 filas (TP-11 a TP-13) — 1 captura EV-IA en §6.1"),
-    ("Pruebas manuales E2E y operativas", "9 filas (TP-14 a TP-22) — evidencias en §6 de este documento (EV-14 a EV-22)"),
+    ("Pruebas manuales cloud y demo (Sprint 13)", "9 filas (TP-14 a TP-22) — evidencias en §6 de este documento (EV-14 a EV-22)"),
     ("Total casos en plan", "22 casos — 22 OK"),
 ]
 
@@ -499,13 +499,13 @@ def build_word(path: Path):
         "La tabla siguiente documenta cada caso con ID, módulo, requisito, tipo, procedimiento, "
         "datos, resultado esperado, resultado obtenido, estado y evidencia. "
         "Los casos TP-01 a TP-13 corresponden a pruebas automatizadas (evidencias agrupadas EV-UNIT, EV-INT, EV-IA en §6.1); "
-        "TP-14 a TP-22 a la pasada E2E manual (§6.2, EV-14 a EV-22)."
+        "TP-14 a TP-22 a la validación manual en cloud y demo del flujo core (§6.2, EV-14 a EV-22)."
     )
     add_table_to_doc(doc, ROWS, HEADERS)
 
     doc.add_heading("5. Tabla de mejoras (plantilla)", level=1)
     doc.add_paragraph(
-        "Completar tras la ejecución E2E si se detectan hallazgos (requisito ítem 16 pauta TPY1101)."
+        "Completar tras la validación cloud (Sprint 13) si se detectan hallazgos (requisito ítem 16 pauta TPY1101)."
     )
     mejoras_headers = [
         "ID hallazgo",
@@ -517,14 +517,14 @@ def build_word(path: Path):
         "Evidencia",
     ]
     mejoras_rows = [
-        ["H-01", "—", "Sin hallazgos críticos en la pasada E2E (TP-14 a TP-22)", "—", "—", "N/A", "—"],
+        ["H-01", "—", "Sin hallazgos críticos en la validación cloud (TP-14 a TP-22)", "—", "—", "N/A", "—"],
     ]
     add_table_to_doc(doc, mejoras_rows, mejoras_headers)
 
     doc.add_heading("6. Anexo de evidencias (TP-01 a TP-22)", level=1)
     doc.add_paragraph(
         "Capturas de la ejecución de pruebas. TP-01 a TP-13: tres capturas de terminal agrupadas por tipo de suite (§6.1). "
-        "TP-14 a TP-22: capturas E2E del producto (§6.2). La tabla del §4 mantiene referencia EV-01 a EV-22 por caso; "
+        "TP-14 a TP-22: capturas de validación cloud y demo del producto (§6.2). La tabla del §4 mantiene referencia EV-01 a EV-22 por caso; "
         "en §6.1 varios TP comparten la misma imagen según el comando ejecutado."
     )
     doc.add_heading("6.1 Pruebas automatizadas — terminal (TP-01 a TP-13)", level=2)
@@ -532,7 +532,7 @@ def build_word(path: Path):
         doc.add_heading(title, level=3)
         doc.add_paragraph(description)
         doc.add_paragraph("[Insertar una captura de terminal BUILD SUCCESS / passed aquí]")
-    doc.add_heading("6.2 Pruebas E2E — producto (TP-14 a TP-22)", level=2)
+    doc.add_heading("6.2 Validación cloud y demo — producto (Sprint 13, TP-14 a TP-22)", level=2)
     for title, description in E2E_EVIDENCE_ANNEX:
         doc.add_heading(title, level=3)
         doc.add_paragraph(description)
@@ -541,8 +541,8 @@ def build_word(path: Path):
     doc.add_heading("7. Conclusiones", level=1)
     doc.add_paragraph(
         "El plan de pruebas cubre 22 casos en estado OK: suite automatizada backend/IA (TP-01 a TP-13) "
-        "y validación manual E2E del flujo core admin–reclutador–candidato–match–mensajería, infraestructura Docker "
-        "y control de acceso JWT (TP-14 a TP-22). Evidencias automatizadas agrupadas en §6.1 (EV-UNIT, EV-INT, EV-IA); E2E en §6.2 (EV-14 a EV-22)."
+        "y validación manual del despliegue cloud Vercel + Railway con demo del flujo core admin–reclutador–candidato–match–mensajería, "
+        "health de servicios y control de acceso JWT (TP-14 a TP-22). Evidencias automatizadas agrupadas en §6.1 (EV-UNIT, EV-INT, EV-IA); cloud y demo en §6.2 (EV-14 a EV-22)."
     )
 
     for section in doc.sections:

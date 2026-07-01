@@ -1,6 +1,6 @@
 PLAN DE SPRINTS — WorkSí
 
-(Reordenado por lógica de desarrollo · Product Backlog como insumo · 13 semanas · equipo de 3 · carga más equilibrada por esfuerzo real · total MVP estimado ~151 h de equipo con match/mensajería, testing y cierre E2E en sprints 11–13)
+(Reordenado por lógica de desarrollo · Product Backlog como insumo · 13 semanas · equipo de 3 · carga más equilibrada por esfuerzo real · total MVP estimado ~151 h de equipo con match/mensajería, testing y despliegue cloud en sprints 11–13)
 
 Fuentes alineadas: Contrato Unificado API, Flujo Pantallas App Web / Móvil, HU sin épicas, Reglas del Proyecto, migraciones Flyway en producto/backend/src/main/resources/db/migration/
 
@@ -33,7 +33,7 @@ PARÁMETROS DEL PLAN (EXPLÍCITOS)
 
 ●    Web MVP empresa: sin registro público de empresa en landing; alta de ficha empresa y alta reclutadores solo por ADMIN (panel + API); rutas /api/v1/company/* exclusivas RECRUITER.
 
-●    Regla esencial de testing: no implementar testing en frontends (sin carpetas de testing en web ni móvil); quienes trabajan en frontends validan de forma visual. Tests automatizados backend/IA se concentran en Sprint 12 (alcance cerrado en producto; ver Sprint 12). La pasada E2E final, bugs críticos y demo stakeholder se concentran en Sprint 13. Omitir tests de funcionalidades no críticas o sencillas.
+●    Regla esencial de testing: no implementar testing en frontends (sin carpetas de testing en web ni móvil); quienes trabajan en frontends validan de forma visual. Tests automatizados backend/IA se concentran en Sprint 12 (alcance cerrado en producto; ver Sprint 12). El despliegue cloud demo (Vercel + Railway) y la validación manual del producto en ese entorno se concentran en Sprint 13. Omitir tests de funcionalidades no críticas o sencillas.
 
 
 ═══════════════════════════════════════════════════════════
@@ -204,21 +204,22 @@ Contenido (único alcance obligatorio del sprint):
      - Flujo API esencial: postulación, listado postulaciones empresa con score, mensajería mínima crear conversación y enviar mensaje (CoreApiIntegrationTest).
      - Invariante matching: mismo CV y misma oferta mantienen score si solo cambian skills de perfil o job_skills (MatchInvariantIntegrationTest).
 ●    Ejecución local documentada en producto/README.md §13: mvn test (unitarios), mvn test -Pintegration (integración; Docker + IA), pytest / pytest -m "not slow" (IA).
-Equilibrio: núcleo técnico cubierto por tests automatizados antes del cierre E2E; no sustituye validación visual de frontends.
+Equilibrio: núcleo técnico cubierto por tests automatizados antes del despliegue cloud (Sprint 13); no sustituye validación visual de frontends.
 
 
 Sprint 13 (Sprint pesado):  29 Junio - 5 Julio 2026
 
 Esfuerzo total estimado del equipo: 8 h.
-Contenido (contenido anterior del Sprint 11 — cierre MVP):
-●    Integración E2E: candidato móvil + flujo empresa con reclutadores creados por ADMIN en entorno único Docker; flujo match/mensajería incluido en demo si Sprint 11 cerrado; revisión checklist calidad Contrato oficial.
-●    Bugs críticos recién detectados durante demo seca interna.
-●    Validación invariante scoring: evidencia E2E o documental complementaria a MatchInvariantIntegrationTest (Sprint 12); mismo CV + misma oferta → mismo resultado aún si solo cambian skills de perfil o skills listados job.
-●    Pasada integración backend Spring ↔ FastAPI acotada; Postman rutas prioritarias Spring y mensajería según Contrato Unificado API.
+Contenido (despliegue cloud demo académica — único alcance obligatorio del sprint):
+●    Railway: proyecto con plugin MySQL 8; servicios `ai-service` (Root Directory `producto/ai-service`, FastAPI) y `backend` (Root Directory `producto/backend`, Spring Boot); variables JDBC desde MySQL (`${{MYSQL.*}}`); `WORKSI_AI_BASE_URL` hacia IA por dominio privado Railway; volumen persistente en backend para almacenamiento CV (`WORKSI_CV_STORAGE_DIR`); dominio público HTTPS del backend; Flyway al arrancar sobre BD cloud.
+●    Vercel: despliegue de `producto/frontWeb` (React + Vite) desde repositorio GitHub; `vercel.json` con rewrite de `/api/*` hacia la URL pública del backend Railway (mismo origen web para el cliente).
+●    App móvil Android: configurar `RetrofitClient.kt` (`BASE_URL`) con la URL HTTPS del backend Railway; generar e instalar APK de demo apuntando al entorno cloud (no `10.0.2.2` ni localhost).
+●    Verificación mínima post-despliegue: `GET /health` backend (y health del servicio IA si se expone); login web ADMIN/RECRUITER; login candidato desde APK contra API cloud.
+●    Demo stakeholder sobre entorno cloud: admin alta empresa/reclutadores, reclutador publica oferta en web, candidato registra o inicia sesión y postula desde móvil; flujo match/mensajería (HU-29–HU-31) si Sprint 11 cerrado.
+●    Calentar servicios Railway antes de la presentación (cold start en primeras peticiones).
+●    Corrección de bugs críticos detectados solo si bloquean el deploy o la demo cloud.
 ●    HU-22 queda opcional backlog (sección sólo tiempo extra).
-●    Demo stakeholder: admin alta empresa/reclutadores, reclutador publica oferta, candidato registra, swipe + post, reclutador ve postulación (HU-19), Detalle de Score (HU-28), establece match (HU-29), mensajería bidireccional asincrónica (HU-30/HU-31; candidato cierra aviso post-login y retoma desde «Matchs»).
-●    Preparación entrega stakeholder.
-Equilibrio: semana puerto cierre oficial del plan MVP.
+Equilibrio: producto accesible con URLs públicas fuera del entorno Docker local; semana de cierre para entrega stakeholder.
 
 
 
@@ -243,7 +244,7 @@ LÓGICA DE DESARROLLO (RESUMEN)
 
 ●    Swipe/post Sprint 7 apoyados score; paralelo primera entrega navegable web ADMIN/RECRUITER.
 
-●    HU-13 Sprint 8 (HU-19 mínimo card flip + listado postulantes, HU-28 «Detalle de Score», HU-16 editar oferta); Sprint 9 complemento HU-19 (Ver postulación completa, perfil solo lectura, botón Establecer Match) + HU-23 VIEWED + HU-17 + HU-25 + HU-26; Sprint 10 HU-20 HU-05 HU-24 HU-27; Sprint 11 HU-29 HU-30 HU-31 (match + mensajería); Sprint 12 tests críticos backend/IA (cerrado); cierre Sprint 13 E2E + demo.
+●    HU-13 Sprint 8 (HU-19 mínimo card flip + listado postulantes, HU-28 «Detalle de Score», HU-16 editar oferta); Sprint 9 complemento HU-19 (Ver postulación completa, perfil solo lectura, botón Establecer Match) + HU-23 VIEWED + HU-17 + HU-25 + HU-26; Sprint 10 HU-20 HU-05 HU-24 HU-27; Sprint 11 HU-29 HU-30 HU-31 (match + mensajería); Sprint 12 tests críticos backend/IA (cerrado); Sprint 13 despliegue cloud Vercel + Railway + demo stakeholder.
 
 ●    HU-16, HU-17, HU-24, HU-25, HU-26, HU-27, HU-28 y HU-29–HU-31 pasan a plan obligatorio MVP (Sprints 8–11). Sprint 8: HU-19 mínimo + HU-28 + HU-16; Sprint 9: HU-19 complemento + HU-23 + HU-17 + HU-25 + HU-26; Sprint 10: HU-20, HU-05, HU-24, HU-27; Sprint 11: HU-29, HU-30, HU-31. Backlog opcional salvo HU-18 (cierre automático por fecha), HU-22. HU-14 y HU-24 ya en producto.
 
@@ -260,10 +261,10 @@ RESUMEN NUMÉRICO
 
 ●    Equipo: 3 integrantes; horas por sprint = esfuerzo total del equipo en esa semana
 
-●    Ajuste fino: ±1 h redistribuible dentro rango MVP 83–110 h manteniendo calendario; con match/mensajería (Sprint 11), testing (Sprint 12) y cierre E2E (Sprint 13) el total planificado sube aprox. a 151 h equipo (13 semanas).
+●    Ajuste fino: ±1 h redistribuible dentro rango MVP 83–110 h manteniendo calendario; con match/mensajería (Sprint 11), testing (Sprint 12) y despliegue cloud (Sprint 13) el total planificado sube aprox. a 151 h equipo (13 semanas).
 
 
 
-Total MVP según esta línea base: sprints 1–10 suman ~115 h; Sprint 11 match/mensajería ~18 h; Sprint 12 tests críticos ~10 h; Sprint 13 cierre E2E ~8 h; total referencia ~151 h (admite micro ajustes por sprint sin mover fechas).
+Total MVP según esta línea base: sprints 1–10 suman ~115 h; Sprint 11 match/mensajería ~18 h; Sprint 12 tests críticos ~10 h; Sprint 13 despliegue cloud ~8 h; total referencia ~151 h (admite micro ajustes por sprint sin mover fechas).
 
 

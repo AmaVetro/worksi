@@ -41,7 +41,7 @@ Regla global de matching (válida en todo el proyecto; no negociar en código):
 Regla global de testing (válida en todo el proyecto):
 - No implementar testing en frontends: no carpetas de testing en el proyecto web (React/Vite) ni en el móvil (Android); quienes desarrollan esas capas comprueban que todo funcione visualmente y por uso manual.
 - Tests automatizados backend/IA se concentran en Sprint 12 (alcance cerrado en producto; ver definición de terminado Sprint 12). Omitir tests de funcionalidades no críticas o sencillas.
-- La pasada E2E final, bugs críticos y demo stakeholder se concentran en Sprint 13.
+- La validación manual del producto en entorno cloud (Vercel + Railway) y la demo stakeholder se concentran en Sprint 13.
 - Durante sprints 1–11, las menciones a «pruebas» o «Postman» en tareas B4/B5 son comprobaciones mínimas puntuales para desbloquear, no suites completas.
 
 
@@ -588,7 +588,7 @@ B3) Integración Spring (3 a 4 horas)
 - Endpoint candidato: GET match para ofertaId (o POST) que devuelva score final
   + explanation
 
-B4) Prueba crítica exigida por Sprint 13 (adelantar si se puede)
+B4) Prueba crítica de invariante matching (cubierta en Sprint 12; revalidar en demo cloud si aplica)
 - Mismo CV y misma oferta debe dar mismo score aunque cambien solo las skills de
   perfil en BD: preparar caso Postman desde ya.
 - Mismo CV y misma oferta debe dar mismo score aunque cambien solo las skills
@@ -868,7 +868,7 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 10
 
 Regla crítica:
 - Editar skills de perfil NO debe cambiar score si CV y oferta no cambian:
-  validar con prueba manual tipo Sprint 13.
+  validar en demo cloud o con prueba manual equivalente.
 - Cambiar solo las skills declaradas job_skills tampoco altera porcentaje final si campos de dimensiones invariantes (description, title, modality, workload, years_experience_required).
 
 3) Pulimiento texto legal menor copy
@@ -1016,9 +1016,9 @@ B3) Documentación de comandos en producto/README.md §13
 ------------------------------------------------------------
 C) QUÉ NO HACER EN EL SPRINT 12
 ------------------------------------------------------------
-- No montar suites E2E completas con frontends (eso es Sprint 13 manual).
+- No montar suites E2E automatizadas en frontends (validación visual y demo cloud en Sprint 13).
 - No ampliar el alcance de tests más allá de la suite cerrada salvo trabajo opcional.
-- No desplegar a producción cloud salvo acuerdo aparte.
+- El despliegue a producción cloud corresponde al Sprint 13, no a este sprint.
 
 ------------------------------------------------------------
 D) OPCIONAL — SOLO SI SOBRA TIEMPO (NO BLOQUEA CIERRE SPRINT 12)
@@ -1035,58 +1035,84 @@ D) OPCIONAL — SOLO SI SOBRA TIEMPO (NO BLOQUEA CIERRE SPRINT 12)
 SPRINT 13 — SEMANA 29 Junio - 5 Julio DE 2026 (SPRINT PESADO)
 ================================================================================
 Esfuerzo total estimado del equipo: 8 horas.
-Contenido oficial (cierre MVP; contenido que antes estaba en Sprint 11):
-- Integración end-to-end candidato-empresa en entorno común.
-- Corrección de bugs críticos.
-- Checklist de calidad previo al cierre.
-- Chequeo explícito regla de matching: evidencia E2E o documental complementaria a MatchInvariantIntegrationTest (Sprint 12); mismo CV + misma oferta → mismo resultado aunque solo cambien skills de perfil o job_skills.
-- Pasada integración Spring ↔ FastAPI acotada; Postman rutas prioritarias Spring, IA POST /match y mensajería según Contrato Unificado API.
-- Demo stakeholder incluyendo match/mensajería si Sprint 11 cerrado.
+Contenido oficial (único alcance obligatorio del sprint):
+- Despliegue cloud demo académica: Vercel (front web) + Railway (MySQL, backend Spring Boot, servicio IA FastAPI).
+- Railway: proyecto con MySQL; servicios backend e IA con Root Directory `producto/backend` y `producto/ai-service`; variables de entorno (JDBC, JWT, `WORKSI_AI_BASE_URL` por red interna, `WORKSI_CV_STORAGE_DIR`); volumen persistente para CV en backend; dominio público HTTPS del backend.
+- Vercel: despliegue `producto/frontWeb`; `vercel.json` con rewrite `/api/*` hacia el backend Railway.
+- App móvil: `RetrofitClient.kt` con `BASE_URL` HTTPS del backend Railway; APK de demo instalable en dispositivo físico o emulador configurado.
+- Verificación post-despliegue: health backend e IA; login web; login candidato móvil contra API cloud.
+- Demo stakeholder en entorno cloud (flujo core + match/mensajería si Sprint 11 cerrado).
+- Calentar servicios Railway antes de presentación (cold start).
 - HU-22 permanece sólo tiempo extra backlog.
 
 Objetivo del sprint en una frase:
-Demostrable, estable en flujo core completo (incluido match/mensajería), con evidencia de pruebas manuales E2E y sin deuda bloqueante para entrega.
+Publicar el MVP en cloud con URLs accesibles (web, API, móvil) y demostrar el flujo core ante stakeholder desde ese entorno.
 
 ------------------------------------------------------------
-A) CHECKLIST OBLIGATORIA DE CIERRE (sin atajos)
+A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 13 (Definition of Done)
 ------------------------------------------------------------
-1) Flujo E2E mínimo demostrable
-- Alta ficha empresa y reclutadores vía ADMIN (POST /api/v1/admin/companies multipart y POST /api/v1/admin/recruiters) o datos semilla coherentes demo.
-- Candidato: flujo móvil con CV/datos/skills cliente, HU-21 consentimiento, POST /api/v1/auth/register/candidate multipart; cuenta CANDIDATE operativa perfil Bearer.
-- Con CV procesado texto Tika, reclutador publica oferta vía sesión RECRUITER (portal web combinado Contrato demo).
-- Candidato consume feed swipe con score HU-11 y confirma postulación HU-12 (POST /api/v1/candidate/applications).
-- Reclutador ve postulaciones (HU-19), Detalle de Score (HU-28), establece match (HU-29) y usa mensajería (HU-30); candidato cierra aviso post-login y retoma desde «Matchs» (HU-31).
-- Mismo reclutador publicador abre detalle de postulación → VIEWED automático HU-23; candidato ve estado HU-13.
-- Lista postulantes orden descendente HU-20 verificación visual.
+Al cerrar el sprint, debe cumplirse TODO lo siguiente:
 
-2) Chequeo explícito regla matching (evidencia complementaria a tests Sprint 12)
-- Capturas o logs E2E: dos consultas con misma oferta y mismo CV; en el medio se cambian skills de perfil; el porcentaje final no debe cambiar.
-- Caso análogo: mismo CV mismos textos IA; sólo mutan filas job_skills sin cambiar campos que componen las dimensiones de score Contrato.
+1) Railway operativo
+- MySQL 8 en Railway con esquema aplicado por Flyway al arrancar el backend.
+- Servicio `ai-service` (FastAPI) desplegado desde `producto/ai-service`; backend lo consume por URL interna Railway (`WORKSI_AI_BASE_URL`).
+- Servicio `backend` (Spring Boot) desplegado desde `producto/backend`; variables JDBC enlazadas al plugin MySQL; volumen montado para almacenamiento de CV.
+- Dominio público HTTPS del backend generado y estable; `GET /health` responde `{"status":"UP"}`.
 
-3) Seguridad mínima
-- Rutas privadas protegidas.
-- JWT operativo.
-- Mensajería: solo participantes acceden a su conversación.
+2) Vercel operativo
+- Proyecto Vercel con Root Directory `producto/frontWeb` y framework Vite.
+- Archivo `vercel.json` en repo con rewrite de `/api/(.*)` hacia la URL pública del backend Railway.
+- Portal web accesible por URL pública; login ADMIN y RECRUITER funcional contra API cloud vía proxy `/api`.
 
-4) Docker Compose
-- Levanta en máquina limpia con README.
+3) App móvil apuntando a cloud
+- `BASE_URL` en `RetrofitClient.kt` configurada con la URL HTTPS del backend Railway (sin localhost ni `10.0.2.2`).
+- APK de demo instalable; candidato puede iniciar sesión o registrarse contra el backend cloud.
 
-5) Lista de bugs críticos = vacía o justificada
-- Crítico: caídas, 500 en flujo core, datos cruzados entre empresas, login roto, postulación duplicada incorrecta, score inconsistente con reglas, mensajes visibles para terceros.
+4) Verificación funcional mínima en cloud
+- Reclutador (web): publicar oferta activa.
+- Candidato (móvil): ver feed, swipe/postular o flujo equivalente del MVP.
+- Opcional según alcance cerrado: reclutador ve postulación (HU-19), Detalle de Score (HU-28), establece match (HU-29), mensajería (HU-30/HU-31).
 
-6) Demo alineada a regla global
-- Explicar en demo: score como promedio de cinco dimensiones; skills de perfil y oferta en BD no gobiernan el porcentaje; match/mensajería como canal reclutador-candidato post-postulación.
+5) Demo stakeholder
+- Guión de demo ejecutable sobre URLs públicas (no dependiente solo de Docker local).
+- Equipo documenta URLs de web y API en README del producto.
+- Servicios calentados antes de la presentación (primera petición tras inactividad puede tardar en Railway).
 
-7) Tests Sprint 12
-- Confirmar suite local documentada en producto/README.md §13 (mvn test, mvn test -Pintegration, pytest). CI/CD en pipeline es opcional (ver Sprint 12 sección D).
+6) Bugs críticos de deploy
+- Sin bloqueos que impidan login, postulación o acceso web/API en cloud (500 en rutas core, CORS/proxy roto, BD no migrada, CV no persistido por volumen mal montado).
 
 ------------------------------------------------------------
-B) ENTREGABLES DE DOCUMENTACIÓN PARA DEFENSA (mínimo)
+B) DESGLOSE ULTRA DETALLADO
 ------------------------------------------------------------
-- Diagrama simple arquitectura Spring → FastAPI.
-- Defensa fairness: regex + spaCy antes de embeddings.
-- Defensa almacenamiento CV filesystem + referencia BD + Tika.
-- Limitación MVP: sin OCR; mensajería con polling sin push.
+B1) Railway: MySQL + servicio IA (2 a 3 horas)
+- Crear servicios en proyecto Railway; Root Directory en Source; variables y dominio público IA si se requiere health externo.
+
+B2) Railway: backend + volumen CV + variables (2 a 3 horas)
+- Enlazar JDBC, JWT, `WORKSI_AI_BASE_URL`, `WORKSI_CV_STORAGE_DIR`; verificar Flyway y health.
+
+B3) Vercel: frontWeb + vercel.json (1 a 2 horas)
+- Conectar repo GitHub; configurar root y rewrites; verificar login web.
+
+B4) Móvil: RetrofitClient + APK demo (1 a 2 horas)
+- Cambiar `BASE_URL`; compilar e instalar; probar login candidato.
+
+B5) Demo seca y calentamiento (1 hora)
+- Recorrer flujo stakeholder en cloud; anotar URLs y incidencias menores.
+
+------------------------------------------------------------
+C) QUÉ NO HACER EN EL SPRINT 13
+------------------------------------------------------------
+- No sustituir el despliegue cloud por demo solo en Docker local (Docker sigue siendo entorno de desarrollo; el cierre exige URLs públicas).
+- No omitir volumen de CV en backend Railway si el flujo de registro/postulación persiste archivos.
+- No dejar el móvil apuntando a `10.0.2.2` o localhost en el APK de entrega.
+- No ampliar alcance a nuevas HU; HU-22 solo si sobra tiempo.
+
+------------------------------------------------------------
+D) ENTREGABLES DE DOCUMENTACIÓN PARA DEFENSA (mínimo)
+------------------------------------------------------------
+- URLs públicas de web y API en documentación del producto.
+- Diagrama simple arquitectura cloud: Vercel → backend Railway → MySQL + IA.
+- Defensa fairness, CV en filesystem y limitaciones MVP (sin OCR; mensajería polling) según documentación técnica existente.
 
 
 
@@ -1107,7 +1133,7 @@ Sprint 9 — HU-19 complemento (Ver postulación completa, perfil solo lectura, 
 Sprint 10 — HU-20 orden descendente HU-05 perfil HU-24 guardar oferta HU-27 eliminar empresas/reclutadores ADMIN + copy seguridad/consentimiento.
 Sprint 11 — HU-29 establecer match; HU-30 bandeja Matchs reclutador; HU-31 aviso post-login y mensajería candidato (vista Matchs).
 Sprint 12 — Tests críticos backend/IA cerrados en producto (Tika, score, auth, integración match, postulación, mensajería mínima, invariante skills). Ver definición de terminado Sprint 12.
-Sprint 13 — E2E Docker; bugs críticos; invariante matching; Postman + demo stakeholder (HU-29–HU-31); HU-22 backlog tiempo extra.
+Sprint 13 — Despliegue cloud Vercel + Railway; móvil con BASE_URL producción; health + login web/móvil; demo stakeholder en cloud; HU-22 backlog tiempo extra.
 
 ================================================================================
 APÉNDICE B — BACKLOG “SOLO SI SOBRA TIEMPO” (NO BLOQUEA MVP)

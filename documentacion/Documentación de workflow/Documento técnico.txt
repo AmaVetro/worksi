@@ -270,7 +270,7 @@ No se implementa testing en los frontends: no se añaden carpetas de testing ni 
 
 Sprint 12: tests automatizados de integración solo sobre funcionalidades más críticas — pipeline IA (extracción Tika, fairness, POST /match), seguridad auth (política contraseña, JWT, bloqueo tras 4 intentos), postulación, mensajería mínima e integración Spring Boot ↔ FastAPI. Pipeline GitHub Actions ejecuta esa suite y falla el build si regresa Tika, IA o integración esencial.
 
-Sprint 13: pasada E2E manual candidato + flujo empresa (reclutador, incl. match/mensajería), corrección de bugs críticos, demo stakeholder; comprobación puntual con Postman sobre endpoints prioritarios si aplica.
+Sprint 13: despliegue cloud demo académica (Vercel + Railway: MySQL, backend Spring Boot, IA FastAPI); `vercel.json` con proxy `/api`; app móvil con `BASE_URL` HTTPS del backend; verificación health y login; demo stakeholder en URLs públicas.
 
 ❌ No se realizan: tests de performance avanzados, suites E2E automatizadas en frontends, ni cobertura de funcionalidades no críticas o sencillas.
 16. REGLAS DE DISEÑO
@@ -315,7 +315,7 @@ Backend: 40–45 hrs
 Mobile: 25–30 hrs
 Web: 15–20 hrs
 IA: 18–22 hrs
-Integración + testing (Sprint 12 CI + Sprint 13 E2E): ~22 hrs
+Integración + testing (Sprint 12) + despliegue cloud (Sprint 13): ~22 hrs
 19. CONCLUSIÓN
 
 WorkSí es una solución enfocada en mejorar el reclutamiento laboral mediante:

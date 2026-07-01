@@ -81,7 +81,7 @@ Desarrollar una plataforma funcional de reclutamiento laboral que mejore la cali
 4. Aplicar filtros de fairness para mitigar sesgos antes del procesamiento semántico del CV.
 5. Entregar interfaces móvil (candidatos) y web (admin/reclutador) alineadas a un contrato API unificado.
 6. Habilitar mensajería asíncrona entre reclutador y candidato tras establecer match.
-7. Documentar arquitectura, flujos y procedimientos de despliegue local reproducible.
+7. Documentar arquitectura, flujos y procedimientos de despliegue local reproducible y despliegue cloud demo (Sprint 13: Vercel + Railway).
 
 ---
 

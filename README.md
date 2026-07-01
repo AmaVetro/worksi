@@ -55,6 +55,19 @@ worksi/
 - [Arranque local del entorno](producto/README.md) (sección 3 en adelante)
 - [Ejecución de pruebas](producto/README.md) (sección 13)
 
+## Entorno de producción (demo cloud)
+
+Despliegue académico en **Vercel** (web) + **Railway** (MySQL, backend, IA).
+
+| Componente | URL |
+|------------|-----|
+| Portal web (ADMIN / RECRUITER) | https://worksi.vercel.app |
+| API backend | https://backend-production-f9dc.up.railway.app |
+| Health backend | https://backend-production-f9dc.up.railway.app/health |
+| Health IA (público, pruebas) | https://worksi-production.up.railway.app/health |
+
+La app móvil en demo apunta al backend Railway (`RetrofitClient.kt`). Desarrollo local sigue usando Docker Compose (sección siguiente).
+
 ## Arranque rápido
 
 Requisitos: Docker Desktop en ejecución, puertos `3306`, `8080` y `8000` libres.

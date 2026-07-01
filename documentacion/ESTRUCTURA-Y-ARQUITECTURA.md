@@ -404,6 +404,20 @@ sequenceDiagram
 - **Catálogos:** `V2__seed_catalogs.sql`
 - **Admin inicial:** `V6__seed_system_admin.sql`
 
+### 8.5 Despliegue cloud (demo académica — Sprint 13)
+
+Además del entorno local (§8.1), el plan oficial concentra en **Sprint 13** el deploy en **Vercel + Railway** (proyecto Railway con MySQL, backend e IA).
+
+| Componente | Producción |
+|------------|------------|
+| Web ADMIN / RECRUITER | https://worksi.vercel.app |
+| API Spring Boot | https://backend-production-f9dc.up.railway.app |
+| IA FastAPI | Servicio `ai-service` en Railway (backend la llama por red interna; health público en `worksi-production.up.railway.app`) |
+| MySQL | Plugin MySQL en Railway (proyecto `prolific-joy`) |
+| App móvil | APK con `RetrofitClient.BASE_URL` apuntando al backend Railway |
+
+El front web usa `vercel.json` para proxy `/api` → backend; no requiere CORS extra en Spring.
+
 ---
 
 ## 9. Alcance del MVP
@@ -438,6 +452,7 @@ sequenceDiagram
 | Flujo pantallas web | `documentacion/Documentación de workflow/Flujo Pantallas App Web.txt` |
 | Stack oficial | `documentacion/Documentación de workflow/Stack Oficial.txt` |
 | Arranque local | `producto/README.md` |
+| Despliegue cloud | Sprint 13 — `producto/README.md` (§0), este documento (§8.5) |
 
 ---
 
