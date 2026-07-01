@@ -144,7 +144,7 @@ fun RegisterSkillsScreen(
             }
 
             Spacer(Modifier.height(24.dp))
-            RegisterRequiredFieldsHint(showErrors && !d.isSkillsStepValid())
+            RegisterStepErrorHints(d.skillsStepValidationMessages(showErrors))
             Button(
                 onClick = {
                     showErrors = true
@@ -175,4 +175,18 @@ fun RegisterSkillsScreen(
 private fun RegisterDraft.isSkillsStepValid(): Boolean {
     val n = skillIds.size
     return sectorId != null && n in 3..12
+}
+
+private fun RegisterDraft.skillsStepValidationMessages(showErrors: Boolean): List<String> {
+    if (!showErrors || isSkillsStepValid()) return emptyList()
+    val messages = mutableListOf<String>()
+    if (sectorId == null) {
+        messages.add("Selecciona un rubro.")
+    }
+    val n = skillIds.size
+    when {
+        n < 3 -> messages.add("Selecciona entre 3 y 12 skills.")
+        n > 12 -> messages.add("Puedes seleccionar como maximo 12 skills.")
+    }
+    return messages
 }

@@ -100,15 +100,18 @@ fun RegisterOutlinedTextField(
 }
 
 @Composable
-fun RegisterRequiredFieldsHint(visible: Boolean) {
-    if (visible) {
+fun RegisterStepErrorHints(messages: List<String>) {
+    val visible = messages.filter { it.isNotBlank() }
+    if (visible.isEmpty()) return
+    visible.forEach { msg ->
         Text(
-            text = "Completa los campos requeridos",
+            text = msg,
             color = OrangeAccent,
             fontWeight = FontWeight.Bold,
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.fillMaxWidth()
         )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(8.dp))
     }
+    Spacer(Modifier.height(4.dp))
 }

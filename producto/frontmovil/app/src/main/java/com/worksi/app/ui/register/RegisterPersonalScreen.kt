@@ -173,7 +173,7 @@ fun RegisterPersonalScreen(
             }
 
             Spacer(Modifier.height(24.dp))
-            RegisterRequiredFieldsHint(showErrors && !d.isPersonalStepValid())
+            RegisterStepErrorHints(d.personalStepValidationMessages(showErrors))
             Button(
                 onClick = {
                     showErrors = true
@@ -224,14 +224,30 @@ private fun regField(
 }
 
 private fun RegisterDraft.isPersonalStepValid(): Boolean =
-    firstName.isNotBlank() &&
-        lastNamePaternal.isNotBlank() &&
-        lastNameMaternal.isNotBlank() &&
-        email.isNotBlank() &&
-        EMAIL_REGEX.matches(email.trim()) &&
-        PasswordPolicy.matches(password) &&
-        phone.isNotBlank() &&
-        RutRules.isValidChileRut(rut) &&
-        documentNumber.isNotBlank() &&
-        regionId != null &&
-        communeId != null
+    personalStepValidationMessages(true).isEmpty()
+
+private fun RegisterDraft.personalStepValidationMessages(showErrors: Boolean): List<String> {
+    if (!showErrors) return emptyList()
+    val messages = mutableListOf<String>()
+    if (firstName.isBlank()) messages.add("Ingresa tu nombre.")
+    if (lastNamePaternal.isBlank()) messages.add("Ingresa tu apellido paterno.")
+    if (lastNameMaternal.isBlank()) messages.add("Ingresa tu apellido materno.")
+    when {
+        email.isBlank() -> messages.add("Ingresa tu correo.")
+        !EMAIL_REGEX.matches(email.trim()) -> messages.add("Ingresa un correo valido.")
+    }
+    if (!PasswordPolicy.matches(password)) {
+        messages.add(
+            "La contrasena debe tener al menos 10 caracteres, con mayuscula, minuscula, numero y simbolo."
+        )
+    }
+    if (phone.isBlank()) messages.add("Ingresa tu celular.")
+    when {
+        rut.isBlank() -> messages.add("Ingresa tu RUT.")
+        !RutRules.isValidChileRut(rut) -> messages.add("Ingresa un RUT valido.")
+    }
+    if (documentNumber.isBlank()) messages.add("Ingresa tu numero de documento.")
+    if (regionId == null) messages.add("Selecciona una region.")
+    if (communeId == null) messages.add("Selecciona una comuna.")
+    return messages
+}

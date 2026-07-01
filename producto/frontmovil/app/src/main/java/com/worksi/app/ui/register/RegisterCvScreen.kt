@@ -179,14 +179,8 @@ fun RegisterCvScreen(
                     )
                 }
             }
-            localError?.let {
-                Spacer(Modifier.height(8.dp))
-                Text(it, color = OrangeAccent, fontSize = 14.sp)
-            }
             Spacer(Modifier.height(24.dp))
-            RegisterRequiredFieldsHint(
-                showValidationErrors && (d.cvUri == null || localError != null)
-            )
+            RegisterStepErrorHints(cvStepValidationMessages(showValidationErrors, d.cvUri, localError))
             Button(
                 onClick = {
                     showValidationErrors = true
@@ -227,4 +221,18 @@ fun RegisterCvScreen(
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = White)
         }
     }
+}
+
+private fun cvStepValidationMessages(
+    showErrors: Boolean,
+    cvUri: String?,
+    localError: String?
+): List<String> {
+    if (!showErrors) return emptyList()
+    val messages = mutableListOf<String>()
+    if (cvUri == null) {
+        messages.add("Debes seleccionar un PDF")
+    }
+    localError?.let { messages.add(it) }
+    return messages.distinct()
 }

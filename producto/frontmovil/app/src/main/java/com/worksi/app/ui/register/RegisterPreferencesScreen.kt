@@ -280,7 +280,7 @@ fun RegisterPreferencesScreen(
                 }
             }
             Spacer(Modifier.height(24.dp))
-            RegisterRequiredFieldsHint(showErrors && !d.isPreferencesStepValid())
+            RegisterStepErrorHints(d.preferencesStepValidationMessages(showErrors))
             Button(
                 onClick = {
                     showErrors = true
@@ -295,14 +295,6 @@ fun RegisterPreferencesScreen(
             ) {
                 Text("Siguiente", fontWeight = FontWeight.Bold)
             }
-            if (showErrors) {
-                val minV = d.salaryMin.toLongOrNull()
-                val maxV = d.salaryMax.toLongOrNull()
-                if (d.salaryMin.isNotEmpty() && d.salaryMax.isNotEmpty() && minV != null && maxV != null && minV > maxV) {
-                    Spacer(Modifier.height(8.dp))
-                    Text("El minimo de renta no puede ser mayor que el maximo.", color = OrangeAccent)
-                }
-            }
         }
         IconButton(
             onClick = onBack,
@@ -315,9 +307,19 @@ fun RegisterPreferencesScreen(
     }
 }
 
-private fun RegisterDraft.isPreferencesStepValid(): Boolean {
-    val salaryOk = salaryMin.isEmpty() || salaryMax.isEmpty() ||
-        (salaryMin.toLongOrNull() != null && salaryMax.toLongOrNull() != null &&
-            salaryMin.toLong()!! <= salaryMax.toLong()!!)
-    return salaryOk && modalities.isNotEmpty() && workloads.isNotEmpty()
+private fun RegisterDraft.isPreferencesStepValid(): Boolean =
+    preferencesStepValidationMessages(true).isEmpty()
+
+private fun RegisterDraft.preferencesStepValidationMessages(showErrors: Boolean): List<String> {
+    if (!showErrors) return emptyList()
+    val messages = mutableListOf<String>()
+    if (modalities.isEmpty() || workloads.isEmpty()) {
+        messages.add("Selecciona al menos una modalidad y una carga horaria.")
+    }
+    val minV = salaryMin.toLongOrNull()
+    val maxV = salaryMax.toLongOrNull()
+    if (salaryMin.isNotEmpty() && salaryMax.isNotEmpty() && minV != null && maxV != null && minV > maxV) {
+        messages.add("El minimo de renta no puede ser mayor que el maximo.")
+    }
+    return messages
 }

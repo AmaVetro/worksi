@@ -88,7 +88,7 @@ fun RegisterConsentScreen(
             }
             if (state.registerError != null) {
                 Spacer(Modifier.height(8.dp))
-                Text(state.registerError!!, color = White)
+                Text(state.registerError!!, color = OrangeAccent, fontWeight = FontWeight.Bold)
             }
             Spacer(Modifier.height(16.dp))
             Text(
