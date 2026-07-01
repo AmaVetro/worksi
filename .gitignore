@@ -1,6 +1,11 @@
 .cursorignore
 .env
-Guía despliegue
+**/Guía despliegue
+**/Documento técnico.txt
+**/Flujo Pantallas App Web.txt
+**/Flujo Pantallas App Móvil.txt
+**/Lista de reglas que irán en Backend.txt
+**/generar_plan_pruebas.py
 **/.env
 !.env.example
 **/target/
