@@ -12,6 +12,8 @@ técnico, Flujo Pantallas App Web y Móvil).
 Fuente de verdad del calendario y de las horas por sprint: Sprint oficiales.txt del mismo folder
 Cuando algo no esté aquí explícito, se aplica documento Reglas del Proyecto
 
+Estado producto (cierre MVP): los sprints 1–13 tienen sus metas obligatorias cumplidas en producto/. No se implementó pipeline CI/CD automatizado en el repositorio; las pruebas backend/IA se ejecutan localmente según producto/README.md §13.
+
 Convenciones en este documento:
 - “Equipo” = 3 integrantes. “Horas del sprint” = esfuerzo TOTAL del equipo en
   esa semana (no horas por persona).
@@ -94,7 +96,7 @@ Nota producto: HU-14 y HU-24 ya implementadas en producto.
 ================================================================================
 SPRINT 1 — SEMANA 6 - 12 Abril DE 2026 (SPRINT PESADO)
 ================================================================================
-Esfuerzo total estimado del equipo: 10 horas (suma de las 3 personas en la
+Esfuerzo total estimado del equipo: 12 horas (suma de las 3 personas en la
 semana).
 
 Objetivo del sprint en una frase:
@@ -213,7 +215,7 @@ D) Reparto sugerido de roles (flexible; ajustar a habilidades reales)
 ================================================================================
 SPRINT 2 — SEMANA 13 - 19 Abril DE 2026
 ================================================================================
-Esfuerzo total estimado del equipo: 10 horas.
+Esfuerzo total estimado del equipo: 9 horas.
 Contenido oficial: HU-03 Login unificado + HU-02 Alta ficha empresa y reclutadores
 por ADMIN según modelo oficial (Contrato Unificado API, HU sin épicas, Flujo Pantallas App Web).
 
@@ -280,7 +282,7 @@ C) QUÉ NO HACER EN EL SPRINT 2
 ================================================================================
 SPRINT 3 — SEMANA 20 - 26 Abril DE 2026
 ================================================================================
-Esfuerzo total estimado del equipo: 9 horas (puede rozar un poco más).
+Esfuerzo total estimado del equipo: 8 horas.
 Contenido oficial: HU-06 (CV en flujo móvil antes de "Uso de datos") + HU-04
 (captura de skills, rubro, presentación y preferencias en flujo) + catálogos
 necesarios; sin persistir candidato en backend hasta el alta oficial multipart
@@ -367,7 +369,7 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 4
 - Checkbox obligatorio en pantalla "Uso de datos" como última pantalla antes
   del alta oficial.
 - Si no acepta, no se crea cuenta.
-- Si acepta, se crea cuenta CANDIDATE y se emite access_token.
+- Si acepta, se crea cuenta CANDIDATE y se emite access_token; el cliente móvil navega a Home/Ofertas (feed de ofertas), no a Perfil.
 - Persistencia en BD de consentimiento: flag + timestamp.
 
 2) Alta oficial en un paso (Contrato Unificado API vigente)
@@ -397,7 +399,7 @@ B3) Perfil autenticado candidato (2 a 3 horas)
 
 B4) Pruebas críticas (1 a 2 horas)
 - Caso sin consentimiento: no se llama al endpoint o rechazo controlado.
-- Caso con consentimiento + multipart válido: alta exitosa y acceso a Perfil.
+- Caso con consentimiento + multipart válido: alta exitosa, navegación a Home/Ofertas y acceso a GET/PATCH /api/v1/candidate/profile.
 - Verificar ausencia de rutas /onboarding/* en el flujo final.
 
 ------------------------------------------------------------
@@ -416,7 +418,7 @@ C) QUÉ NO HACER EN EL SPRINT 4
 ================================================================================
 SPRINT 5 — SEMANA 4 - 10 Mayo DE 2026 (SPRINT PESADO)
 ================================================================================
-Esfuerzo total estimado del equipo: 10 horas.
+Esfuerzo total estimado del equipo: 11 horas.
 Contenido oficial:
 - Extracción de texto con Apache Tika en Spring Boot + post-procesamiento
   mínimo (saltos de línea, ruido básico, consistencia).
@@ -448,7 +450,7 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 5
 - Opcional por oferta image_url/imagen archivo según Flujo Contrato si el equipo ya modela esa parte en Sprint 8 UI.
 - job_text construido en backend para IA concatena únicamente title + description + modality + workload (no incluye skills,
   salary_offered ni company_commercial_name en esa cadena). years_experience_required entra al score como dimensión experience_score, no dentro de job_text.
-- PATCH /api/v1/company/profile/image operativo donde corresponda (marca empleador sobre companies, fuera texto job_text).
+- Imagen de ficha company (distincta de imagen por oferta): asignable al alta empresa vía ADMIN (parte "image" en POST /api/v1/admin/companies). PATCH /api/v1/company/profile/image (sesión RECRUITER) actualiza image_url en JSON en backend (asignar URL o null); no hay subida multipart desde el portal reclutador en la UI actual.
 
 3) HU-10 Feed / ver ofertas candidato
 - GET /api/v1/candidate/jobs/feed (y detalle donde aplique Contrato): solo ACTIVE, sin repetir swipeadas como reglas oficiales.
@@ -485,7 +487,7 @@ C) QUÉ NO HACER EN EL SPRINT 5
 ================================================================================
 SPRINT 6 — SEMANA 11 - 17 Mayo DE 2026 (SPRINT PESADO)
 ================================================================================
-Esfuerzo total estimado del equipo: 10 horas.
+Esfuerzo total estimado del equipo: 12 horas.
 Contenido oficial:
 - HU-09 Eliminación de datos sensibles (fairness) en FastAPI con diseño acordado
   (spaCy + regex, orden y solapamiento).
@@ -611,7 +613,7 @@ C) QUÉ NO HACER EN EL SPRINT 6
 ================================================================================
 SPRINT 7 — SEMANA 18 - 24 Mayo DE 2026 (SPRINT PESADO)
 ================================================================================
-Esfuerzo total estimado del equipo: 10 horas.
+Esfuerzo total estimado del equipo: 12 horas.
 Contenido oficial:
 - Frontend web MVP Stack Oficial React+Vite: login unificado ADMIN/RECRUTADOR según Contrato Flujo Pantallas Web;
   Portal administrador registrar empresa (sin credencial empresa) y registrar reclutadores; navegación básica;
@@ -697,12 +699,12 @@ C) QUÉ NO HACER EN EL SPRINT 7
 ================================================================================
 SPRINT 8 — SEMANA 25 - 31 Mayo DE 2026
 ================================================================================
-Esfuerzo total estimado del equipo: 12 horas.
+Esfuerzo total estimado del equipo: 13 horas.
 Contenido oficial (orden lógico reclutador: HU-19 mínimo → HU-28 → HU-16):
 - HU-13 Ver postulaciones candidato estados APPLIED / VIEWED mínimos.
 - Completar web reclutador: listados GET /api/v1/company/jobs, formulario creación y visualización
   HU-15 alineados Flujo Pantallas App Web (region_id coherence comunas, skills topes Contrato/UI).
-- PATCH imagen empresa vía cliente si backlog UI Sprint 7 dejó pendiente marca employer.
+- PATCH imagen empresa: en producto la imagen se asigna al alta ADMIN; endpoint PATCH /api/v1/company/profile/image (RECRUITER) solo image_url JSON; sin UI de subida en portal reclutador (no bloquea cierre si queda pendiente).
 - HU-19 (mínimo Sprint 8) Ver postulantes por oferta: GET /api/v1/company/jobs/{job_id}/applications;
   contador postulaciones + ícono en listado ofertas; botón celeste «Ver postulaciones» en Vista Oferta;
   card gira al reverso con listado match_score desc; «Ver postulación» por fila → pantalla básica (nombre, datos, match_score);
@@ -755,7 +757,7 @@ B1) GET /api/v1/candidate/applications?page=1&size=20&sort=applied_at,desc (1 a 
 B2) UI móvil lista postulaciones (3 a 4 horas)
 B3) Navegación a detalle vista previa oferta (2 a 3 horas)
 B4) Web pantallas reclutador listado ofertas + crear oferta HU-15 (3 a 4 horas equipo)
-B5) PATCH /api/v1/company/profile/image UI si backlog (1 hora)
+B5) Imagen company: verificar alta ADMIN con multipart; PATCH /api/v1/company/profile/image backend (JSON image_url) si aplica (1 hora)
 B6) HU-19 mínimo: GET applications + card flip postulaciones + Ver postulación básica (3 a 4 horas equipo)
 B7) HU-28: match_breakdown + pantalla «Detalle de Score» (3 a 4 horas equipo; depende de B6)
 B8) HU-16: PATCH /api/v1/company/jobs/{job_id} + pantalla Editar Oferta web (2 a 3 horas equipo)
@@ -769,7 +771,7 @@ B9) Pruebas: postulación candidato listada; listado postulantes empresa; explic
 ================================================================================
 SPRINT 9 — SEMANA 1 - 7 Junio DE 2026
 ================================================================================
-Esfuerzo total estimado del equipo: 18 horas.
+Esfuerzo total estimado del equipo: 15 horas.
 Contenido oficial: complemento HU-19 + HU-23 VIEWED al abrir detalle (no al listar reverso card) +
 pulimiento navegaciones web segunda mitad panel errores campo “Completa este campo”
 según Sprint oficiales Flujo Contrato + HU-17 ciclo de vida oferta activar/desactivar/eliminar (RECRUITER) + HU-25 Ver empresas
@@ -842,7 +844,7 @@ C) QUÉ NO HACER EN EL SPRINT 9
 ================================================================================
 SPRINT 10 — SEMANA 8 - 14 Junio DE 2026
 ================================================================================
-Esfuerzo total estimado del equipo: 16 horas.
+Esfuerzo total estimado del equipo: 14 horas.
 Contenido oficial: HU-20 Orden descendente compatibilidad listados API/UI reclutador + HU-05 Editar perfil candidato +
 afinar textos seguridad/consentimiento y revisiones menor copy web/móvil según Sprint oficiales + HU-24 Guardar oferta
 (candidato) + HU-27 Eliminar empresas y reclutadores registrados (ADMIN), según HU sin épicas.
@@ -862,7 +864,7 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 10
   violar reglas. Documentar elección.
 
 2) HU-05 Editar perfil
-- El candidato puede modificar campos del perfil incluyendo skills.
+- El candidato puede modificar los campos editables del perfil (nombre, apellidos, teléfono, email, presentación, renta, años de experiencia, región, comuna, rubro, skills, modalidades y cargas horarias) y reemplazar el CV; no editables desde perfil: RUT, nro. documento, segundo nombre, calle y contraseña.
 - Cambios persistentes.
 - No se pierden datos previos al editar parcialmente (definir PATCH robusto).
 
@@ -905,7 +907,7 @@ B5) HU-27: DELETE admin companies/recruiters + confirmación UI en listados Spri
 ================================================================================
 SPRINT 11 — SEMANA 15 - 21 Junio DE 2026 (SPRINT PESADO)
 ================================================================================
-Esfuerzo total estimado del equipo: 18 horas.
+Esfuerzo total estimado del equipo: 15 horas.
 Contenido oficial (orden lógico: backend mensajería → HU-29 → HU-30 → HU-31):
 - Backend mensajería MVP (Contrato Unificado API secciones 28–33).
 - HU-29 Establecer match con candidato (reclutador; first_message obligatorio).
@@ -923,7 +925,7 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 11
 ------------------------------------------------------------
 1) Backend y BD (soporte HU-29–HU-31)
 - Migraciones Flyway: conversations (incl. login_notice_dismissed) y messages.
-- POST /api/v1/messaging/conversations: RECRUITER, application_id + first_message (1..80 chars; obligatorio).
+- POST /api/v1/messaging/conversations: RECRUITER, application_id + first_message (1..200 chars; obligatorio).
 - GET /api/v1/messaging/conversations: bandeja Matchs RECRUITER (nombre candidato) y CANDIDATE (company_commercial_name).
 - GET /api/v1/messaging/conversations/login-notice: CANDIDATE, aviso post-login (login_notice_dismissed=false).
 - PATCH /api/v1/messaging/conversations/{id}/dismiss-login-notice: CANDIDATE, al cerrar aviso o entrar al hilo desde aviso.
@@ -932,7 +934,7 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 11
 - 403 si usuario no es participante.
 
 2) HU-29 Establecer match con candidato (reclutador)
-- Desde botón «Establecer Match» en perfil postulante (HU-19 Sprint 9): modal confirmación, primer mensaje max 80 obligatorio, «Hacer Match», éxito «¡Ha hecho match con candidato [nombre]!», «Ir a mensajes» (HU-30) o volver al perfil.
+- Desde botón «Establecer Match» en perfil postulante (HU-19 Sprint 9): modal confirmación, primer mensaje max 200 obligatorio, «Confirmar Match», éxito «¡Ha hecho match con candidato [nombre]!», «Ir a mensajes» (HU-30) o «Volver» (cierra modal).
 - POST /api/v1/messaging/conversations persiste conversación y primer mensaje; mensajería abierta para ambos al instante.
 
 3) HU-30 Bandeja Matchs y mensajería con candidatos (reclutador)
@@ -942,7 +944,7 @@ A) DEFINICIÓN DE “TERMINADO” DEL SPRINT 11
 
 4) HU-31 Aviso de match y mensajería con empresa (candidato)
 - Acceso permanente vía vista «Matchs» (bandeja de entrada).
-- Modal post-login a pantalla completa «¡Una empresa quiere hacer match contigo!»: «Ver mensajes» → hilo y dismiss-login-notice; cerrar aviso → dismiss-login-notice; no se repite en logins posteriores para esa conversación.
+- Modal post-login a pantalla completa «¡Felicidades! Una empresa hizo match con tu perfil.»: «Ver mensajes» → hilo y dismiss-login-notice; cerrar aviso → dismiss-login-notice; no se repite en logins posteriores para esa conversación.
 - Vista «Matchs»: listado de conversaciones activas ordenadas por último mensaje.
 - Pantalla «Hilo de mensajes con empresa»: polling; cabecera solo company_commercial_name.
 
@@ -974,7 +976,7 @@ C) QUÉ NO HACER EN EL SPRINT 11
 ================================================================================
 SPRINT 12 — SEMANA 22 - 28 Junio DE 2026
 ================================================================================
-Esfuerzo total estimado del equipo: 10 horas.
+Esfuerzo total estimado del equipo: 9 horas.
 Estado: cerrado (suite implementada en producto).
 Contenido oficial (único alcance obligatorio):
 Tests automatizados críticos backend e IA (sin tests en frontends), limitados a lo ya implementado en producto.
@@ -1023,7 +1025,6 @@ C) QUÉ NO HACER EN EL SPRINT 12
 ------------------------------------------------------------
 D) OPCIONAL — SOLO SI SOBRA TIEMPO (NO BLOQUEA CIERRE SPRINT 12)
 ------------------------------------------------------------
-- Pipeline CI/CD (p. ej. GitHub Actions) ejecutando mvn test, pytest -m "not slow" y opcionalmente mvn test -Pintegration.
 - Optimización/refinación IA: warm-up explícito en arranque FastAPI, medición de latencia POST /match, baseline documentado.
 - Tests adicionales no incluidos en la suite cerrada (p. ej. registro candidato, feed).
 
@@ -1034,7 +1035,7 @@ D) OPCIONAL — SOLO SI SOBRA TIEMPO (NO BLOQUEA CIERRE SPRINT 12)
 ================================================================================
 SPRINT 13 — SEMANA 29 Junio - 5 Julio DE 2026 (SPRINT PESADO)
 ================================================================================
-Esfuerzo total estimado del equipo: 8 horas.
+Esfuerzo total estimado del equipo: 10 horas.
 Contenido oficial (único alcance obligatorio del sprint):
 - Despliegue cloud demo académica: Vercel (front web) + Railway (MySQL, backend Spring Boot, servicio IA FastAPI).
 - Railway: proyecto con MySQL; servicios backend e IA con Root Directory `producto/backend` y `producto/ai-service`; variables de entorno (JDBC, JWT, `WORKSI_AI_BASE_URL` por red interna, `WORKSI_CV_STORAGE_DIR`); volumen persistente para CV en backend; dominio público HTTPS del backend.
@@ -1125,7 +1126,7 @@ Sprint 1 — Infra (Compose, Spring, FastAPI scaffold), cadena Flyway oficial re
 Sprint 2 — HU-03 login multicuenta; HU-02 empresa+reclutadores vía ADMIN; lockout + pantallas recuperación MVP opcional; password_hash sólo usuarios login.
 Sprint 3 — Registro cliente móvil sin persistir hasta multipart; HU-06 HU-04 cliente; GET /api/v1/catalogs/* públicos Contrato.
 Sprint 4 — HU-21 consentimiento; POST /api/v1/auth/register/candidate multipart; GET /api/v1/candidate/profile y PATCH /api/v1/candidate/profile con Bearer CANDIDATE.
-Sprint 5 — Tika; HU-15 crear oferta RECRUITER modelo Contrato actual; PATCH /api/v1/company/profile/image; HU-10 GET /api/v1/candidate/jobs/feed.
+Sprint 5 — Tika; HU-15 crear oferta RECRUITER modelo Contrato actual; imagen company (alta ADMIN; PATCH /api/v1/company/profile/image JSON en backend); HU-10 GET /api/v1/candidate/jobs/feed.
 Sprint 6 — HU-09 fairness; HU-07 score; HU-08 explicación; contrato técnico POST /match (FastAPI) con cv_text y job_text.
 Sprint 7 — Web MVP React+Vite login ADMIN/RECRUITER, panel empresa/reclutadores, shell reclutador; HU-11 HU-12 opcional UI recuperación MVP (maqueta + nueva contraseña real).
 Sprint 8 — HU-13; portal reclutador HU-15; PATCH imagen si backlog; HU-19 mínimo (card flip, Ver postulación básica); HU-28 «Detalle de Score»; HU-16 editar oferta.
@@ -1140,7 +1141,7 @@ APÉNDICE B — BACKLOG “SOLO SI SOBRA TIEMPO” (NO BLOQUEA MVP)
 ================================================================================
 HU-18 (cierre automático por fecha; excluido; closing_date + CLOSING_DUE), HU-22
 
-Sprint 12 opcional (no bloquea MVP): pipeline CI/CD GitHub Actions; optimización/refinación velocidad IA (warm-up, latencia POST /match); tests adicionales (registro candidato, feed u otros endpoints no cubiertos por la suite cerrada).
+Sprint 12 opcional (no bloquea MVP): optimización/refinación velocidad IA (warm-up, latencia POST /match); tests adicionales (registro candidato, feed u otros endpoints no cubiertos por la suite cerrada).
 
 Nota producto: HU-14 y HU-24 ya implementadas en producto.
 

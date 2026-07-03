@@ -195,8 +195,8 @@ un docker-compose.yml simple
 No necesitas:
 Kubernetes ❌
 
-Sí incluye (Sprint 12):
-GitHub Actions con suite crítica backend/IA (Tika, fairness, POST /match, auth, postulación, mensajería mínima, integración Spring ↔ FastAPI) ✅
+Sí incluye (Sprint 12, cerrado en producto):
+Suite crítica backend/IA ejecutable localmente (Tika, fairness, POST /match, auth, postulación, mensajería mínima, integración Spring ↔ FastAPI) según producto/README.md §13 ✅
 
 
 
@@ -227,10 +227,10 @@ HU-22: Eliminación de cuenta
 
 Ya implementado en producto: HU-14 Cancelar postulación; HU-24 Guardar oferta.
 
-Plan obligatorio MVP restante (Sprint oficiales): HU-29–HU-31 match/mensajería (Sprint 11). Referencia API y web: Contrato Unificado API y Flujo Pantallas App Web.
+Plan obligatorio MVP (Sprint oficiales): sprints 1–13 cerrados en producto/. Referencia API y web: Contrato Unificado API y Flujo Pantallas App Web.
 
 5. 🧪 Regla esencial de testing
-En frontends no se implementan tests automatizados ni carpetas de testing; quienes hacen web y móvil comprueban el producto a ojo, flujo a flujo. Sprint 12: tests automatizados de integración solo de funcionalidades más críticas (pipeline IA, seguridad auth, postulación, mensajería mínima, integración Spring ↔ FastAPI) vía GitHub Actions. Sprint 13: despliegue cloud Vercel + Railway, validación manual en producción y demo stakeholder. No se pide performance avanzada, suites E2E automatizadas en frontends ni cobertura de funcionalidades no críticas.
+En frontends no se implementan tests automatizados ni carpetas de testing; quienes hacen web y móvil comprueban el producto a ojo, flujo a flujo. Sprint 12 (cerrado): tests automatizados solo de funcionalidades más críticas (pipeline IA, seguridad auth, postulación, mensajería mínima, integración Spring ↔ FastAPI), ejecutables localmente según producto/README.md §13. Sprint 13 (cerrado): despliegue cloud Vercel + Railway, validación manual en producción y demo stakeholder. No se pide performance avanzada, suites E2E automatizadas en frontends, pipeline CI/CD en repo ni cobertura de funcionalidades no críticas.
 
 🎯 Frase tipo defensa (CV + IA)
 Los CV se almacenan como archivos en el servidor y en la base de datos solo la referencia. El backend extrae el texto con Apache Tika, lo limpia y normaliza; el servicio de IA aplica el doble filtro con spaCy y regex para reducir datos sensibles antes de generar embeddings y calcular el matching. El MVP no incluye OCR: solo PDF con texto seleccionable.

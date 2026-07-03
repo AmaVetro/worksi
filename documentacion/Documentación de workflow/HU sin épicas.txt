@@ -2,7 +2,7 @@
 REGLA TRANSVERSAL DE TESTING (ESENCIAL)
 No se implementa testing en frontends: no carpetas ni suites de tests en el proyecto web ni en el móvil.
 Quienes desarrollan frontends verifican que todo funcione de forma visual y manual en pantalla.
-Sprint 12: pruebas automatizadas de backend e IA (solo piezas críticas: pipeline IA, seguridad auth/contraseñas/tokens, postulación, mensajería mínima, integración Spring ↔ FastAPI) y pipeline CI/CD con GitHub Actions según Sprint oficiales.txt; no son historias de usuario numeradas en este archivo.
+Sprint 12: pruebas automatizadas de backend e IA (solo piezas críticas: pipeline IA, seguridad auth/contraseñas/tokens, postulación, mensajería mínima, integración Spring ↔ FastAPI), ejecutables localmente según producto/README.md §13; no son historias de usuario numeradas en este archivo.
 El despliegue cloud (Vercel + Railway), la validación manual del producto en ese entorno y la demo stakeholder se planifican en Sprint 13 según Sprint oficiales.txt.
 Se evita toda batería de testing opcional, de baja prioridad o repartida por sprint en frontends.
 
@@ -39,7 +39,7 @@ Criterios de aceptación (alineados a Flujo Pantallas App Web y Contrato Unifica
 * Listado de empresas: GET /api/v1/admin/companies para desplegable al dar de alta reclutadores (items con company_id, commercial_name, corporate_email, etc.).
 * Alta reclutador: POST /api/v1/admin/recruiters con email, password (política del contrato), datos personales y company_id existente.
 * Si falta un obligatorio no avanza y muestra “Completa este campo” donde corresponda.
-* Con sesión RECRUITER activa en portal empresa: PATCH /api/v1/company/profile/image permite subir/cambiar/eliminar imagen en la ficha company (distincta de imagen por oferta).
+* Imagen de la ficha company (distincta de imagen por oferta): se puede asignar al alta empresa vía ADMIN (parte "image" en POST /api/v1/admin/companies). En producto, PATCH /api/v1/company/profile/image (sesión RECRUITER) actualiza solo image_url en JSON (asignar URL o null para quitar); no hay subida de archivo multipart desde el portal reclutador en la UI actual.
 * Manejo de errores visible si falla validación o servidor.
 Nota: no existe registro público de empresa; alta empresa solo vía POST /api/v1/admin/companies con rol ADMIN.
 
@@ -87,9 +87,10 @@ Como candidato
 * Quiero editar mi perfil
 * Para mantener mis datos actualizados
 Criterios de aceptación:
-* Puede modificar todos los campos
+* Puede modificar los campos editables del perfil vía PATCH /api/v1/candidate/profile: nombre, apellidos, teléfono, email, presentación, renta esperada, años de experiencia, región, comuna, rubro, skills, modalidades y cargas horarias preferidas; también puede reemplazar el CV (PDF máx. 1 MB).
+* No son editables desde el perfil (quedan fijos desde el alta): RUT, nro. documento, segundo nombre, calle y contraseña (cambio de contraseña solo vía flujo de recuperación).
 * Los cambios se guardan correctamente
-* No se pierden datos previos
+* No se pierden datos previos al editar parcialmente
 
 
 
@@ -165,7 +166,7 @@ Criterios de aceptación:
 * Incluye info básica (título, empresa, ubicación)
 * Carga inicial funciona sin errores
 * Manejo si no hay ofertas
-* En la pantalla Ofertas, acceso a la vista «Matchs» (HU-31; pendiente en frontmovil actual), bandeja de entrada de mensajería asincrona con las empresas que establecieron match
+* En la pantalla Ofertas (y barra superior de Home, Perfil, Guardados y Postulaciones), acceso a la vista «Matchs» (HU-31): ícono estrella en cabecera; bandeja de entrada de mensajería asincrónica con las empresas que establecieron match
 
 
 
@@ -339,7 +340,7 @@ Criterios de aceptación:
 * La pantalla "Uso de datos" es la última pantalla antes de crear la cuenta oficialmente
 * Checkbox obligatorio
 * No permite crear la cuenta sin aceptar en la pantalla "Uso de datos"
-* Al aceptar el consentimiento, se crea la cuenta y se pasa a la pantalla Perfil
+* Al aceptar el consentimiento, se crea la cuenta y se pasa a la pantalla Home/Ofertas (feed de ofertas; sesión candidato), no a Perfil
 
 
 

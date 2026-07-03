@@ -130,7 +130,7 @@ Objetivo: centralizar reglas esenciales para que cualquier integrante encuentre 
   - no colas/event-driven complejas
   - no microservicios extra
   - no Kubernetes
-  - no CI/CD complejo más allá del pipeline GitHub Actions de Sprint 12 (solo suite crítica backend/IA)
+  - no CI/CD automatizado en el repositorio (tests backend/IA locales según producto/README.md §13)
   - no patrones innecesarios
 
 ============================================================
@@ -138,7 +138,7 @@ Objetivo: centralizar reglas esenciales para que cualquier integrante encuentre 
 ============================================================
 - No implementar testing en frontends: no añadir carpetas ni entornos de testing en el proyecto web (React) ni en el móvil (Android). Queda excluido Jest, Vitest, Testing Library en web, y suites o carpetas de test instrumentado en móvil salvo lo que el stack imponga por defecto y deba dejarse sin uso.
 - Las personas que trabajan en frontends validan el comportamiento de forma visual y funcional mientras integran, sin obligación de tests automatizados de UI.
-- Sprint 12: tests automatizados de integración solo sobre funcionalidades más críticas — pipeline IA (extracción Tika, fairness, POST /match), seguridad auth (política contraseña, JWT, bloqueo tras 4 intentos), postulación, mensajería mínima e integración Spring Boot ↔ FastAPI. Pipeline GitHub Actions ejecuta esa suite y falla el build si regresa Tika, IA o integración esencial.
+- Sprint 12 (cerrado): tests automatizados solo sobre funcionalidades más críticas — pipeline IA (extracción Tika, fairness, POST /match), seguridad auth (política contraseña, JWT, bloqueo tras 4 intentos), postulación, mensajería mínima e integración Spring Boot ↔ FastAPI; ejecutables localmente según producto/README.md §13.
 - Sprint 13: despliegue cloud demo académica (Vercel front web + Railway MySQL, backend e IA); configuración `vercel.json` y `RetrofitClient.kt` con URL HTTPS del backend; verificación health y login web/móvil; demo stakeholder sobre URLs públicas; corrección de bugs críticos solo si bloquean deploy o demo.
 - Regla transversal: priorizar integración y flujo core; omitir tests de funcionalidades no críticas o sencillas.
 - No se exige: testing de performance avanzado, suites E2E automatizadas en frontends ni cobertura amplia fuera de la suite crítica de Sprint 12.
@@ -149,11 +149,11 @@ Objetivo: centralizar reglas esenciales para que cualquier integrante encuentre 
 ============================================================
 - Plan base: 13 sprints, 1 semana calendario cada uno, inicio lunes.
 - Equipo: 3 integrantes. Horas por sprint: esfuerzo total del equipo en esa semana (no horas por persona).
-- Carga por sprint: estimación variable entre 8 h y 10 h según complejidad; total referencia ~155 h de equipo (Sprint oficiales: núcleo sprints 1–10 ~115 h + Sprint 11 match/mensajería ~18 h + Sprint 12 tests/IA/CI ~14 h + Sprint 13 despliegue cloud ~8 h).
-- Calendario (Sprint oficiales): 13 semanas; Sprint 1 (6–12 abril 2026), Sprint 2 (13–19 abril), Sprint 3 (20–26 abril), Sprint 4 (27 abril–3 mayo), Sprint 5 (4–10 mayo), Sprint 6 (11–17 mayo), Sprint 7 (18–24 mayo), Sprint 8 (25–31 mayo), Sprint 9 (1–7 junio), Sprint 10 (8–14 junio), Sprint 11 (15–21 junio), Sprint 12 (22–28 junio), Sprint 13 (29 junio–5 julio 2026). Sprint 11: match/mensajería (HU-29–HU-31). Sprint 12: tests críticos backend/IA + optimización IA + CI/CD GitHub Actions. Sprint 13: despliegue cloud Vercel + Railway, validación en producción y demo stakeholder.
+- Carga por sprint: estimación variable entre 8 h y 15 h según complejidad de actividades de cada semana (máximo 15 h en los sprints más densos); total referencia ~150 h de equipo (Sprint oficiales: sprints 1–10 ~116 h + Sprint 11 match/mensajería ~15 h + Sprint 12 tests ~9 h + Sprint 13 despliegue cloud ~10 h).
+- Calendario (Sprint oficiales): 13 semanas; Sprint 1 (6–12 abril 2026), Sprint 2 (13–19 abril), Sprint 3 (20–26 abril), Sprint 4 (27 abril–3 mayo), Sprint 5 (4–10 mayo), Sprint 6 (11–17 mayo), Sprint 7 (18–24 mayo), Sprint 8 (25–31 mayo), Sprint 9 (1–7 junio), Sprint 10 (8–14 junio), Sprint 11 (15–21 junio), Sprint 12 (22–28 junio), Sprint 13 (29 junio–5 julio 2026). Sprints 1–13: metas obligatorias cerradas en producto/. Sprint 11: match/mensajería (HU-29–HU-31). Sprint 12: tests críticos backend/IA. Sprint 13: despliegue cloud Vercel + Railway, validación en producción y demo stakeholder.
 - Criterio de ordenación: lógica de desarrollo (dependencias, pipeline de IA) y entregas de valor continuas; cada sprint puede atravesar BD, frontend y backend a la vez.
 - La inicialización del proyecto no es HU numerada; va en Sprint 1.
-- Cierre obligatorio del plan en Sprint 13: publicar MVP en cloud (Vercel + Railway), móvil apuntando al backend HTTPS, verificación funcional mínima en URLs públicas y demo stakeholder del flujo core (incl. match/mensajería si Sprint 11 cerrado).
+- Cierre obligatorio del plan en Sprint 13 (cumplido en producto/): publicar MVP en cloud (Vercel + Railway), móvil apuntando al backend HTTPS, verificación funcional mínima en URLs públicas y demo stakeholder del flujo core (incl. match/mensajería).
 - Sprints marcados como pesados (alineado a Sprint oficiales):
   - Sprint 1
   - Sprint 5
